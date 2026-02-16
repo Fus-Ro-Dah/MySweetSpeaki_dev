@@ -1,0 +1,626 @@
+:root {
+    --primary-bg: #f9fbf9;
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(200, 230, 200, 0.4);
+    --accent-color: #4ae281;
+    --text-color: #2c3e50;
+    --shadow: 0 8px 32px 0 rgba(74, 226, 129, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Outfit', 'Zen Maru Gothic', sans-serif;
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    overflow: hidden;
+}
+
+/* タイトル画面のスタイリング */
+#title-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #87ceeb;
+    /* 空色 */
+    overflow: hidden;
+    transition: opacity 0.8s ease, visibility 0.8s;
+}
+
+.title-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('assets/backgrounds/trickal_logo.jpg');
+    background-size: cover;
+    background-position: center;
+    filter: blur(5px) brightness(1.1);
+    transform: scale(1.1);
+    opacity: 0.6;
+}
+
+#title-screen.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.title-content {
+    position: relative;
+    background: rgba(255, 255, 255, 0.75);
+    padding: 3rem 4rem;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 800px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    animation: floatingUI 4s ease-in-out infinite;
+    z-index: 10;
+}
+
+.logo-container {
+    margin-bottom: 2rem;
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
+}
+
+.main-logo {
+    max-width: 100%;
+    height: auto;
+    border-radius: 20px;
+}
+
+.title-content p {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    margin-bottom: 2.5rem;
+    color: #4a5568;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+#start-button {
+    font-size: 1.3rem;
+    padding: 1.2rem 4rem;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+    box-shadow: 0 10px 20px rgba(255, 154, 158, 0.4);
+    border: none;
+    color: #fff;
+    font-family: inherit;
+    font-weight: 700;
+    border-radius: 60px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#start-button:hover {
+    transform: translateY(-8px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(255, 154, 158, 0.6);
+    filter: brightness(1.05);
+}
+
+/* 雲のスタイリング */
+.title-cloud {
+    position: absolute;
+    background: white;
+    border-radius: 100px;
+    opacity: 0.8;
+    z-index: 1;
+    filter: blur(2px);
+}
+
+.title-cloud::before,
+.title-cloud::after {
+    content: '';
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+}
+
+.cloud-1 {
+    width: 200px;
+    height: 60px;
+    top: 20%;
+    left: 10%;
+    animation: cloudFloat 20s linear infinite;
+}
+
+.cloud-2 {
+    width: 150px;
+    height: 45px;
+    top: 60%;
+    right: 15%;
+    animation: cloudFloat 25s linear infinite reverse;
+}
+
+.cloud-3 {
+    width: 250px;
+    height: 75px;
+    bottom: 15%;
+    left: 20%;
+    animation: cloudFloat 30s linear infinite;
+}
+
+@keyframes cloudFloat {
+    0% {
+        transform: translateX(-100px);
+    }
+
+    100% {
+        transform: translateX(200px);
+    }
+}
+
+@keyframes floatingUI {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+#app {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+}
+
+#game-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* 飼育スペース (80%) */
+#speaki-room {
+    flex: 0 0 80%;
+    height: 100%;
+    position: relative;
+    background-image: url('assets/backgrounds/background.png');
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+}
+
+#game-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    /* タッチ中のスクロールを無効化 */
+}
+
+/* 隠れ家 (hideout) */
+#speaki-hideout {
+    position: absolute;
+    left: -20px;
+    top: -20px;
+    width: 280px;
+    /* スピキを覆い隠せるサイズ */
+    height: auto;
+    z-index: 200;
+    pointer-events: none;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
+}
+
+/* グローバルオーバーレイ (ギフトイベント等) */
+#room-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    /* 全ての上に来るように */
+}
+
+/* メニュー (20%) */
+#side-menu {
+    flex: 0 0 22%;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-left: 1px solid var(--glass-border);
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    box-shadow: var(--shadow);
+    overflow-y: auto;
+    /* メニュー全体が溢れた場合にスクロール可能に */
+}
+
+.menu-description {
+    font-size: 0.85rem;
+    color: #66bb6a;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+h2,
+h3 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--accent-color);
+}
+
+#item-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+.draggable-item {
+    padding: 0.6rem 1rem;
+    background: white;
+    border-radius: 12px;
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e8f5e9;
+}
+
+.draggable-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 226, 129, 0.15);
+    border-color: var(--accent-color);
+}
+
+#speaki-status {
+    flex: 1;
+    /* 残りのスペースをすべて使う */
+    background: rgba(255, 255, 255, 0.6);
+    padding: 1.2rem;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* flex内のスクロールを有効にするために必要 */
+    border: 1px solid #e8f5e9;
+}
+
+.status-hint {
+    font-size: 0.8rem;
+    color: #81c784;
+    margin-bottom: 1rem;
+    font-style: italic;
+}
+
+#speaki-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    overflow-y: auto;
+    padding-right: 5px;
+    flex: 1;
+}
+
+#speaki-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+#speaki-list::-webkit-scrollbar-thumb {
+    background: #c8e6c9;
+    border-radius: 10px;
+}
+
+/* 開発メモ・クレジットセクション共通 */
+#memo-section,
+#credits-section {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+#dev-roadmap,
+#material-credits {
+    width: 100%;
+    height: 100px;
+    padding: 0.7rem;
+    border-radius: 12px;
+    border: 1px solid #e8f5e9;
+    background: white;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: #666;
+    overflow-y: auto;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+#dev-roadmap::-webkit-scrollbar,
+#material-credits::-webkit-scrollbar {
+    width: 4px;
+}
+
+#dev-roadmap::-webkit-scrollbar-thumb,
+#material-credits::-webkit-scrollbar-thumb {
+    background: #c8e6c9;
+    border-radius: 10px;
+}
+
+.empty-list {
+    text-align: center;
+    color: #95a5a6;
+    font-size: 0.85rem;
+    padding: 1rem;
+}
+
+.speaki-entry {
+    background: white;
+    padding: 0.8rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    border-left: 4px solid var(--accent-color);
+    transition: transform 0.2s;
+}
+
+.speaki-entry:hover {
+    transform: translateX(5px);
+}
+
+.speaki-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+}
+
+.speaki-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+
+.speaki-friendship {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 10px;
+}
+
+/* 好感度レベル別カラー */
+.friendship-v-high {
+    background: #e8f8f5;
+    color: #1abc9c;
+}
+
+.friendship-high {
+    background: #eaf2f8;
+    color: #3498db;
+}
+
+.friendship-normal {
+    background: #fdfefe;
+    color: #95a5a6;
+    border: 1px solid #eee;
+}
+
+.friendship-low {
+    background: #fef9e7;
+    color: #f1c40f;
+}
+
+.friendship-v-low {
+    background: #fdf2f2;
+    color: #e74c3c;
+}
+
+.speaki-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+}
+
+.speaki-detail-item {
+    display: flex;
+    justify-content: space-between;
+    color: #5d6d7e;
+}
+
+.speaki-detail-val {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+#gift-countdown-container {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #5d6d7e;
+}
+
+#gift-countdown {
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+/* 削除: 重複定義を整理 */
+
+#gift-event-ui {
+    position: relative;
+    /* absoluteから変更 */
+    margin-top: -5%;
+    /* 少し上に寄せる */
+    pointer-events: auto;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    padding: 2.5rem 3.5rem;
+    border-radius: 32px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    animation: popIn 0.4s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.button-group,
+#reaction-group {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+button {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 50px;
+    background: var(--accent-color);
+    color: white;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+button:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+}
+
+@keyframes popIn {
+    to {
+        transform: scale(1);
+    }
+}
+
+/* スピキのCSS 3D 描画 */
+.speaki-sprite-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    /* クリックなどはCanvasで処理する */
+    transform-style: preserve-3d;
+    will-change: transform;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.speaki-sprite {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    /* 3D変形の基準点を足元（中央下）に設定して、撫でた時の踏ん張り感を出す */
+    transform-origin: bottom center;
+    transition: transform 0.1s ease-out;
+}
+
+.speaki-emoji-overlay {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 32px;
+}
+
+.speaki-gift-overlay {
+    position: absolute;
+    top: -15px;
+    /* さらに20px下げた (-35px + 20px) */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: auto;
+    pointer-events: none;
+    z-index: 50;
+    /* スピキ本体よりも確実に手前に表示 */
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.speaki-gift-overlay.hidden {
+    display: none;
+}
+
+/* 独立したヒットエフェクト（CSSスパーク）のスタイル */
+.hit-effect {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, #fff 10%, #ffeb3b 40%, #f44336 80%);
+    pointer-events: none;
+    z-index: 100;
+    user-select: none;
+    /* 8つの尖った星型（スパーク）の形状 */
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%,
+            79% 91%, 50% 70%, 21% 91%, 32% 57%,
+            2% 35%, 39% 35%);
+    animation: impactSpark 0.4s ease-out forwards;
+}
+
+@keyframes impactSpark {
+    0% {
+        transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+        opacity: 0;
+    }
+
+    20% {
+        transform: translate(-50%, -50%) scale(1.5) rotate(20deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(2.0) rotate(45deg);
+        opacity: 0;
+    }
+}
+
+/* なでなでパーティクル (❤️) のスタイル */
+.petting-heart {
+    position: absolute;
+    font-size: 24px;
+    pointer-events: none;
+    z-index: 90;
+    user-select: none;
+    animation: pettingHeartFloat 1.2s ease-out forwards;
+}
+
+@keyframes pettingHeartFloat {
+    0% {
+        transform: translate(-50%, 0) scale(0) rotate(0deg);
+        opacity: 0;
+    }
+
+    20% {
+        transform: translate(-50%, -20px) scale(1.2) rotate(15deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(calc(-50% + 20px), -100px) scale(0.8) rotate(-15deg);
+        opacity: 0;
+    }
+}

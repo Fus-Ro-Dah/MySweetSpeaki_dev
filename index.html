@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1200">
+    <title>My Sweet Speki - 癒やしのスピキ飼育スペース</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Zen+Maru+Gothic:wght@400;500;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- タイトル画面オーバーレイ -->
+    <div id="title-screen">
+        <div class="title-bg"></div>
+        <div class="title-content">
+            <div class="logo-container">
+                <img src="assets/backgrounds/trickal_logo.jpg" alt="Trickal Logo" class="main-logo">
+            </div>
+            <p>ここはあなただけの小さな飼育スペース (開発中)。<br>
+                不思議な生き物(?) ｽﾋﾟｷたちと触れ合って癒されよう。
+            </p>
+            <button id="start-button">ｽﾋﾟｷに会いに行く</button>
+        </div>
+        <!-- 装飾的な雲 -->
+        <div class="title-cloud cloud-1"></div>
+        <div class="title-cloud cloud-2"></div>
+        <div class="title-cloud cloud-3"></div>
+    </div>
+
+    <div id="app">
+        <div id="game-container">
+            <!-- 飼育スペース (80%) -->
+            <main id="speaki-room">
+                <canvas id="game-canvas"></canvas>
+                <!-- 隠れ家 (常に最前面) -->
+                <img id="speaki-hideout" src="assets/images/hideout.png" alt="hideout">
+                <!-- Speaki elements will be generated dynamically here -->
+            </main>
+
+            <!-- メニュー（20%） -->
+            <aside id="side-menu">
+                <h2>アイテム</h2>
+                <p class="menu-description">ドラッグアンドドロップでアイテムが配置できるよ！</p>
+                <div id="item-list">
+                    <!-- Dynamic Items from ITEMS in app.js -->
+                </div>
+                <div id="speaki-status">
+                    <h3>スピキたちの状態</h3>
+                    <p class="status-hint">ｽﾋﾟｷと仲良くなると何か持ってきてもらえるかも？</p>
+                    <div id="speaki-list">
+                        <!-- スピキごとのエントリが動的に生成されます -->
+                        <p class="empty-list">スピキはいません...</p>
+                    </div>
+                </div>
+                <div id="memo-section">
+                    <h3>開発メモ: 今後やりたいこと</h3>
+                    <div id="dev-roadmap">
+                        ・ランダムギフトの種類をもっと増やす(現状4種)<br>
+                        ・距離の近いｽﾋﾟｷどうしがおしゃべりする<br>
+                        ・動き回る子供のｽﾋﾟｷ<br>
+                        ・ｽﾋﾟｷ以外も出演<br>
+                    </div>
+                </div>
+
+                <!-- 素材クレジット表示エリア -->
+                <div id="credits-section">
+                    <h3>使用素材</h3>
+                    <div id="material-credits">
+                        ・キャラクター・背景・BGM・サウンド: EPID Games 様<br>
+                        ・イラスト: x(旧Twitter) @RyO03374506 様<br>
+                        その他は登場時に表記
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- グローバルオーバーレイ (ギフトイベント等) -->
+    <div id="room-overlay">
+        <div id="gift-event-ui" class="hidden">
+            <p id="gift-message">何かを持ってきてくれたようだ</p>
+            <div class="button-group">
+                <button id="gift-btn-receive">うけとる</button>
+            </div>
+            <div id="reaction-group" class="hidden">
+                <button id="reaction-btn-1">ﾁｮﾜﾖ!</button>
+                <button id="reaction-btn-2">ｱﾘｶﾞﾄｳ!</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
