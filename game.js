@@ -361,9 +361,9 @@ export class Game {
         if (itemDef.ignoreReaction) return;
 
         this.speakis.forEach(speaki => {
-            const distToItem = Math.sqrt((speaki.x - x) ** 2 + (speaki.y - y) ** 2);
+            const distToItem = Math.sqrt((speaki.pos.x - x) ** 2 + (speaki.pos.y - y) ** 2);
             if (distToItem > 500) return;
-            if (speaki.friendship <= -31) return;
+            if (speaki.status.friendship <= -31) return;
 
             const nonInterruptibleStates = [
                 STATE.GIFT_RETURNING,
@@ -372,16 +372,16 @@ export class Game {
                 STATE.GIFT_TIMEOUT,
                 STATE.USER_INTERACTING
             ];
-            if (nonInterruptibleStates.includes(speaki.state)) return;
+            if (nonInterruptibleStates.includes(speaki.status.state)) return;
 
-            const isGiftEventActive = [STATE.GIFT_LEAVING, STATE.GIFT_SEARCHING].includes(speaki.state);
-            const isItemEventActive = [STATE.ITEM_APPROACHING, STATE.ITEM_ACTION].includes(speaki.state);
+            const isGiftEventActive = [STATE.GIFT_LEAVING, STATE.GIFT_SEARCHING].includes(speaki.status.state);
+            const isItemEventActive = [STATE.ITEM_APPROACHING, STATE.ITEM_ACTION].includes(speaki.status.state);
 
             if (isGiftEventActive || isItemEventActive) {
-                speaki.stateStack.push(speaki.state);
+                speaki.status.stateStack.push(speaki.status.state);
             }
 
-            speaki.friendship = Math.min(50, speaki.friendship + 2);
+            speaki.status.friendship = Math.min(50, speaki.status.friendship + 2);
             speaki.approachItem(item, 50);
         });
     }
@@ -409,25 +409,25 @@ export class Game {
             STATE.IDLE, STATE.WALKING, STATE.GIFT_RETURNING,
             STATE.GIFT_LEAVING, STATE.GIFT_WAIT_FOR_USER_REACTION, STATE.ITEM_APPROACHING,
         ];
-        return interactableStates.includes(speaki.state);
+        return interactableStates.includes(speaki.status.state);
     }
 
     _findSpeakiAt(x, y) {
         for (let i = this.speakis.length - 1; i >= 0; i--) {
             const s = this.speakis[i];
-            const dist = Math.sqrt((x - s.x) ** 2 + (y - s.y) ** 2);
-            const isHeadHit = (y < s.y - s.size / 5);
-            if (dist < s.size / 2 && isHeadHit) return s;
+            const dist = Math.sqrt((x - s.pos.x) ** 2 + (y - s.pos.y) ** 2);
+            const isHeadHit = (y < s.pos.y - s.status.size / 5);
+            if (dist < s.status.size / 2 && isHeadHit) return s;
         }
         return null;
     }
 
     _prepareInteraction(speaki, x, y) {
-        speaki.isInteracting = true;
-        speaki.interactStartTime = Date.now();
-        speaki.lastMouseX = x;
-        speaki.lastMouseY = y;
-        speaki.isPetting = false;
+        speaki.interaction.isInteracting = true;
+        speaki.timers.interactStart = Date.now();
+        speaki.interaction.lastMouseX = x;
+        speaki.interaction.lastMouseY = y;
+        speaki.interaction.isPetting = false;
 
         const interruptibleStates = [
             STATE.GIFT_LEAVING, STATE.GIFT_SEARCHING,
@@ -435,11 +435,11 @@ export class Game {
             STATE.ITEM_APPROACHING, STATE.ITEM_ACTION
         ];
 
-        if (interruptibleStates.includes(speaki.state)) {
-            speaki.stateStack.push(speaki.state);
+        if (interruptibleStates.includes(speaki.status.state)) {
+            speaki.status.stateStack.push(speaki.status.state);
         }
 
-        speaki.state = STATE.USER_INTERACTING;
+        speaki.status.state = STATE.USER_INTERACTING;
         this.interactTarget = speaki;
     }
 
@@ -449,53 +449,52 @@ export class Game {
         const speaki = this.interactTarget;
         const { x, y } = this._getMousePos(e);
 
-        const dx = x - speaki.lastMouseX;
-        const dy = y - speaki.lastMouseY;
+        const dx = x - speaki.interaction.lastMouseX;
+        const dy = y - speaki.interaction.lastMouseY;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist <= 5) return;
 
-        if (speaki.state === STATE.USER_INTERACTING) {
-            speaki.pettingStartTime = Date.now();
-            speaki.isPetting = true;
-            speaki.friendship = Math.min(50, speaki.friendship + 0.2);
-            if (speaki.currentVoice) speaki.currentVoice.loop = true;
+        if (speaki.status.state === STATE.USER_INTERACTING) {
+            speaki.interaction.isPetting = true;
+            speaki.status.friendship = Math.min(50, speaki.status.friendship + 0.2);
+            if (speaki.visual.currentVoice) speaki.visual.currentVoice.loop = true;
         }
 
-        speaki.isActuallyDragging = true;
-        const targetEmotion = (speaki.friendship <= -11) ? 'sad' : 'happy';
+        speaki.interaction.isActuallyDragging = true;
+        const targetEmotion = (speaki.status.friendship <= -11) ? 'sad' : 'happy';
 
-        if (speaki.action !== 'idle' || speaki.emotion !== targetEmotion) {
+        if (speaki.status.action !== 'idle' || speaki.status.emotion !== targetEmotion) {
             speaki.setExpression('idle', targetEmotion);
         }
 
-        if (speaki.isPetting && speaki.emotion === 'happy') {
+        if (speaki.interaction.isPetting && speaki.status.emotion === 'happy') {
             const now = Date.now();
-            if (now - speaki.lastHeartTime > 150) {
+            if (now - speaki.timers.lastHeartTime > 150) {
                 this._createPettingHeart(speaki);
-                speaki.lastHeartTime = now;
+                speaki.timers.lastHeartTime = now;
             }
         }
 
-        speaki.targetDistortion.skewX = Math.max(-20, Math.min(20, dx * -1.0));
-        speaki.targetDistortion.rotateX = Math.max(-15, Math.min(15, dy * -0.5));
-        speaki.targetDistortion.scale = 1.05;
+        speaki.visual.targetDistortion.skewX = Math.max(-20, Math.min(20, dx * -1.0));
+        speaki.visual.targetDistortion.rotateX = Math.max(-15, Math.min(15, dy * -0.5));
+        speaki.visual.targetDistortion.scale = 1.05;
 
-        speaki.lastMouseX = x;
-        speaki.lastMouseY = y;
+        speaki.interaction.lastMouseX = x;
+        speaki.interaction.lastMouseY = y;
     }
 
     handleMouseUp() {
         const speaki = this.interactTarget;
         if (!speaki) return;
 
-        const isTap = (Date.now() - speaki.interactStartTime < 300) && !speaki.isPetting;
+        const isTap = (Date.now() - speaki.timers.interactStart < 300) && !speaki.interaction.isPetting;
 
         if (isTap) {
             this._handleSpeakiTap(speaki);
         }
 
-        if (isTap || speaki.isActuallyDragging) {
+        if (isTap || speaki.interaction.isActuallyDragging) {
             this._resetActionTimer(speaki, 2000);
         }
 
@@ -504,17 +503,18 @@ export class Game {
 
     _handleSpeakiTap(speaki) {
         speaki.setExpression('surprised', 'sad');
-        this._createHitEffect(speaki.lastMouseX, speaki.lastMouseY);
-        speaki.friendship = Math.max(-50, speaki.friendship - 5);
+        this._createHitEffect(speaki.interaction.lastMouseX, speaki.interaction.lastMouseY);
+        speaki.status.friendship = Math.max(-50, speaki.status.friendship - 5);
         this.playSound('surprised');
     }
 
     _cleanupInteraction(speaki) {
-        speaki.isInteracting = false;
-        speaki.isPetting = false;
-        speaki.arrivalTime = Date.now();
-        speaki.destinationSet = false;
-        speaki.state = (speaki.stateStack.length > 0) ? speaki.stateStack.pop() : STATE.IDLE;
+        speaki.interaction.isInteracting = false;
+        speaki.interaction.isPetting = false;
+        speaki.interaction.isActuallyDragging = false;
+        speaki.timers.stateStart = Date.now();
+        speaki.pos.destinationSet = false;
+        speaki.status.state = (speaki.status.stateStack.length > 0) ? speaki.status.stateStack.pop() : STATE.IDLE;
         speaki._stopCurrentVoice();
         this.interactTarget = null;
     }
@@ -524,9 +524,9 @@ export class Game {
         heart.className = 'petting-heart';
         heart.textContent = '❤️';
         const offsetX = (Math.random() - 0.5) * 60;
-        const offsetY = -speaki.size / 2 + (Math.random() - 0.5) * 40;
-        heart.style.left = `${speaki.x + offsetX}px`;
-        heart.style.top = `${speaki.y + offsetY}px`;
+        const offsetY = -speaki.status.size / 2 + (Math.random() - 0.5) * 40;
+        heart.style.left = `${speaki.pos.x + offsetX}px`;
+        heart.style.top = `${speaki.pos.y + offsetY}px`;
         this.speakiRoom.appendChild(heart);
         setTimeout(() => heart.remove(), 1200);
     }
@@ -541,19 +541,19 @@ export class Game {
     }
 
     _resetActionTimer(speaki, delay) {
-        if (speaki.actionTimeout) clearTimeout(speaki.actionTimeout);
-        speaki.actionTimeout = setTimeout(() => this.resetSpeakiAppearance(speaki), delay);
+        if (speaki.timers.actionTimeout) clearTimeout(speaki.timers.actionTimeout);
+        speaki.timers.actionTimeout = setTimeout(() => this.resetSpeakiAppearance(speaki), delay);
     }
 
     resetSpeakiAppearance(speaki) {
         if (!speaki) return;
-        speaki.actionTimeout = null;
+        speaki.timers.actionTimeout = null;
         speaki._updateBaseEmotion();
-        speaki.setExpression('idle', speaki.emotion);
-        if (speaki.currentVoice) {
-            speaki.currentVoice.loop = false;
-            speaki.currentVoice.pause();
-            speaki.currentVoice = null;
+        speaki.setExpression('idle', speaki.status.emotion);
+        if (speaki.visual.currentVoice) {
+            speaki.visual.currentVoice.loop = false;
+            speaki.visual.currentVoice.pause();
+            speaki.visual.currentVoice = null;
         }
     }
 
@@ -583,9 +583,9 @@ export class Game {
 
     startGiftReceiveEvent(speaki) {
         this.giftPartner = speaki;
-        speaki.state = STATE.GIFT_WAIT_FOR_USER_REACTION;
-        speaki.eventStartTime = Date.now();
-        speaki._onStateChanged(speaki.state);
+        speaki.status.state = STATE.GIFT_WAIT_FOR_USER_REACTION;
+        speaki.timers.stateStart = Date.now();
+        speaki._onStateChanged(speaki.status.state);
         this.updateGiftUI('start');
         this.playSound('gift');
     }
@@ -598,9 +598,9 @@ export class Game {
     handleReaction(type) {
         this.updateGiftUI('hide');
         if (this.giftPartner) {
-            this.giftPartner.state = STATE.GIFT_REACTION;
-            this.giftPartner.eventStartTime = Date.now();
-            this.giftPartner._onStateChanged(this.giftPartner.state);
+            this.giftPartner.status.state = STATE.GIFT_REACTION;
+            this.giftPartner.timers.stateStart = Date.now();
+            this.giftPartner._onStateChanged(this.giftPartner.status.state);
             this.playSound('happy');
             this.stockGifts++;
             this.initItemMenu();
@@ -609,7 +609,7 @@ export class Game {
 
     completeGiftEvent() {
         if (this.giftPartner) {
-            this.giftPartner.state = STATE.IDLE;
+            this.giftPartner.status.state = STATE.IDLE;
             this.resetSpeakiAppearance(this.giftPartner);
         }
         this.giftPartner = null;
@@ -628,6 +628,49 @@ export class Game {
         this.speakis.forEach(speaki => speaki.update(dt));
         this._updateItemLifecycles();
         this.updateSpeakiListUI();
+        this.updateGiftDebugUI(); // ギフト調査用デバッグの更新
+    }
+
+    /** ギフトイベント発生条件のリアルタイムデバッグ表示 (Speaki ID:0 専用) */
+    updateGiftDebugUI() {
+        const speaki0 = this.speakis.find(s => s.id === 0);
+        if (!speaki0) return;
+
+        const now = Date.now();
+        const timeSinceLastGift = now - this.lastGiftTime;
+        const cooldownRemaining = Math.max(0, 30000 - timeSinceLastGift);
+
+        // 1. 全体クールダウン
+        const cdEl = document.querySelector('#debug-global-cd .debug-val');
+        if (cdEl) {
+            const isOk = cooldownRemaining <= 0;
+            cdEl.textContent = isOk ? 'READY' : `${(cooldownRemaining / 1000).toFixed(1)}s`;
+            cdEl.className = `debug-val ${isOk ? 'ok' : 'ng'}`;
+        }
+
+        // 2. 他がイベント中ではないか
+        const holderEl = document.querySelector('#debug-global-holder .debug-val');
+        if (holderEl) {
+            const isOk = !this.giftPartner;
+            holderEl.textContent = isOk ? 'OK' : 'BUSY';
+            holderEl.className = `debug-val ${isOk ? 'ok' : 'ng'}`;
+        }
+
+        // 3. 好感度ランク
+        const friendshipEl = document.querySelector('#debug-speaki-friendship .debug-val');
+        if (friendshipEl) {
+            const isOk = speaki0.status.friendship >= 31;
+            friendshipEl.textContent = `${speaki0.status.friendship.toFixed(1)}${isOk ? ' (OK)' : ' (NG)'}`;
+            friendshipEl.className = `debug-val ${isOk ? 'ok' : 'ng'}`;
+        }
+
+        // 4. 現在の状態 (待機中か)
+        const stateEl = document.querySelector('#debug-speaki-state .debug-val');
+        if (stateEl) {
+            const isOk = speaki0.status.state === STATE.IDLE;
+            stateEl.textContent = isOk ? 'IDLE (OK)' : `${speaki0.status.state} (NG)`;
+            stateEl.className = `debug-val ${isOk ? 'ok' : 'ng'}`;
+        }
     }
 
     _updateItemLifecycles() {
@@ -704,14 +747,14 @@ export class Game {
     }
 
     _getEmotionLabel(s) {
-        if (s.state === STATE.USER_INTERACTING) {
-            if (s.emotion === 'sad') return 'いたい...';
-            if (s.friendship >= 11) return 'うれしい！';
+        if (s.status.state === STATE.USER_INTERACTING) {
+            if (s.status.emotion === 'sad') return 'いたい...';
+            if (s.status.friendship >= 11) return 'うれしい！';
             return 'なでなで';
         }
-        if (s.emotion === 'ITEM') return 'ワクワク';
-        if (s.emotion === 'happy') return 'しあわせ';
-        if (s.emotion === 'sad') return 'かなしい';
+        if (s.status.emotion === 'ITEM') return 'ワクワク';
+        if (s.status.emotion === 'happy') return 'しあわせ';
+        if (s.status.emotion === 'sad') return 'かなしい';
         return '穏やか';
     }
 

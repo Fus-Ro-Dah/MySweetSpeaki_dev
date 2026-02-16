@@ -39,7 +39,7 @@ export const ASSETS = {
     speaki_mood_normal_idle_1: {
         imagefile: 'speaki_normal_idle_1.png',
         soundfile: 'チョワヨ.mp3', // 仮の割り当て
-        text: 'ﾁｮﾜヨ!',
+        text: 'ﾁｮﾜﾖ!',
         movePattern: 'swing'
     },
     speaki_mood_normal_idle_2: {
@@ -58,7 +58,7 @@ export const ASSETS = {
     speaki_mood_normal_walking_1: {
         imagefile: 'speaki_normal_walking_1.png',
         soundfile: 'チョワヨ.mp3',
-        text: 'ﾁｮﾜヨ!',
+        text: 'ﾁｮﾜﾖ!',
         movePattern: 'swing'
     },
     speaki_mood_normal_walking_2: {
@@ -78,7 +78,7 @@ export const ASSETS = {
     speaki_mood_happy_idle_1: {
         imagefile: 'speaki_happy_idle_1.png',
         soundfile: 'チョワヨ.mp3',
-        text: 'ﾁｮﾜヨ!',
+        text: 'ﾁｮﾜﾖ!',
         movePattern: 'none'
     },
     speaki_mood_happy_idle_2: {
@@ -97,7 +97,7 @@ export const ASSETS = {
     speaki_mood_happy_walking_1: {
         imagefile: 'speaki_happy_walking_1.png',
         soundfile: 'チョワヨチョワヨウェガレジチョワヨ.mp3',
-        text: 'ﾁｮﾜヨ-ﾁｮﾜヨ-',
+        text: 'ﾁｮﾜﾖ-ﾁｮﾜﾖ-',
         movePattern: 'swing'
     },
     speaki_mood_happy_walking_2: {
@@ -109,7 +109,7 @@ export const ASSETS = {
     speaki_mood_happy_walking_3: {
         imagefile: 'speaki_happy_walking_3.png',
         soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3',
-        text: 'ﾁｮﾜヨ-ﾁｮﾜヨ-',
+        text: 'ﾁｮﾜﾖ-ﾁｮﾜﾖ-',
         movePattern: 'swing'
     },
     // ---- 悲しい ----
@@ -176,26 +176,26 @@ export const ASSETS = {
     speaki_performance_ITEM_Pumpkin_1: {
         imagefile: 'speaki_happy_idle_1.png',
         soundfile: 'チョワヨ.mp3',
-        text: 'ﾁｮﾜヨ!',
+        text: 'ﾁｮﾜﾖ!',
         movePattern: 'bounce'
     },
     speaki_performance_ITEM_BabySpeaki_1: {
         imagefile: 'speaki_happy_idle_1.png',
         soundfile: 'チョワヨ.mp3',
-        text: 'ﾁｮﾜヨ!',
+        text: 'ﾁｮﾜﾖ!',
         movePattern: 'bounce',
         pitch: 1.5
     },
     speaki_performance_ITEM_Candy_1: {
         imagefile: 'speaki_happy_idle_1.png',
         soundfile: 'チョワヨ.mp3',
-        text: 'ﾁｮﾜヨ!',
+        text: 'ﾁｮﾜﾖ!',
         movePattern: 'swing'
     },
     speaki_performance_ITEM_Mocaron_1: {
         imagefile: 'speaki_happy_idle_1.png',
         soundfile: 'チョワヨ.mp3',
-        text: 'ﾁｮﾜヨ!',
+        text: 'ﾁｮﾜﾖ!',
         movePattern: 'bounce'
     },
     speaki_performance_ITEM_AnimalCan_1: {
@@ -226,14 +226,14 @@ export const ASSETS = {
     speaki_performance_ITEM_generic_1: {
         imagefile: 'speaki_happy_idle_1.png',
         soundfile: 'チョワヨ.mp3',
-        text: 'ﾁｮﾜヨ!',
+        text: 'ﾁｮﾜﾖ!',
         movePattern: 'bounce'
     },
     // ---- ギフト ----
     speaki_mood_happy_giftwait_1: {
         imagefile: 'speaki_happy_idle_1.png', // ギフト待機画像
         soundfile: 'チョワヨ.mp3',
-        text: 'ﾁｮﾜヨ!!!!!',
+        text: 'ﾁｮﾜﾖ!!!!!',
         movePattern: 'none'
     },
     speaki_performance_happy_giftreaction_1: {
@@ -308,7 +308,7 @@ export const ITEMS = {
         name: '赤ちゃんスピキ',
         imagefile: 'item_baby_speaki.png',
         soundfile: 'チョワヨ.mp3',
-        text: 'ﾁｮﾜヨ',
+        text: 'ﾁｮﾜﾖ',
         size: 80,
         pitch: 1.5,
         transform: { nextId: 'BabySpeaki2', duration: 20000 }
@@ -317,7 +317,7 @@ export const ITEMS = {
         name: '赤ちゃんスピキ2',
         imagefile: 'item_baby_speaki2.png',
         soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3',
-        text: 'ﾁｮﾜヨ',
+        text: 'ﾁｮﾜﾖ',
         size: 80,
         pitch: 1.5,
         transform: { isAdult: true, duration: 20000 }

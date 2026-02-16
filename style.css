@@ -624,3 +624,41 @@ button:hover {
         opacity: 0;
     }
 }
+
+/* 調査用デバッグパネルのスタイル */
+#gift-debug-section {
+    margin-top: 1rem;
+    background: rgba(44, 62, 80, 0.05);
+    padding: 1rem;
+    border-radius: 15px;
+    border: 1px dashed #c8e6c9;
+}
+
+.debug-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.debug-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #555;
+    padding: 0.3rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.debug-val {
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.debug-val.ok {
+    color: #2ecc71;
+}
+
+.debug-val.ng {
+    color: #e74c3c;
+}
