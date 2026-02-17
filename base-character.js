@@ -93,10 +93,15 @@ export class BaseCharacter {
         gift.className = 'char-gift-overlay hidden';
         gift.src = 'assets/images/gift.png';
 
+        // 名前表示用ラベル
+        const nameTag = document.createElement('div');
+        nameTag.className = 'char-name-tag';
+
         container.appendChild(img);
         container.appendChild(gift);
         container.appendChild(emoji);
         container.appendChild(chatText);
+        container.appendChild(nameTag);
         this.parentElement.appendChild(container);
 
         this.visual.dom.container = container;
@@ -104,6 +109,7 @@ export class BaseCharacter {
         this.visual.dom.gift = gift;
         this.visual.dom.emoji = emoji;
         this.visual.dom.chatText = chatText;
+        this.visual.dom.nameTag = nameTag;
     }
 
     /** フレームごとの更新処理 */
@@ -267,6 +273,11 @@ export class BaseCharacter {
 
         // セリフ表示
         dom.chatText.textContent = (this.visual.currentAsset && this.visual.currentAsset.text) || '';
+
+        // 名前表示
+        if (dom.nameTag) {
+            dom.nameTag.textContent = this.name;
+        }
     }
 
     /** 目的地到着時の処理 */

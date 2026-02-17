@@ -46,23 +46,6 @@ export class Game {
             startBtn.addEventListener('click', () => this.startGame());
         }
 
-        // 情報モーダルの制御
-        const openInfoBtn = document.getElementById('open-info-btn');
-        const closeInfoBtn = document.getElementById('close-info-btn');
-        const infoModal = document.getElementById('info-modal');
-
-        if (openInfoBtn && infoModal) {
-            openInfoBtn.addEventListener('click', () => infoModal.classList.remove('hidden'));
-        }
-        if (closeInfoBtn && infoModal) {
-            closeInfoBtn.addEventListener('click', () => infoModal.classList.add('hidden'));
-        }
-        if (infoModal) {
-            infoModal.addEventListener('click', (e) => {
-                if (e.target === infoModal) infoModal.classList.add('hidden');
-            });
-        }
-
         requestAnimationFrame((t) => this.loop(t));
     }
 
@@ -263,6 +246,29 @@ export class Game {
         document.getElementById('gift-btn-receive').onclick = () => this.receiveGift();
         document.getElementById('reaction-btn-1').onclick = () => this.handleReaction(1);
         document.getElementById('reaction-btn-2').onclick = () => this.handleReaction(2);
+
+        // 情報モーダルの制御
+        const openInfoBtn = document.getElementById('open-info-btn');
+        const closeInfoBtn = document.getElementById('close-info-btn');
+        const infoModal = document.getElementById('info-modal');
+
+        if (openInfoBtn && infoModal) {
+            openInfoBtn.onclick = (e) => {
+                e.stopPropagation();
+                infoModal.classList.remove('hidden');
+            };
+        }
+        if (closeInfoBtn && infoModal) {
+            closeInfoBtn.onclick = (e) => {
+                e.stopPropagation();
+                infoModal.classList.add('hidden');
+            };
+        }
+        if (infoModal) {
+            infoModal.onclick = (e) => {
+                if (e.target === infoModal) infoModal.classList.add('hidden');
+            };
+        }
     }
 
     /** ドラッグ＆ドロップの設定 */
@@ -329,8 +335,8 @@ export class Game {
     }
 
     _updateTouchGhost(ghost, x, y) {
-        ghost.style.left = `${x - 40} px`;
-        ghost.style.top = `${y - 20} px`;
+        ghost.style.left = `${x - 40}px`;
+        ghost.style.top = `${y - 20}px`;
     }
 
     _handleItemDrop(rawData, clientX, clientY) {
@@ -569,8 +575,8 @@ export class Game {
     _createHitEffect(x, y) {
         const effect = document.createElement('div');
         effect.className = 'hit-effect';
-        effect.style.left = `${x} px`;
-        effect.style.top = `${y} px`;
+        effect.style.left = `${x}px`;
+        effect.style.top = `${y}px`;
         this.speakiRoom.appendChild(effect);
         setTimeout(() => effect.remove(), 2000);
     }
@@ -696,7 +702,7 @@ export class Game {
     /** ハイライト設定 */
     setHighlight(id) {
         this.highlightedCharId = (this.highlightedCharId === id) ? null : id;
-        this.updateSpeakiListUI(); // UI側の反映（枠線など）
+        this.updateSpeakiListUI(true); // UI側の反映（強制更新）
     }
 
     /** キャラクター削除 */
@@ -707,7 +713,7 @@ export class Game {
             if (s.visual.dom.container) s.visual.dom.container.remove();
             this.speakis.splice(index, 1);
             if (this.highlightedCharId === id) this.highlightedCharId = null;
-            this.updateSpeakiListUI();
+            this.updateSpeakiListUI(true);
         }
     }
 
@@ -716,7 +722,7 @@ export class Game {
         const s = this.speakis.find(s => s.id === id);
         if (s) {
             s.name = newName;
-            this.updateSpeakiListUI();
+            this.updateSpeakiListUI(true);
         }
     }
 
@@ -761,9 +767,12 @@ export class Game {
         }
     }
 
-    updateSpeakiListUI() {
+    updateSpeakiListUI(force = false) {
         const listContainer = document.getElementById('speaki-list');
         if (!listContainer) return;
+
+        // 入力中（フォーカスがある場合）は、forceがfalseなら更新をスキップして、入力を妨げないようにする
+        if (!force && listContainer.contains(document.activeElement)) return;
         if (this.speakis.length === 0) {
             // ゲーム開始後のみ自動追加。startGameでも1回呼ばれるが、
             // 万が一削除された場合やタイミングの競合に備える。
@@ -796,7 +805,6 @@ export class Game {
                     <input class="speaki-name-input" value="${s.name}" 
                         onchange="window.game.renameSpeaki(${s.id}, this.value)">
                     <span class="speaki-state-tag">${state} [${emotionLabel}]</span>
-                    <button class="delete-btn" onclick="event.stopPropagation(); window.game.removeSpeaki(${s.id})">×</button>
                 </div>
                 
                 <div class="speaki-gauges">
