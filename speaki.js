@@ -100,7 +100,6 @@ export class Speaki extends BaseCharacter {
             this.pos.targetX = 50 + (Math.random() * 40 - 20);
             this.pos.targetY = 100 + (Math.random() * 40 - 20);
             this.pos.destinationSet = true;
-            this._onStateChanged(this.status.state);
             return;
         }
         super._decideWanderingDestination(w, h);
@@ -159,10 +158,10 @@ export class Speaki extends BaseCharacter {
         if (distToHidden <= 30) return false;
 
         this.status.state = STATE.WALKING;
+        this._onStateChanged(this.status.state);
         this.pos.targetX = hiddenX;
         this.pos.targetY = hiddenY;
         this.pos.destinationSet = true;
-        this._onStateChanged(this.status.state);
         return true;
     }
 

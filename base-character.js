@@ -355,9 +355,12 @@ export class BaseCharacter {
 
     /** 状態変更時の初期化 */
     _onStateChanged(newState) {
+        const isActualChange = this.status.state !== newState;
         this._stopCurrentVoice();
         this.timers.stateStart = Date.now();
-        this.pos.destinationSet = false; // 状態が変わったら目的地をリセットして再計算させる
+        if (isActualChange) {
+            this.pos.destinationSet = false; // 実際に状態が変わった時のみリセット
+        }
         this._applyStateAppearance(newState);
         this._applySelectedAsset(newState);
         this.visual.motionTimer = 0;
