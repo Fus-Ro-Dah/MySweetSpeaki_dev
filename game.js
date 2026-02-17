@@ -46,6 +46,23 @@ export class Game {
             startBtn.addEventListener('click', () => this.startGame());
         }
 
+        // 情報モーダルの制御
+        const openInfoBtn = document.getElementById('open-info-btn');
+        const closeInfoBtn = document.getElementById('close-info-btn');
+        const infoModal = document.getElementById('info-modal');
+
+        if (openInfoBtn && infoModal) {
+            openInfoBtn.addEventListener('click', () => infoModal.classList.remove('hidden'));
+        }
+        if (closeInfoBtn && infoModal) {
+            closeInfoBtn.addEventListener('click', () => infoModal.classList.add('hidden'));
+        }
+        if (infoModal) {
+            infoModal.addEventListener('click', (e) => {
+                if (e.target === infoModal) infoModal.classList.add('hidden');
+            });
+        }
+
         requestAnimationFrame((t) => this.loop(t));
     }
 
@@ -312,8 +329,8 @@ export class Game {
     }
 
     _updateTouchGhost(ghost, x, y) {
-        ghost.style.left = `${x - 40}px`;
-        ghost.style.top = `${y - 20}px`;
+        ghost.style.left = `${x - 40} px`;
+        ghost.style.top = `${y - 20} px`;
     }
 
     _handleItemDrop(rawData, clientX, clientY) {
@@ -552,8 +569,8 @@ export class Game {
     _createHitEffect(x, y) {
         const effect = document.createElement('div');
         effect.className = 'hit-effect';
-        effect.style.left = `${x}px`;
-        effect.style.top = `${y}px`;
+        effect.style.left = `${x} px`;
+        effect.style.top = `${y} px`;
         this.speakiRoom.appendChild(effect);
         setTimeout(() => effect.remove(), 2000);
     }
@@ -770,39 +787,27 @@ export class Game {
             const hungerPct = Math.min(100, Math.max(0, s.status.hunger));
 
             html += `
-            <div class="speaki-entry ${isHighlighted ? 'active' : ''}" onclick="window.game.setHighlight(${s.id})">
+            <div class="speaki-entry ${isHighlighted ? 'active' : ''}">
                 <div class="speaki-entry-header">
+                    <button class="highlight-toggle ${isHighlighted ? 'active' : ''}" 
+                        onclick="event.stopPropagation(); window.game.setHighlight(${s.id})">
+                        ${isHighlighted ? '★' : '☆'}
+                    </button>
                     <input class="speaki-name-input" value="${s.name}" 
-                        onclick="event.stopPropagation()"
                         onchange="window.game.renameSpeaki(${s.id}, this.value)">
-                    <span class="speaki-state-tag">${state}</span>
-                    <button class="delete-btn" onclick="event.stopPropagation(); window.game.removeSpeaki(${s.id})">削除</button>
+                    <span class="speaki-state-tag">${state} [${emotionLabel}]</span>
+                    <button class="delete-btn" onclick="event.stopPropagation(); window.game.removeSpeaki(${s.id})">×</button>
                 </div>
                 
                 <div class="speaki-gauges">
-                    <div class="gauge-item">
-                        <div class="gauge-label">
-                            <span>好感度</span>
-                            <span class="gauge-val">${s.status.friendship.toFixed(0)}</span>
-                        </div>
-                        <div class="gauge-bar">
-                            <div class="gauge-fill friendship" style="width: ${friendshipPct}%"></div>
-                        </div>
+                    <div class="gauge-item mini-row">
+                        <span class="mini-label">好感度: ${s.status.friendship.toFixed(0)}</span>
+                        <div class="gauge-bar"><div class="gauge-fill friendship" style="width: ${friendshipPct}%"></div></div>
                     </div>
-                    
-                    <div class="gauge-item">
-                        <div class="gauge-label">
-                            <span>空腹度</span>
-                            <span class="gauge-val">${s.status.hunger.toFixed(0)}%</span>
-                        </div>
-                        <div class="gauge-bar">
-                            <div class="gauge-fill hunger" style="width: ${hungerPct}%"></div>
-                        </div>
+                    <div class="gauge-item mini-row">
+                        <span class="mini-label">空腹度: ${s.status.hunger.toFixed(0)}%</span>
+                        <div class="gauge-bar"><div class="gauge-fill hunger" style="width: ${hungerPct}%"></div></div>
                     </div>
-                </div>
-
-                <div class="speaki-detail-footer">
-                    <span>感情: ${emotionLabel}</span>
                 </div>
             </div>
         `;
