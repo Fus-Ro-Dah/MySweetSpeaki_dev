@@ -279,7 +279,15 @@ export const ASSETS = {
         soundfile: 'アーウ.mp3',
         text: '痛いよ！',
         movePattern: 'shake'
-    }
+    },
+
+    // -- Baby Speaki Assets (Alias of Speaki with modification if needed) --
+    baby_mood_normal_idle_1: { imagefile: 'speaki_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ﾋﾟｷ!', movePattern: 'swing' },
+    baby_mood_normal_walking_1: { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+    baby_mood_happy_idle_1: { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ｷｬﾊﾊ!', movePattern: 'bounce' },
+    baby_mood_happy_walking_1: { imagefile: 'speaki_happy_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+    baby_performance_ITEM_generic_1: { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾊﾟｸﾊﾟｸ!', movePattern: 'bounce' },
+    baby_performance_normal_idle_1: { imagefile: 'speaki_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ﾋﾟｷ?', movePattern: 'bounce' }
 };
 
 /**
@@ -321,7 +329,7 @@ export const ITEMS = {
         text: 'ﾁｮﾜﾖ',
         size: 80,
         pitch: 1.5,
-        transform: { isAdult: true, duration: 20000 }
+        transform: { isAdult: 'baby', duration: 20000 }
     },
     Candy: {
         name: 'キャンディ',

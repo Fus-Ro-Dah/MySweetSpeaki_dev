@@ -1,5 +1,7 @@
 import { STATE, ASSETS, ITEMS } from './config.js';
 import { Speaki } from './speaki.js';
+import { Item } from './item.js';
+import { BabySpeaki } from './baby-speaki.js';
 
 export class Game {
     /** コンストラクタ: ゲームの初期化 */
@@ -9,10 +11,12 @@ export class Game {
         this.speakiRoom = document.getElementById('speaki-room');
 
         this.speakis = [];      // 複数管理用の配列
+        this.nextCharId = 0;    // ユニークID用カウンタ
+        this.highlightedCharId = null; // ハイライト中のキャラクターID
         this.furniture = [];
         this.placedItems = [];
         this.interactTarget = null; // 現在操作（タップ・なでなで）中のスピキ
-        this.lastGiftTime = Date.now();
+        this.lastGiftTime = Date.now() - 20000; // 起動後10秒程度でギフト可能にする
         this.stockGifts = 0;        // 溜まったギフト回数
         this.bgmBuffer = null;      // Web Audio API用デコード済みデータ
         this.bgmSource = null;      // 再生用ノード
@@ -30,11 +34,11 @@ export class Game {
 
         this.loadResources();
 
-        this.init();
         this.resize();
+        this.init();
         window.addEventListener('resize', () => this.resize());
 
-        this.lastTime = 0;
+        this.lastTime = performance.now();
 
         // 開始ボタンの待機
         const startBtn = document.getElementById('start-button');
@@ -174,7 +178,7 @@ export class Game {
             console.log("[Audio] Playing BGM via Standard Audio (Fallback).");
         }
 
-        this.addSpeaki();
+        this.addSpeaki(); // これが最初の1匹目
     }
 
     /** アイテムメニューを動的に生成 */
@@ -230,11 +234,13 @@ export class Game {
             }
             window.removeEventListener('pointerdown', unlockAudio);
         };
-        window.addEventListener('pointerdown', unlockAudio);
+        window.addEventListener('pointerdown', unlockAudio); // イベントリスナーの登録
+        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        window.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        this.canvas.addEventListener('contextmenu', (e) => this.handleContextMenu(e));
 
-        this.canvas.addEventListener('pointerdown', (e) => this.handleMouseDown(e));
-        this.canvas.addEventListener('pointermove', (e) => this.handleMouseMove(e));
-        this.canvas.addEventListener('pointerup', (e) => this.handleMouseUp(e));
+        // タッチイベント対応
         this.canvas.addEventListener('pointercancel', (e) => this.handleMouseUp(e));
 
         document.getElementById('gift-btn-receive').onclick = () => this.receiveGift();
@@ -340,17 +346,10 @@ export class Game {
 
         if (!itemDef) return;
 
-        const item = {
-            id: finalId,
+        const item = new Item(finalId, x, y, {
             type: itemDef.type || type,
-            x,
-            y,
-            size: itemDef.size || (type === 'furniture' ? 100 : 40),
-            placedTime: Date.now(),
-            stage: 'default',
-            displayText: itemDef.text || null,
-            textDisplayUntil: itemDef.text ? Date.now() + 15000 : 0
-        };
+            ownerId: null // 必要に応じて将来的に設定
+        });
 
         this.placedItems.push(item);
 
@@ -441,6 +440,25 @@ export class Game {
 
         speaki.status.state = STATE.USER_INTERACTING;
         this.interactTarget = speaki;
+    }
+
+    handleContextMenu(e) {
+        e.preventDefault();
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // クリック位置のアイテムを探して削除
+        for (let i = this.placedItems.length - 1; i >= 0; i--) {
+            const it = this.placedItems[i];
+            const dist = Math.sqrt((it.x - x) ** 2 + (it.y - y) ** 2);
+            if (dist < it.size / 2) {
+                this.placedItems.splice(i, 1);
+                this.playSound('アーウ.mp3', 0.8);
+                console.log(`Item ${it.id} removed by user.`);
+                return;
+            }
+        }
     }
 
     handleMouseMove(e) {
@@ -607,44 +625,101 @@ export class Game {
         }
     }
 
-    completeGiftEvent() {
-        if (this.giftPartner) {
-            this.giftPartner.status.state = STATE.IDLE;
-            this.resetSpeakiAppearance(this.giftPartner);
+    completeGiftEvent(char) {
+        if (char) {
+            this.resetSpeakiAppearance(char);
         }
         this.giftPartner = null;
         this.lastGiftTime = Date.now();
     }
 
     loop(time) {
+        if (!this.lastTime) this.lastTime = time;
         const dt = time - this.lastTime;
         this.lastTime = time;
-        this.update(dt);
+
+        // dtが極端に大きい場合（タブがバックグラウンドだった場合など）は上限を設ける
+        const clampedDt = Math.min(dt, 100);
+
+        this.update(clampedDt);
         this.draw();
         requestAnimationFrame((t) => this.loop(t));
     }
 
     update(dt) {
         this.speakis.forEach(speaki => speaki.update(dt));
-        this._updateItemLifecycles();
+        this._updateItemLifecycles(dt);
+
+        // UIの定期更新 (約250msごと)
+        if (!this.lastUIUpdate || Date.now() - this.lastUIUpdate > 250) {
+            this.updateSpeakiListUI();
+            this.lastUIUpdate = Date.now();
+        }
+    }
+
+    addSpeaki(x, y, type = 'speaki') {
+        const id = this.nextCharId++;
+        // 指定がない場合は画面中央付近、ただし座標が不安定な場合は固定値 40% / 50%
+        const defX = (this.canvas.width > 0) ? this.canvas.width * 0.4 : window.innerWidth * 0.4;
+        const defY = (this.canvas.height > 0) ? this.canvas.height * 0.5 : window.innerHeight * 0.5;
+
+        const finalX = (x !== undefined && x !== 0) ? x : defX + (Math.random() * 100 - 50);
+        const finalY = (y !== undefined && y !== 0) ? y : defY + (Math.random() * 100 - 50);
+
+        let char;
+        if (type === 'baby') {
+            char = new BabySpeaki(id, this.speakiRoom, finalX, finalY);
+        } else {
+            char = new Speaki(id, this.speakiRoom, finalX, finalY);
+        }
+        this.speakis.push(char);
         this.updateSpeakiListUI();
     }
 
-    _updateItemLifecycles() {
-        const now = Date.now();
+    /** ハイライト設定 */
+    setHighlight(id) {
+        this.highlightedCharId = (this.highlightedCharId === id) ? null : id;
+        this.updateSpeakiListUI(); // UI側の反映（枠線など）
+    }
+
+    /** キャラクター削除 */
+    removeSpeaki(id) {
+        const index = this.speakis.findIndex(s => s.id === id);
+        if (index !== -1) {
+            const s = this.speakis[index];
+            if (s.visual.dom.container) s.visual.dom.container.remove();
+            this.speakis.splice(index, 1);
+            if (this.highlightedCharId === id) this.highlightedCharId = null;
+            this.updateSpeakiListUI();
+        }
+    }
+
+    /** 改名 */
+    renameSpeaki(id, newName) {
+        const s = this.speakis.find(s => s.id === id);
+        if (s) {
+            s.name = newName;
+            this.updateSpeakiListUI();
+        }
+    }
+
+    _updateItemLifecycles(dt) {
         for (let i = this.placedItems.length - 1; i >= 0; i--) {
             const item = this.placedItems[i];
-            const def = ITEMS[item.id];
-            if (!def || !def.transform) continue;
-            if (now - item.placedTime > def.transform.duration) {
-                this._processItemTransform(item, i, def.transform);
+            const result = item.update(dt);
+
+            if (result.action === 'delete') {
+                this.placedItems.splice(i, 1);
+            } else if (result.action === 'transform') {
+                this._processItemTransform(item, i, result.transform);
             }
         }
     }
 
     _processItemTransform(item, index, transform) {
         if (transform.isAdult) {
-            this.addSpeaki(item.x, item.y);
+            const type = typeof transform.isAdult === 'string' ? transform.isAdult : 'speaki';
+            this.addSpeaki(item.x, item.y, type);
             this.placedItems.splice(index, 1);
             return;
         }
@@ -656,9 +731,12 @@ export class Game {
     _transformItemTo(item, nextId) {
         const nextDef = ITEMS[nextId];
         if (!nextDef) return;
+
+        // クラスのプロパティを更新
         item.id = nextId;
         item.size = nextDef.size || item.size;
         item.placedTime = Date.now();
+
         if (nextDef.soundfile) this.playSound(nextDef.soundfile, nextDef.pitch || 1.0);
         if (nextDef.text) {
             item.displayText = nextDef.text;
@@ -670,7 +748,11 @@ export class Game {
         const listContainer = document.getElementById('speaki-list');
         if (!listContainer) return;
         if (this.speakis.length === 0) {
-            listContainer.innerHTML = '<p class="empty-list">スピキはいません</p>';
+            // ゲーム開始後のみ自動追加。startGameでも1回呼ばれるが、
+            // 万が一削除された場合やタイミングの競合に備える。
+            if (this.isGameStarted) {
+                this.addSpeaki();
+            }
             return;
         }
 
@@ -678,6 +760,7 @@ export class Game {
         this.speakis.forEach(s => {
             const state = s.getStateLabel();
             const emotionLabel = this._getEmotionLabel(s);
+            const isHighlighted = this.highlightedCharId === s.id;
 
             // 好感度ゲージの計算 (-50 ~ 50 を 0% ~ 100% にマッピング)
             const friendshipScore = Math.min(50, Math.max(-50, s.status.friendship));
@@ -687,10 +770,13 @@ export class Game {
             const hungerPct = Math.min(100, Math.max(0, s.status.hunger));
 
             html += `
-            <div class="speaki-entry">
+            <div class="speaki-entry ${isHighlighted ? 'active' : ''}" onclick="window.game.setHighlight(${s.id})">
                 <div class="speaki-entry-header">
-                    <span class="speaki-name">ｽﾋﾟｷ (${s.id + 1}ﾋﾟｷ目)</span>
+                    <input class="speaki-name-input" value="${s.name}" 
+                        onclick="event.stopPropagation()"
+                        onchange="window.game.renameSpeaki(${s.id}, this.value)">
                     <span class="speaki-state-tag">${state}</span>
+                    <button class="delete-btn" onclick="event.stopPropagation(); window.game.removeSpeaki(${s.id})">削除</button>
                 </div>
                 
                 <div class="speaki-gauges">
@@ -739,25 +825,7 @@ export class Game {
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.placedItems.forEach(item => {
-            const itemDef = ITEMS[item.id];
-            if (!itemDef) return;
-            const imgKey = itemDef.imagefile ? itemDef.imagefile.replace('.png', '') : '';
-            if (this.images[imgKey]) {
-                const img = this.images[imgKey];
-                this.ctx.drawImage(img, item.x - item.size / 2, item.y - item.size / 2, item.size, item.size);
-            }
-            if (item.displayText && Date.now() < item.textDisplayUntil) {
-                this.ctx.save();
-                this.ctx.font = "bold 18px 'Zen Maru Gothic', sans-serif";
-                this.ctx.textAlign = 'center';
-                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-                this.ctx.lineWidth = 3;
-                const textY = item.y - item.size / 2 - 10;
-                this.ctx.strokeText(item.displayText, item.x, textY);
-                this.ctx.fillText(item.displayText, item.x, textY);
-                this.ctx.restore();
-            }
+            item.draw(this.ctx, this.images);
         });
     }
 }
