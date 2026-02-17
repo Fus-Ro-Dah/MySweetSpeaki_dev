@@ -628,49 +628,6 @@ export class Game {
         this.speakis.forEach(speaki => speaki.update(dt));
         this._updateItemLifecycles();
         this.updateSpeakiListUI();
-        this.updateGiftDebugUI(); // ギフト調査用デバッグの更新
-    }
-
-    /** ギフトイベント発生条件のリアルタイムデバッグ表示 (Speaki ID:0 専用) */
-    updateGiftDebugUI() {
-        const speaki0 = this.speakis.find(s => s.id === 0);
-        if (!speaki0) return;
-
-        const now = Date.now();
-        const timeSinceLastGift = now - this.lastGiftTime;
-        const cooldownRemaining = Math.max(0, 30000 - timeSinceLastGift);
-
-        // 1. 全体クールダウン
-        const cdEl = document.querySelector('#debug-global-cd .debug-val');
-        if (cdEl) {
-            const isOk = cooldownRemaining <= 0;
-            cdEl.textContent = isOk ? 'READY' : `${(cooldownRemaining / 1000).toFixed(1)}s`;
-            cdEl.className = `debug-val ${isOk ? 'ok' : 'ng'}`;
-        }
-
-        // 2. 他がイベント中ではないか
-        const holderEl = document.querySelector('#debug-global-holder .debug-val');
-        if (holderEl) {
-            const isOk = !this.giftPartner;
-            holderEl.textContent = isOk ? 'OK' : 'BUSY';
-            holderEl.className = `debug-val ${isOk ? 'ok' : 'ng'}`;
-        }
-
-        // 3. 好感度ランク
-        const friendshipEl = document.querySelector('#debug-speaki-friendship .debug-val');
-        if (friendshipEl) {
-            const isOk = speaki0.status.friendship >= 31;
-            friendshipEl.textContent = `${speaki0.status.friendship.toFixed(1)}${isOk ? ' (OK)' : ' (NG)'}`;
-            friendshipEl.className = `debug-val ${isOk ? 'ok' : 'ng'}`;
-        }
-
-        // 4. 現在の状態 (待機中か)
-        const stateEl = document.querySelector('#debug-speaki-state .debug-val');
-        if (stateEl) {
-            const isOk = speaki0.status.state === STATE.IDLE;
-            stateEl.textContent = isOk ? 'IDLE (OK)' : `${speaki0.status.state} (NG)`;
-            stateEl.className = `debug-val ${isOk ? 'ok' : 'ng'}`;
-        }
     }
 
     _updateItemLifecycles() {
@@ -719,29 +676,50 @@ export class Game {
 
         let html = '';
         this.speakis.forEach(s => {
-            const label = s.getFriendshipLabel();
-            const cls = s.getFriendshipClass();
             const state = s.getStateLabel();
             const emotionLabel = this._getEmotionLabel(s);
 
+            // 好感度ゲージの計算 (-50 ~ 50 を 0% ~ 100% にマッピング)
+            const friendshipScore = Math.min(50, Math.max(-50, s.status.friendship));
+            const friendshipPct = ((friendshipScore + 50) / 100) * 100;
+
+            // 空腹度ゲージの計算 (0 ~ 100)
+            const hungerPct = Math.min(100, Math.max(0, s.status.hunger));
+
             html += `
-                <div class="speaki-entry">
-                    <div class="speaki-entry-header">
-                        <span class="speaki-name">ｽﾋﾟｷ (${s.id + 1}ﾋﾟｷ目)</span>
-                        <span class="speaki-friendship ${cls}">${label}</span>
-                    </div>
-                    <div class="speaki-detail">
-                        <div class="speaki-detail-item">
-                            <span>なにをしているか:</span>
-                            <span class="speaki-detail-val">${state}</span>
+            <div class="speaki-entry">
+                <div class="speaki-entry-header">
+                    <span class="speaki-name">ｽﾋﾟｷ (${s.id + 1}ﾋﾟｷ目)</span>
+                    <span class="speaki-state-tag">${state}</span>
+                </div>
+                
+                <div class="speaki-gauges">
+                    <div class="gauge-item">
+                        <div class="gauge-label">
+                            <span>好感度</span>
+                            <span class="gauge-val">${s.status.friendship.toFixed(0)}</span>
                         </div>
-                        <div class="speaki-detail-item">
-                            <span>きもち:</span>
-                            <span class="speaki-detail-val">${emotionLabel}</span>
+                        <div class="gauge-bar">
+                            <div class="gauge-fill friendship" style="width: ${friendshipPct}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="gauge-item">
+                        <div class="gauge-label">
+                            <span>空腹度</span>
+                            <span class="gauge-val">${s.status.hunger.toFixed(0)}%</span>
+                        </div>
+                        <div class="gauge-bar">
+                            <div class="gauge-fill hunger" style="width: ${hungerPct}%"></div>
                         </div>
                     </div>
                 </div>
-            `;
+
+                <div class="speaki-detail-footer">
+                    <span>感情: ${emotionLabel}</span>
+                </div>
+            </div>
+        `;
         });
         listContainer.innerHTML = html;
     }

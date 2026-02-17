@@ -369,82 +369,95 @@ h3 {
     padding: 1rem;
 }
 
+/* スピキごとのエントリ */
 .speaki-entry {
-    background: white;
-    padding: 0.8rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-    border-left: 4px solid var(--accent-color);
-    transition: transform 0.2s;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s ease;
 }
 
 .speaki-entry:hover {
-    transform: translateX(5px);
+    transform: translateY(-3px);
 }
 
 .speaki-entry-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.8rem;
 }
 
 .speaki-name {
     font-weight: 700;
     font-size: 0.95rem;
-    color: var(--text-color);
+    color: #2c3e50;
 }
 
-.speaki-friendship {
-    font-size: 0.8rem;
-    font-weight: 600;
+.speaki-state-tag {
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.8);
     padding: 0.2rem 0.6rem;
-    border-radius: 10px;
+    border-radius: 8px;
+    color: #7f8c8d;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* 好感度レベル別カラー */
-.friendship-v-high {
-    background: #e8f8f5;
-    color: #1abc9c;
-}
-
-.friendship-high {
-    background: #eaf2f8;
-    color: #3498db;
-}
-
-.friendship-normal {
-    background: #fdfefe;
-    color: #95a5a6;
-    border: 1px solid #eee;
-}
-
-.friendship-low {
-    background: #fef9e7;
-    color: #f1c40f;
-}
-
-.friendship-v-low {
-    background: #fdf2f2;
-    color: #e74c3c;
-}
-
-.speaki-detail {
+.speaki-gauges {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    font-size: 0.85rem;
+    gap: 0.6rem;
 }
 
-.speaki-detail-item {
+.gauge-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.gauge-label {
     display: flex;
     justify-content: space-between;
+    font-size: 0.75rem;
     color: #5d6d7e;
+    font-weight: 600;
 }
 
-.speaki-detail-val {
-    font-weight: 500;
-    color: var(--text-color);
+.gauge-val {
+    font-family: monospace;
+}
+
+.gauge-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.gauge-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease, background 0.3s ease;
+}
+
+.gauge-fill.friendship {
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+}
+
+.gauge-fill.hunger {
+    background: linear-gradient(90deg, #e67e22, #e74c3c);
+}
+
+.speaki-detail-footer {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    font-style: italic;
+    text-align: right;
 }
 
 #gift-countdown-container {
@@ -623,42 +636,4 @@ button:hover {
         transform: translate(calc(-50% + 20px), -100px) scale(0.8) rotate(-15deg);
         opacity: 0;
     }
-}
-
-/* 調査用デバッグパネルのスタイル */
-#gift-debug-section {
-    margin-top: 1rem;
-    background: rgba(44, 62, 80, 0.05);
-    padding: 1rem;
-    border-radius: 15px;
-    border: 1px dashed #c8e6c9;
-}
-
-.debug-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.debug-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.75rem;
-    color: #555;
-    padding: 0.3rem 0;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-
-.debug-val {
-    font-weight: 700;
-    font-family: monospace;
-}
-
-.debug-val.ok {
-    color: #2ecc71;
-}
-
-.debug-val.ng {
-    color: #e74c3c;
 }

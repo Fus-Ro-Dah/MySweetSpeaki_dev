@@ -23,6 +23,7 @@ export class Speaki {
             state: STATE.IDLE,
             stateStack: [],
             friendship: 0,
+            hunger: 50,         // 空腹度 (0 ~ 100)
             emotion: 'happy',
             action: 'idle',
             size: 160
@@ -128,14 +129,20 @@ export class Speaki {
         // 4. 実行フェーズ：現在のSTATEに応じた行動をとる
         this._executeStateAction(dt);
 
+        // 空腹度の進行 (1秒に1ずつ減少)
+        this.status.hunger = Math.max(0, this.status.hunger - dt / 1000);
+
         // 好感度の自然回復（マイナスの時のみ、0にゆっくり近づく）
         if (this.status.friendship < 0) {
             this.status.friendship += 0.005; // 1秒で約0.3回復するペース
             if (this.status.friendship > 0) this.status.friendship = 0;
         }
 
-        // 好感度が「低い」または「とっても低い」場合は表情を「かなしい」に固定
-        if (this.status.friendship <= -11 && this.status.emotion !== 'ITEM') {
+        // 好感度が低い、またはお腹が空きすぎている場合は表情を「かなしい」に固定
+        const isStarving = this.status.hunger <= 0;
+        const isSpecialState = [STATE.ITEM_ACTION, STATE.GIFT_RETURNING, STATE.GIFT_WAIT_FOR_USER_REACTION, STATE.GIFT_REACTION].includes(this.status.state);
+
+        if ((this.status.friendship <= -11 || isStarving) && !isSpecialState) {
             this.status.emotion = 'sad';
         }
     }
@@ -153,6 +160,14 @@ export class Speaki {
 
         // 【最優先】プレゼントイベントの発生チェック
         if (this._checkGiftEventInterruption(now)) return;
+
+        // 【空腹時の挙動】散歩中（WALKING）に空腹になったら、その場で立ち止まる（IDLEへ）
+        // IDLE状態になれば、次の目的地決定（_decideWanderingDestination）で近くの食べ物を探すか、その場に留まるかが判断される
+        if (this.status.hunger <= 0 && this.status.state === STATE.WALKING) {
+            this.status.state = STATE.IDLE;
+            this._onStateChanged(this.status.state);
+            return;
+        }
 
         switch (this.status.state) {
             // 待機中：一定時間経過、または特定イベント発生で移動（WALKING/GIFT）へ
@@ -219,6 +234,9 @@ export class Speaki {
 
     /** プレゼントイベントの割り込みチェック */
     _checkGiftEventInterruption(now) {
+        // お腹が空いている時はプレゼントを持ってこない
+        if (this.status.hunger <= 0) return false;
+
         const nonInterruptibleStates = [
             STATE.GIFT_LEAVING, STATE.GIFT_SEARCHING, STATE.GIFT_RETURNING,
             STATE.GIFT_WAIT_FOR_USER_REACTION, STATE.GIFT_REACTION, STATE.GIFT_TIMEOUT,
@@ -403,7 +421,7 @@ export class Speaki {
 
     /** 好感度ランクに基づいて基本感情を決定する (ヘルパー) */
     _updateBaseEmotion() {
-        if (this.status.friendship <= -11) {
+        if (this.status.friendship <= -11 || this.status.hunger <= 0) {
             this.status.emotion = 'sad';
         } else if (this.status.friendship <= 10) {
             this.status.emotion = 'normal';
@@ -628,9 +646,9 @@ export class Speaki {
             return;
         }
 
-        if (this.status.state === STATE.ITEM_APPROACHING && this.status.targetItem) {
-            this.pos.targetX = this.status.targetItem.x;
-            this.pos.targetY = this.status.targetItem.y;
+        if (this.status.state === STATE.ITEM_APPROACHING && this.interaction.targetItem) {
+            this.pos.targetX = this.interaction.targetItem.x;
+            this.pos.targetY = this.interaction.targetItem.y;
             return;
         }
 
@@ -640,6 +658,28 @@ export class Speaki {
 
     /** 通常の散歩中の目的地決定 */
     _decideWanderingDestination(w, h) {
+        // お腹が空きすぎている時は動けない
+        if (this.status.hunger <= 0) {
+            // ただし、食べ物アイテムが近く（500px以内）にある場合は、低確率でそちらへ向かう
+            const game = window.game;
+            const foodItems = game ? game.placedItems.filter(it => {
+                const def = ITEMS[it.id];
+                const dist = Math.sqrt((it.x - this.pos.x) ** 2 + (it.y - this.pos.y) ** 2);
+                return def && def.nutrition > 0 && dist <= 500;
+            }) : [];
+
+            if (foodItems.length > 0 && Math.random() < 0.5) {
+                const item = foodItems[Math.floor(Math.random() * foodItems.length)];
+                this.approachItem(item);
+                return;
+            }
+
+            this.status.state = STATE.IDLE;
+            this.pos.destinationSet = false;
+            this._onStateChanged(this.status.state);
+            return;
+        }
+
         // 低好感度時は隠れ家付近限定
         if (this.status.friendship <= -31) {
             this.interaction.targetItem = null;
@@ -650,12 +690,18 @@ export class Speaki {
             return;
         }
 
-        // 20%の確率で配置済みアイテムを目指す
+        // 20%の確率で配置済みアイテムを目指す（500px以内）
         const game = window.game;
         if (game && game.placedItems.length > 0 && Math.random() < 0.2) {
-            const item = game.placedItems[Math.floor(Math.random() * game.placedItems.length)];
-            this.approachItem(item);
-            return;
+            const nearbyItems = game.placedItems.filter(it => {
+                const dist = Math.sqrt((it.x - this.pos.x) ** 2 + (it.y - this.pos.y) ** 2);
+                return dist <= 500;
+            });
+            if (nearbyItems.length > 0) {
+                const item = nearbyItems[Math.floor(Math.random() * nearbyItems.length)];
+                this.approachItem(item);
+                return;
+            }
         }
 
         // ランダムな位置へ
@@ -717,6 +763,12 @@ export class Speaki {
     _performItemAction(item) {
         this.status.emotion = 'ITEM';
         this.status.action = item.id;
+
+        // 空腹度の回復 (ITEMS定義から栄養価を取得)
+        const itemDef = ITEMS[item.id];
+        if (itemDef && itemDef.nutrition) {
+            this.status.hunger = Math.min(100, this.status.hunger + itemDef.nutrition);
+        }
 
         // 時間を記録
         this.timers.actionStart = Date.now();

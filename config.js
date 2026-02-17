@@ -293,6 +293,7 @@ export const ITEMS = {
         size: 180,
         pitch: 1.5,
         showInMenu: true,
+        nutrition: 40,
         transform: { nextId: 'Pumpkin2', duration: 10000 }
     },
     Pumpkin2: {
@@ -328,6 +329,7 @@ export const ITEMS = {
         size: 100,
         text: 'ﾜｱ ｷｬﾝﾃﾞｨﾀﾞ ｳｯﾋｮｰ!',
         showInMenu: true,
+        nutrition: 15,
     },
     Mocaron: {
         name: 'モカロン',
@@ -335,6 +337,7 @@ export const ITEMS = {
         size: 100,
         text: '',
         showInMenu: true,
+        nutrition: 25,
     },
     AnimalCan: {
         name: 'アニマル缶',
@@ -343,6 +346,7 @@ export const ITEMS = {
         size: 100,
         text: 'エルフ族特製!',
         isSpecialGift: true,
+        nutrition: 60,
     },
     Shionmelone: {
         name: 'シオン・ザ・メロンブレッド',
@@ -365,6 +369,7 @@ export const ITEMS = {
         imagefile: 'item_かぼちゃ粥.png',
         size: 100,
         isSpecialGift: true,
+        nutrition: 30,
     },
     RandomGift: {
         name: 'ランダムギフト(ｽﾋﾟｷからもらったプラスチックの分だけ配置できる)',
