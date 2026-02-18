@@ -76,21 +76,22 @@ describe('Speaki Character Logic', () => {
         expect(speaki.status.state).toBe(STATE.WALKING);
     });
 
-    it('should set sad emotion and maintain ITEM_ACTION if food is gone when character arrives', () => {
+    it('should set sad emotion and idle action if food is gone before arrival', () => {
         const mockItem = { id: 'Candy', consume: vi.fn(), x: 200, y: 200 };
-        // window.game.placedItems does NOT contain mockItem (others ate it)
         global.window.game.placedItems = [];
 
-        // 接近中に「到着」したと仮定
-        speaki.status.state = STATE.ITEM_ACTION;
-        speaki.status.friendship = 0;
+        speaki.status.state = STATE.ITEM_APPROACHING;
+        speaki.interaction.targetItem = mockItem;
+        speaki.pos.x = 0;
+        speaki.pos.y = 0;
 
-        speaki._performItemAction(mockItem);
+        // arrived is FALSE (dist > 10)
+        speaki._updateStateTransition();
 
-        // ITEM_ACTION のまま、アイテムIDをアクションに持ち、悲しい顔をする
-        expect(speaki.status.emotion).toBe('sad');
-        expect(speaki.status.action).toBe('Candy');
+        // 食べつくされたことを検知して ITEM_ACTION に移行し、sad idle になるはず
         expect(speaki.status.state).toBe(STATE.ITEM_ACTION);
+        expect(speaki.status.emotion).toBe('sad');
+        expect(speaki.status.action).toBe('idle');
     });
 
     it('should set happy emotion and decrease hunger if food is eaten successfully', () => {

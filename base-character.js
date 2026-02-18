@@ -168,7 +168,10 @@ export class BaseCharacter {
                 break;
 
             case STATE.ITEM_APPROACHING:
-                if (arrived) {
+                // 移動中にアイテムが消えたかチェック (割り込み等で消される場合がある)
+                const itemIsStillThere = window.game && window.game.placedItems.includes(this.interaction.targetItem);
+
+                if (!itemIsStillThere || arrived) {
                     this.status.state = STATE.ITEM_ACTION;
                     if (this.interaction.targetItem) {
                         this._performItemAction(this.interaction.targetItem);
@@ -417,27 +420,39 @@ export class BaseCharacter {
     _applySelectedAsset(state) {
         const type = [STATE.ITEM_ACTION, STATE.USER_INTERACTING, STATE.GAME_REACTION].includes(state) ? 'performance' : 'mood';
 
-        // 新しい階層構造: ASSETS[characterType][type][emotion][action]
-        const charAssets = ASSETS[this.characterType];
-        if (!charAssets || !charAssets[type]) return;
-
-        let variations = null;
         const emotion = this.status.emotion;
         const action = this.status.action;
 
-        // 1. 指定された感情とアクションで検索
-        if (charAssets[type][emotion] && charAssets[type][emotion][action]) {
-            variations = charAssets[type][emotion][action];
+        // アセット取得の内部ヘルパー
+        const getVariations = (charType, e, a) => {
+            const charAssets = ASSETS[charType];
+            if (charAssets && charAssets[type] && charAssets[type][e] && charAssets[type][e][a]) {
+                return charAssets[type][e][a];
+            }
+            return null;
+        };
+
+        // 1. 指定されたキャラ・感情・アクションで検索
+        let variations = getVariations(this.characterType, emotion, action);
+
+        // 2. なければ 'normal' 感情で再試行
+        if (!variations) {
+            variations = getVariations(this.characterType, 'normal', action);
         }
 
-        // 2. なければ 'normal' 感情で再試行 (mood の場合など)
-        if (!variations && charAssets[type]['normal'] && charAssets[type]['normal'][action]) {
-            variations = charAssets[type]['normal'][action];
+        // 3. それでもなければ汎用アイテムリアクション
+        if (!variations && state === STATE.ITEM_ACTION) {
+            variations = getVariations(this.characterType, 'ITEM', 'generic');
         }
 
-        // 3. それでもなければ汎用アイテムリアクション (ITEM_ACTION時)
-        if (!variations && state === STATE.ITEM_ACTION && charAssets[type]['ITEM'] && charAssets[type]['ITEM']['generic']) {
-            variations = charAssets[type]['ITEM']['generic'];
+        // 4. 【NEW】 キャラ指定で見つからない場合、基本の 'speaki' アセットで再試行 (継承)
+        if (!variations && this.characterType !== 'speaki') {
+            variations = getVariations('speaki', emotion, action) ||
+                getVariations('speaki', 'normal', action);
+
+            if (!variations && state === STATE.ITEM_ACTION) {
+                variations = getVariations('speaki', 'ITEM', 'generic');
+            }
         }
 
         if (!variations || variations.length === 0) {
@@ -445,10 +460,7 @@ export class BaseCharacter {
             return;
         }
 
-        // ランダムにバリエーションを選択
         const assetData = variations[Math.floor(Math.random() * variations.length)];
-
-        // 互換性のためのキー生成（デバッグ用などに一応残すか、不要なら消す）
         this.visual.currentAssetKey = `${this.characterType}_${type}_${emotion}_${action}`;
         this.visual.currentAsset = assetData;
         this.visual.motionType = assetData.movePattern || 'none';
@@ -484,9 +496,9 @@ export class BaseCharacter {
 
         if (!isStillThere) {
             // アイテムが既になかった場合 (ガッカリ)
-            // STATE.ITEM_ACTION のままにして、特定のリアクションを可能にする
+            // STATE.ITEM_ACTION のまま、アクションを 'idle' にリセットして汎用の悲しい動作をさせる
             this.status.emotion = 'sad';
-            this.status.action = item.id;
+            this.status.action = 'idle';
             this.timers.actionDuration = 3000;
         } else {
             // 2. アイテムが存在する場合の動作

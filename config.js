@@ -113,7 +113,11 @@ export const ASSETS = {
             },
             happy: {
                 idle: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ｷｬﾊﾊ!', movePattern: 'bounce' }],
-                walking: [{ imagefile: 'speaki_happy_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }]
+                walking: [{ imagefile: 'speaki_happy_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜヨ!', movePattern: 'bounce' }]
+            },
+            sad: {
+                idle: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｰｳ...', movePattern: 'bounce' }],
+                walking: [{ imagefile: 'speaki_sad_walking_1.png', soundfile: 'アーウ.mp3', text: 'ｱーｳ...', movePattern: 'bounce' }]
             }
         },
         performance: {
@@ -122,6 +126,10 @@ export const ASSETS = {
             },
             normal: {
                 idle: [{ imagefile: 'speaki_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ﾋﾟｷ?', movePattern: 'bounce' }]
+            },
+            sad: {
+                idle: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｰｳ...', movePattern: 'bounce' }],
+                surprised: [{ imagefile: 'speaki_sad_surprised_1.png', soundfile: 'ウアア.mp3', text: 'ｱｱｯ!', movePattern: 'shake' }]
             }
         }
     }
