@@ -70,13 +70,54 @@ describe('Speaki Character Logic', () => {
 
     it('should transition from IDLE to WALKING after waitDuration', () => {
         speaki.status.state = STATE.IDLE;
-        // timers.stateStart is set in constructor to Date.now()
-        // We need to manipulate it or use fake timers
-        speaki.timers.stateStart = Date.now() - 10000; // 10 seconds ago
+        speaki.timers.stateStart = Date.now() - 10000;
         speaki.timers.waitDuration = 5000;
-
         speaki._updateStateTransition();
-
         expect(speaki.status.state).toBe(STATE.WALKING);
+    });
+
+    it('should set sad emotion and maintain ITEM_ACTION if food is gone when character arrives', () => {
+        const mockItem = { id: 'Candy', consume: vi.fn(), x: 200, y: 200 };
+        // window.game.placedItems does NOT contain mockItem (others ate it)
+        global.window.game.placedItems = [];
+
+        // 接近中に「到着」したと仮定
+        speaki.status.state = STATE.ITEM_ACTION;
+        speaki.status.friendship = 0;
+
+        speaki._performItemAction(mockItem);
+
+        // ITEM_ACTION のまま、アイテムIDをアクションに持ち、悲しい顔をする
+        expect(speaki.status.emotion).toBe('sad');
+        expect(speaki.status.action).toBe('Candy');
+        expect(speaki.status.state).toBe(STATE.ITEM_ACTION);
+    });
+
+    it('should set happy emotion and decrease hunger if food is eaten successfully', () => {
+        const mockItem = { id: 'Candy', consume: vi.fn(() => true), x: 200, y: 200 };
+        global.window.game.placedItems = [mockItem];
+
+        speaki.status.hunger = 50;
+        speaki.status.friendship = 50; // Ensure BaseCharacter defaults to 'happy'
+        speaki.status.state = STATE.ITEM_APPROACHING;
+        speaki._performItemAction(mockItem);
+
+        expect(speaki.status.emotion).toBe('happy');
+        expect(speaki.status.hunger).toBeGreaterThan(50);
+        expect(global.window.game.placedItems.length).toBe(0);
+    });
+
+    it('should not consume item and set emotion to ITEM if non-food item is interacted with', () => {
+        const mockItem = { id: 'LeviDriver', consume: vi.fn(), x: 200, y: 200 };
+        global.window.game.placedItems = [mockItem];
+
+        speaki.status.hunger = 50;
+        speaki.status.state = STATE.ITEM_APPROACHING;
+        speaki._performItemAction(mockItem);
+
+        expect(speaki.status.hunger).toBe(50); // Hunger not changed
+        expect(global.window.game.placedItems.length).toBe(1); // Not consumed
+        // _performItemAction stays in emotion 'ITEM' for non-food items
+        expect(speaki.status.emotion).toBe('ITEM');
     });
 });

@@ -310,13 +310,14 @@ export class BaseCharacter {
 
     /** ランダム散歩の目的地決定 */
     _decideWanderingDestination(w, h) {
-        // 空腹時の低確率アイテム探索
+        // 食べ物の探索 (空腹時)
         if (this.status.hunger <= 0) {
             const game = window.game;
             const foodItems = game ? game.placedItems.filter(it => {
                 const def = ITEMS[it.id];
                 const dist = Math.sqrt((it.x - this.pos.x) ** 2 + (it.y - this.pos.y) ** 2);
-                return def && def.nutrition > 0 && dist <= 500;
+                // isFood が true のものだけを探す
+                return def && def.isFood && dist <= 500;
             }) : [];
 
             if (foodItems.length > 0 && Math.random() < 0.5) {
@@ -471,17 +472,42 @@ export class BaseCharacter {
 
     /** アイテムアクション実行 */
     _performItemAction(item) {
-        this.status.emotion = 'ITEM';
-        this.status.action = item.id;
-
+        const game = window.game;
         const def = ITEMS[item.id];
-        if (def && def.nutrition) {
-            this.status.hunger = Math.min(100, this.status.hunger + def.nutrition);
-            if (item.consume()) {
-                const game = window.game;
-                const idx = game.placedItems.indexOf(item);
-                if (idx !== -1) game.placedItems.splice(idx, 1);
+
+        // 1. 早いもの勝ち判定: まだアイテムが場にあるか
+        const isStillThere = game && game.placedItems.includes(item);
+
+        if (!isStillThere) {
+            // アイテムが既になかった場合 (ガッカリ)
+            // STATE.ITEM_ACTION のままにして、特定のリアクションを可能にする
+            this.status.emotion = 'sad';
+            this.status.action = item.id;
+            this.timers.actionDuration = 3000;
+        } else {
+            // 2. アイテムが存在する場合の動作
+            this.status.emotion = 'ITEM';
+            this.status.action = item.id;
+
+            if (def && def.isFood) {
+                // 食べ物なら食べる (ステータス回復)
+                if (def.nutrition) {
+                    this.status.hunger = Math.min(100, this.status.hunger + def.nutrition);
+                }
+
+                if (item.consume()) {
+                    if (game) {
+                        const idx = game.placedItems.indexOf(item);
+                        if (idx !== -1) game.placedItems.splice(idx, 1);
+                    }
+                }
+                // 食べられたので「うれしい」状態をセット (次回のアセット選択に影響)
+                this.status.emotion = 'happy';
+            } else {
+                // 食べ物でないなら遊ぶだけ (消費しない)
+                // emotion=ITEM, action=item.id のまま
             }
+            this.timers.actionDuration = 0; // _applySelectedAsset 等で設定される
         }
 
         this.timers.actionStart = Date.now();

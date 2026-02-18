@@ -301,7 +301,7 @@ export const ITEMS = {
         size: 180,
         pitch: 1.5,
         showInMenu: true,
-        nutrition: 40,
+        isFood: false, // 成長用なので勝手に食べない
         transform: { nextId: 'Pumpkin2', duration: 10000 }
     },
     Pumpkin2: {
@@ -311,6 +311,7 @@ export const ITEMS = {
         text: '',
         size: 180,
         pitch: 1.5,
+        isFood: false,
         transform: { nextId: 'BabySpeaki', duration: 10000 }
     },
     BabySpeaki: {
@@ -320,6 +321,7 @@ export const ITEMS = {
         text: 'ﾁｮﾜﾖ',
         size: 80,
         pitch: 1.5,
+        isFood: false,
         transform: { nextId: 'BabySpeaki2', duration: 20000 }
     },
     BabySpeaki2: {
@@ -329,6 +331,7 @@ export const ITEMS = {
         text: 'ﾁｮﾜﾖ',
         size: 80,
         pitch: 1.5,
+        isFood: false,
         transform: { isAdult: 'baby', duration: 20000 }
     },
     Candy: {
@@ -338,6 +341,7 @@ export const ITEMS = {
         text: 'ﾜｱ ｷｬﾝﾃﾞｨﾀﾞ ｳｯﾋｮｰ!',
         showInMenu: true,
         nutrition: 15,
+        isFood: true,
     },
     Mocaron: {
         name: 'モカロン',
@@ -346,6 +350,7 @@ export const ITEMS = {
         text: '',
         showInMenu: true,
         nutrition: 25,
+        isFood: true,
     },
     AnimalCan: {
         name: 'アニマル缶',
@@ -355,6 +360,7 @@ export const ITEMS = {
         text: 'エルフ族特製!',
         isSpecialGift: true,
         nutrition: 60,
+        isFood: true,
     },
     Shionmelone: {
         name: 'シオン・ザ・メロンブレッド',
@@ -363,6 +369,7 @@ export const ITEMS = {
         size: 150,
         text: '元ネタ: https://youtu.be/Py06vYKp4EY?si=V2BOhdAMiVH_Rvh1',
         isSpecialGift: true,
+        isFood: false,
     },
     LeviDriver: {
         name: 'レヴィ・ドライバー',
@@ -371,13 +378,14 @@ export const ITEMS = {
         size: 100,
         text: '元ネタ: https://youtu.be/WsQKUin6sb0?si=lltZElvtIdY4qbA6',
         isSpecialGift: true,
+        isFood: false,
     },
     BrokenHobagi: {
         name: 'かぼちゃ粥',
         imagefile: 'item_かぼちゃ粥.png',
         size: 100,
         isSpecialGift: true,
-        nutrition: 30,
+        isFood: false,
     },
     RandomGift: {
         name: 'ランダムギフト(ｽﾋﾟｷからもらったプラスチックの分だけ配置できる)',
