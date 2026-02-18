@@ -51,20 +51,8 @@ export class Game {
 
     /** アセット（画像・音声）の全読み込み */
     loadResources() {
-        Object.entries(ASSETS).forEach(([key, data]) => {
-            // 1. 画像のロード
-            if (data.imagefile && !this.images[data.imagefile]) {
-                const img = new Image();
-                img.src = `assets/images/${data.imagefile}`;
-                this.images[data.imagefile] = img;
-            }
-
-            // 2. 音声のロード（Audioオブジェクトを事前に作成）
-            if (data.soundfile && !this.sounds[data.soundfile]) {
-                const audio = new Audio(`assets/sounds/${data.soundfile}`);
-                this.sounds[data.soundfile] = audio;
-            }
-        });
+        // ネストされたアセットを再帰的に読み込む
+        this._loadNestedAssets(ASSETS);
 
         // ITEMSに定義された画像と音声をすべて読み込む
         Object.values(ITEMS).forEach(item => {
@@ -821,6 +809,33 @@ export class Game {
         `;
         });
         listContainer.innerHTML = html;
+    }
+
+    /** アセット定義を再帰的に探索して読み込む */
+    _loadNestedAssets(node) {
+        if (!node || typeof node !== 'object') return;
+
+        // 子要素が配列（バリエーションリスト）なら、それは末端のアセットデータ群
+        if (Array.isArray(node)) {
+            node.forEach(data => {
+                if (data.imagefile && !this.images[data.imagefile]) {
+                    const img = new Image();
+                    img.src = `assets/images/${data.imagefile}`;
+                    this.images[data.imagefile] = img;
+                    // キーでも引けるように（マッピングの互換性維持のため）
+                    const key = data.imagefile.replace('.png', '');
+                    this.images[key] = img;
+                }
+                if (data.soundfile && !this.sounds[data.soundfile]) {
+                    const audio = new Audio(`assets/sounds/${data.soundfile}`);
+                    this.sounds[data.soundfile] = audio;
+                }
+            });
+            return;
+        }
+
+        // それ以外はさらに深く探索
+        Object.values(node).forEach(child => this._loadNestedAssets(child));
     }
 
     _getEmotionLabel(s) {

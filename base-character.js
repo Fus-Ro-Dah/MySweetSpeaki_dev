@@ -413,39 +413,43 @@ export class BaseCharacter {
         }
     }
 
-    /** アセットの適用 */
+    /** アセットの選択と適用 */
     _applySelectedAsset(state) {
         const type = [STATE.ITEM_ACTION, STATE.USER_INTERACTING, STATE.GAME_REACTION].includes(state) ? 'performance' : 'mood';
 
-        // フィルタリング (characterType_type_emotion_action)
-        let candidates = Object.entries(ASSETS).filter(([key]) => {
-            const p = key.split('_');
-            return p.length >= 4 && p[0] === this.characterType && p[1] === type && p[2] === this.status.emotion && p[3] === this.status.action;
-        });
+        // 新しい階層構造: ASSETS[characterType][type][emotion][action]
+        const charAssets = ASSETS[this.characterType];
+        if (!charAssets || !charAssets[type]) return;
 
-        // 合致しなければ normal で再試行
-        if (candidates.length === 0) {
-            candidates = Object.entries(ASSETS).filter(([key]) => {
-                const p = key.split('_');
-                return p[0] === this.characterType && p[1] === type && p[2] === 'normal' && p[3] === this.status.action;
-            });
+        let variations = null;
+        const emotion = this.status.emotion;
+        const action = this.status.action;
+
+        // 1. 指定された感情とアクションで検索
+        if (charAssets[type][emotion] && charAssets[type][emotion][action]) {
+            variations = charAssets[type][emotion][action];
         }
 
-        // それでもなければ汎用アイテムリアクション (ITEM_ACTION時)
-        if (candidates.length === 0 && state === STATE.ITEM_ACTION) {
-            candidates = Object.entries(ASSETS).filter(([key]) => {
-                const p = key.split('_');
-                return p[0] === this.characterType && p[1] === type && p[2] === 'ITEM' && p[3] === 'generic';
-            });
+        // 2. なければ 'normal' 感情で再試行 (mood の場合など)
+        if (!variations && charAssets[type]['normal'] && charAssets[type]['normal'][action]) {
+            variations = charAssets[type]['normal'][action];
         }
 
-        if (candidates.length === 0) {
+        // 3. それでもなければ汎用アイテムリアクション (ITEM_ACTION時)
+        if (!variations && state === STATE.ITEM_ACTION && charAssets[type]['ITEM'] && charAssets[type]['ITEM']['generic']) {
+            variations = charAssets[type]['ITEM']['generic'];
+        }
+
+        if (!variations || variations.length === 0) {
             this.visual.currentAsset = null;
             return;
         }
 
-        const [assetKey, assetData] = candidates[Math.floor(Math.random() * candidates.length)];
-        this.visual.currentAssetKey = assetKey;
+        // ランダムにバリエーションを選択
+        const assetData = variations[Math.floor(Math.random() * variations.length)];
+
+        // 互換性のためのキー生成（デバッグ用などに一応残すか、不要なら消す）
+        this.visual.currentAssetKey = `${this.characterType}_${type}_${emotion}_${action}`;
         this.visual.currentAsset = assetData;
         this.visual.motionType = assetData.movePattern || 'none';
 
