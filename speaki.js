@@ -46,7 +46,9 @@ export class Speaki extends BaseCharacter {
             case STATE.GIFT_RETURNING:
                 if (arrived) {
                     this.status.state = STATE.GIFT_WAIT_FOR_USER_REACTION;
-                    window.game.startGiftReceiveEvent(this);
+                    if (typeof window !== 'undefined' && window.game) {
+                        window.game.startGiftReceiveEvent(this);
+                    }
                     this._onStateChanged(this.status.state);
                 }
                 break;
@@ -54,7 +56,9 @@ export class Speaki extends BaseCharacter {
             case STATE.GIFT_WAIT_FOR_USER_REACTION:
                 if (now - this.timers.stateStart > 10000) {
                     this.status.state = STATE.GIFT_TIMEOUT;
-                    window.game.updateGiftUI('hide');
+                    if (typeof window !== 'undefined' && window.game) {
+                        window.game.updateGiftUI('hide');
+                    }
                     this._onStateChanged(this.status.state);
                 }
                 break;
@@ -65,7 +69,9 @@ export class Speaki extends BaseCharacter {
                 if (now - this.timers.stateStart > dur) {
                     // 完了処理 (IDLEへ戻る)
                     this.status.state = STATE.IDLE;
-                    window.game.completeGiftEvent(this);
+                    if (typeof window !== 'undefined' && window.game) {
+                        window.game.completeGiftEvent(this);
+                    }
                     this._onStateChanged(this.status.state);
                 }
                 break;
@@ -76,14 +82,15 @@ export class Speaki extends BaseCharacter {
     _decideNextDestination() {
         if (this.status.state === STATE.GIFT_LEAVING) {
             this.pos.targetX = -100;
-            this.pos.targetY = (this.parentElement.clientHeight || window.innerHeight) / 2;
+            const h = (this.parentElement && this.parentElement.clientHeight) || (typeof window !== 'undefined' ? window.innerHeight : 800);
+            this.pos.targetY = h / 2;
             this.pos.destinationSet = true;
             return;
         }
 
         if (this.status.state === STATE.GIFT_RETURNING) {
-            const w = this.parentElement.clientWidth || window.innerWidth;
-            const h = this.parentElement.clientHeight || window.innerHeight;
+            const w = (this.parentElement && this.parentElement.clientWidth) || (typeof window !== 'undefined' ? window.innerWidth : 1200);
+            const h = (this.parentElement && this.parentElement.clientHeight) || (typeof window !== 'undefined' ? window.innerHeight : 800);
             this.pos.targetX = w * 0.4 + (Math.random() * 100 - 50);
             this.pos.targetY = h * 0.5 + (Math.random() * 100 - 50);
             this.pos.destinationSet = true;
@@ -141,7 +148,8 @@ export class Speaki extends BaseCharacter {
         if (isShowingGift) {
             dom.gift.classList.remove('hidden');
             const flip = this.pos.facingLeft ? 1 : -1;
-            dom.gift.style.transform = `translateX(-50%) translateZ(100px) scale(${1.0 / this.visual.distortion.scale}) scaleX(${flip})`;
+            const scale = (this.visual.distortion && this.visual.distortion.scale) || 1.0;
+            dom.gift.style.transform = `translateX(-50%) translateZ(100px) scale(${1.0 / scale}) scaleX(${flip})`;
         } else {
             dom.gift.classList.add('hidden');
         }
@@ -183,6 +191,7 @@ export class Speaki extends BaseCharacter {
     }
 
     _tryStartGiftEvent(now) {
+        if (typeof window === 'undefined' || !window.game) return false;
         const game = window.game;
         const timeSinceLastGift = now - game.lastGiftTime;
         const canStartGift = this.status.friendship >= 31 && timeSinceLastGift >= 30000 && !game.giftPartner;

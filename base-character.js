@@ -56,7 +56,6 @@ export class BaseCharacter {
             lastMouseY: 0
         };
 
-        // 5. タイマー管理
         this.timers = {
             stateStart: Date.now(),
             actionStart: 0,
@@ -66,9 +65,11 @@ export class BaseCharacter {
             lastHeartTime: 0
         };
 
-        this.createDOM();
+        if (this.parentElement) {
+            this.createDOM();
+            this.syncDOM(); // 初期位置を即座に反映
+        }
         this._onStateChanged(this.status.state);
-        this.syncDOM(); // 初期位置を即座に反映
     }
 
     /** DOM要素の生成 */
@@ -242,14 +243,14 @@ export class BaseCharacter {
         if (!dom.container) return;
 
         // ハイライトの反映
-        if (window.game && window.game.highlightedCharId === this.id) {
+        if (typeof window !== 'undefined' && window.game && window.game.highlightedCharId === this.id) {
             dom.container.classList.add('highlighted');
         } else {
             dom.container.classList.remove('highlighted');
         }
 
         // 画像の切り替え
-        if (this.visual.currentAsset && this.visual.currentAsset.imagefile) {
+        if (this.visual.currentAsset && this.visual.currentAsset.imagefile && typeof window !== 'undefined' && window.game) {
             const game = window.game;
             const img = game.images[this.visual.currentAsset.imagefile];
             if (img && dom.sprite.src !== img.src) {
@@ -292,8 +293,8 @@ export class BaseCharacter {
 
     /** 目的地決定ロジック */
     _decideNextDestination() {
-        const canvasWidth = this.parentElement.clientWidth || window.innerWidth;
-        const canvasHeight = this.parentElement.clientHeight || window.innerHeight;
+        const canvasWidth = this.parentElement ? this.parentElement.clientWidth : (typeof window !== 'undefined' ? window.innerWidth : 1200);
+        const canvasHeight = this.parentElement ? this.parentElement.clientHeight : (typeof window !== 'undefined' ? window.innerHeight : 800);
 
         this.status.action = 'walking';
         this.pos.destinationSet = true;
@@ -452,7 +453,7 @@ export class BaseCharacter {
 
     /** 音声再生 */
     _playAssetSound(data, type) {
-        if (!data.soundfile || !window.game) return;
+        if (!data.soundfile || typeof window === 'undefined' || !window.game) return;
 
         // 個体ごとの声の高さ (voicePitch) を反映
         this.visual.currentVoice = window.game.playSound(data.soundfile, (data.pitch || 1.0) * this.status.voicePitch);
