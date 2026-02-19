@@ -150,7 +150,7 @@ describe('Speaki Character Logic', () => {
 
         // Now mock voice ended and enough time has passed
         isVoicePlayingSpy.mockReturnValue(false);
-        speaki.timers.stateStart -= 300; // Simulate 300ms passing
+        speaki.timers.stateStart -= 2500; // Simulate 2500ms passing (must be > 2000)
         speaki._updateStateTransition();
 
         expect(speaki.status.state).not.toBe(STATE.USER_INTERACTING);

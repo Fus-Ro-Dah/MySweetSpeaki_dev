@@ -43,7 +43,7 @@ export const ASSETS = {
                 ],
                 walking: [
                     { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
-                    { imagefile: 'speaki_normal_walking_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ-ﾁｮﾜﾖ-', movePattern: 'bounce' },
+                    { imagefile: 'speaki_normal_walking_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ-ﾁｮﾜﾖ-', movePattern: 'swing' },
                     { imagefile: 'speaki_normal_walking_3.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'swing' }
                 ]
             },

@@ -436,6 +436,7 @@ export class Game {
     _prepareInteraction(speaki, x, y) {
         speaki.interaction.isInteracting = true;
         speaki.timers.interactStart = Date.now();
+        speaki.timers.stateStart = Date.now(); // 状態遷移タイマーもリセット（IDLE判定による即時終了を防ぐ）
         speaki.interaction.lastMouseX = x;
         speaki.interaction.lastMouseY = y;
         speaki.interaction.isPetting = false;
@@ -519,9 +520,14 @@ export class Game {
         if (!speaki) return;
 
         const isTap = (Date.now() - speaki.timers.interactStart < 300) && !speaki.interaction.isPetting;
+        console.log(`[Debug][${speaki.id}] MouseUp: isTap=${isTap}, dur=${Date.now() - speaki.timers.interactStart}, isPetting=${speaki.interaction.isPetting}`);
 
         if (isTap) {
             this._handleSpeakiTap(speaki);
+            // タップアクション（音声再生）が始まった瞬間にタイマーをリセットし、
+            // 以前の長押し時間（elapsed）によって即座にステートが終了するのを防ぐ
+            speaki.timers.stateStart = Date.now();
+            console.log(`[Debug][${speaki.id}] stateStart reset to ${speaki.timers.stateStart}`);
             speaki.interaction.isInteracting = false; // フラグだけ下ろして、状態（USER_INTERACTING）の解除はボイス終了を待つ
         }
 
@@ -704,6 +710,9 @@ export class Game {
             char = new Speaki(id, this.speakiRoom, finalX, finalY);
         }
         this.speakis.push(char);
+        if (id === 0) {
+            console.log(char);
+        }
         this.updateSpeakiListUI();
     }
 

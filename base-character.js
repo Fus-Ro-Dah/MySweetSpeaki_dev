@@ -170,11 +170,29 @@ export class BaseCharacter {
                 // インタラクト中フラグが降りている（マウスを離した等）場合
                 if (!this.interaction.isInteracting) {
                     const elapsed = now - this.timers.stateStart;
-                    // 音声が再生中、または開始直後（200ms未満）の場合は状態を維持する
+                    // 音声が再生中、または開始直後（500ms未満）の場合は状態を維持する
                     // これにより、クリック直後の音声読み込み待ちによる瞬時終了を防ぐ
-                    if (!this.isVoicePlaying() && elapsed > 200) {
+                    const isVoice = this.isVoicePlaying();
+                    // NEW: 音声準備中(readyState < 1) も再生中とみなす + ラグ対策の最低保証時間(500ms)
+                    const isPreparing = (this.visual.currentVoice && this.visual.currentVoice.readyState < 1);
+
+                    if (elapsed < 500) {
+                        // 強制待機期間：ラグでelapsedが飛んでも、ここを通るまでは遷移させない
+                        // (ただし、更新自体が500ms以上止まっていた場合は次のフレームでここを抜ける可能性があるため、
+                        //  isPreparing も合わせてチェックすることで安全性を高める)
+                        return;
+                    }
+
+                    if (!isVoice && !isPreparing && elapsed > 2000) {
+                        const v = this.visual.currentVoice;
+                        console.log(`[Debug][${this.id}] Transitioning to IDLE. isVoice=${isVoice}, isPreparing=${isPreparing}, elapsed=${elapsed}`);
+                        if (v) console.log(`[Debug][${this.id}] Voice state at transition: ended=${v.ended}, paused=${v.paused}, ready=${v.readyState}, time=${v.currentTime}`);
+
                         this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
                         this._onStateChanged(this.status.state);
+                    } else if (Math.random() < 0.01) {
+                        // Debug log occasionally to avoid spam
+                        console.log(`[Debug][${this.id}] Maintaining state. isVoice=${isVoice}, isPreparing=${isPreparing}, elapsed=${elapsed}`);
                     }
                 }
                 break;
@@ -232,7 +250,11 @@ export class BaseCharacter {
         const isSpecialState = [STATE.ITEM_ACTION, STATE.GAME_REACTION].includes(this.status.state);
 
         if ((this.status.friendship <= -11 || isStarving) && !isSpecialState) {
-            this.status.emotion = 'sad';
+            if (this.status.emotion !== 'sad') {
+                this.status.emotion = 'sad';
+                // 実際に感情が変わった時だけアセットを更新する (無限ループ防止)
+                this._applySelectedAsset(this.status.state);
+            }
         }
     }
 
@@ -403,8 +425,9 @@ export class BaseCharacter {
     /** 状態に基づいた基本感情・アクション設定 */
     _applyStateAppearance(state) {
         const isSpecialEmotion = [STATE.ITEM_ACTION, STATE.GAME_REACTION].includes(state);
+        let emotionChanged = false;
         if (!isSpecialEmotion) {
-            this._updateBaseEmotion();
+            emotionChanged = this._updateBaseEmotion();
         }
 
         switch (state) {
@@ -427,6 +450,7 @@ export class BaseCharacter {
 
     /** 好感度に基づく基本感情更新 */
     _updateBaseEmotion() {
+        const oldEmotion = this.status.emotion;
         if (this.status.friendship <= -11 || this.status.hunger <= 0) {
             this.status.emotion = 'sad';
         } else if (this.status.friendship <= 10) {
@@ -434,6 +458,7 @@ export class BaseCharacter {
         } else {
             this.status.emotion = 'happy';
         }
+        return this.status.emotion !== oldEmotion;
     }
 
     /** アセットの選択と適用 */
@@ -496,6 +521,12 @@ export class BaseCharacter {
     /** 音声再生 (内部用) */
     _playAssetSound(data, type) {
         if (!data.soundfile || typeof window === 'undefined' || !window.game) return;
+
+        // ブラウザの自動再生ポリシーによりブロックされている場合は再生しない (AbortError回避)
+        if (window.game.audioCtx && window.game.audioCtx.state === 'suspended') {
+            console.log('[BaseCharacter] Audio context suspended. Skipping initial sound.');
+            return;
+        }
 
         // _applySelectedAsset で既に停止されているため、ここでは重ねて停止しない
 
@@ -653,8 +684,9 @@ export class BaseCharacter {
     /** 現在ボイスが再生中かどうか */
     isVoicePlaying() {
         const v = this.visual.currentVoice;
-        // 再生終了(ended)していない限り、一時停止(paused)であっても
-        // 読み込み中(readyState < 2)などの可能性を考慮して「再生中（または準備中）」とみなす
+        if (v) {
+            // console.log(`[Debug] Voice check: ended=${v.ended}, paused=${v.paused}, readyState=${v.readyState}, currentTime=${v.currentTime}`);
+        }
         return (v && !v.ended);
     }
 }
