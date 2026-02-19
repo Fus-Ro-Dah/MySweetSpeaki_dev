@@ -8,7 +8,10 @@ export class BaseCharacter {
         this.id = id;
         this.parentElement = parentElement;
         this.characterType = options.characterType || 'speaki'; // アセットのプレフィックス (speaki, mob 等)
-        this.name = options.name || `${this.characterType}_${id}`;
+        // const defaultNamePrefix = (this.characterType === 'baby') ? '赤ちゃんスピキ' : 'ｽﾋﾟｷ';
+        // ユーザー要望により、赤ちゃんでも大人でも「ｽﾋﾟｷ_番号」で統一
+        const defaultNamePrefix = 'ｽﾋﾟｷ';
+        this.name = options.name || `${defaultNamePrefix}_${id}`;
 
         // 1. 位置と物理状態
         this.pos = {
@@ -390,9 +393,12 @@ export class BaseCharacter {
             return;
         }
 
+        // 好感度が低い(怯えている)場合は常に高速移動
+        const moveSpeed = (this.status.friendship <= -31) ? 8.0 : this.pos.speed;
+
         const angle = Math.atan2(dy, dx);
-        this.pos.x += Math.cos(angle) * this.pos.speed;
-        this.pos.y += Math.sin(angle) * this.pos.speed;
+        this.pos.x += Math.cos(angle) * moveSpeed;
+        this.pos.y += Math.sin(angle) * moveSpeed;
         this.pos.angle = angle;
 
         if (Math.abs(dx) > 1) {
@@ -466,7 +472,7 @@ export class BaseCharacter {
         // 状態変更時は必ず以前の音声を停止する (Strict Stop)
         this._stopCurrentVoice();
 
-        const type = [STATE.ITEM_ACTION, STATE.USER_INTERACTING, STATE.GAME_REACTION].includes(state) ? 'performance' : 'mood';
+        const type = [STATE.ITEM_ACTION, STATE.USER_INTERACTING, STATE.GAME_REACTION, STATE.GIFT_REACTION].includes(state) ? 'performance' : 'mood';
 
         const emotion = this.status.emotion;
         const action = this.status.action;
@@ -532,6 +538,9 @@ export class BaseCharacter {
 
         // 個体ごとの声の高さ (voicePitch) を反映
         this.visual.currentVoice = window.game.playSound(data.soundfile, (data.pitch || 1.0) * this.status.voicePitch);
+        if (this.visual.currentVoice) {
+            this.visual.currentVoice.loop = false;
+        }
 
         const voice = this.visual.currentVoice;
         // アセットのタイプに関わらず、音声の長さを取得してアクションの長さに反映する

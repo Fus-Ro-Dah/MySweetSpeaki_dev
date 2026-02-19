@@ -374,6 +374,8 @@ export class Game {
             const distToItem = Math.sqrt((speaki.pos.x - x) ** 2 + (speaki.pos.y - y) ** 2);
             if (distToItem > 500) return;
             if (speaki.status.friendship <= -31) return;
+            // 空腹時は食べ物以外無視する
+            if (speaki.status.hunger <= 0 && !itemDef.isFood) return;
 
             const nonInterruptibleStates = [
                 STATE.GIFT_RETURNING,
@@ -741,6 +743,39 @@ export class Game {
             s.name = newName;
             this.updateSpeakiListUI(true);
         }
+    }
+
+    /** 赤ちゃんスピキの進化 */
+    evolveBaby(baby) {
+        if (!baby) return;
+        console.log(`[Game] BabySpeaki ${baby.id} is evolving!`);
+
+        // DOM削除
+        if (baby.visual.dom.container) baby.visual.dom.container.remove();
+
+        // 配列から削除
+        const index = this.speakis.indexOf(baby);
+        if (index !== -1) {
+            this.speakis.splice(index, 1);
+        }
+
+        // 大人のSpeakiを生成（IDは引き継ぐ）
+        const adult = new Speaki(baby.id, this.speakiRoom, baby.pos.x, baby.pos.y);
+
+        // ステータスの継承
+        adult.name = baby.name; // 名前継承
+        adult.status.friendship = baby.status.friendship;
+        adult.status.hunger = baby.status.hunger;
+
+        // 配列に追加（元の位置へ）
+        if (index !== -1) {
+            this.speakis.splice(index, 0, adult);
+        } else {
+            this.speakis.push(adult);
+        }
+
+        this.playSound('happy', 1.0);
+        this.updateSpeakiListUI(true);
     }
 
     _updateItemLifecycles(dt) {

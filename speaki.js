@@ -81,7 +81,7 @@ export class Speaki extends BaseCharacter {
     /** 目的地決定の拡張 */
     _decideNextDestination() {
         if (this.status.state === STATE.GIFT_LEAVING) {
-            this.pos.targetX = -100;
+            this.pos.targetX = -250;
             const h = (this.parentElement && this.parentElement.clientHeight) || (typeof window !== 'undefined' ? window.innerHeight : 800);
             this.pos.targetY = h / 2;
             this.pos.destinationSet = true;
@@ -170,6 +170,7 @@ export class Speaki extends BaseCharacter {
         this.pos.targetX = hiddenX;
         this.pos.targetY = hiddenY;
         this.pos.destinationSet = true;
+        // this.pos.speed = 8.0; // BaseCharacter側で好感度を見て速度制御するため削除
         return true;
     }
 

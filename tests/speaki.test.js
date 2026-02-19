@@ -228,4 +228,55 @@ describe('Speaki Character Logic', () => {
         speaki._updateStateTransition();
         expect(speaki.status.state).toBe(STATE.WALKING);
     });
+    it('should use high speed (8.0) when friendship is <= -31', () => {
+        speaki.pos.speed = 2.0;
+
+        // Normal friendship
+        speaki.status.friendship = 0;
+        speaki.pos.destinationSet = true;
+        speaki.pos.targetX = speaki.pos.x + 100;
+        speaki.pos.targetY = speaki.pos.y;
+
+        // _processMovement accesses this.status.friendship
+        speaki._processMovement();
+        // Speed should correspond to pos.speed (2.0)
+        // dx = 2.0
+        expect(speaki.pos.x).toBeCloseTo(102, 0);
+
+        // Frightened friendship
+        speaki.pos.x = 100;
+        speaki.status.friendship = -31;
+        speaki._processMovement();
+        // Speed should be forced to 8.0
+        expect(speaki.pos.x).toBeCloseTo(108, 0);
+
+        // Recovered friendship
+        speaki.pos.x = 100;
+        speaki.status.friendship = -30;
+        speaki._processMovement();
+        // Speed should revert to pos.speed (2.0)
+        expect(speaki.pos.x).toBeCloseTo(102, 0);
+    });
+
+    it('should evolve baby when age > 30s and hunger >= 75', async () => {
+        const { BabySpeaki } = await import('../baby-speaki.js'); // Dynamic import for test
+        const baby = new BabySpeaki(2, mockParent, 0, 0);
+        global.window.game.evolveBaby = vi.fn();
+
+        // Case 1: Just born (Age 0) -> No evolution
+        baby._updateStateTransition();
+        expect(global.window.game.evolveBaby).not.toHaveBeenCalled();
+
+        // Case 2: Age > 30s but Hunger < 75
+        baby.bornTime = Date.now() - 31000;
+        baby.status.hunger = 74;
+        baby._updateStateTransition();
+        expect(global.window.game.evolveBaby).not.toHaveBeenCalled();
+
+        // Case 3: Age > 30s and Hunger >= 75 -> Evolution
+        baby.status.hunger = 75;
+        baby._updateStateTransition();
+        expect(global.window.game.evolveBaby).toHaveBeenCalledWith(baby);
+    });
 });
+
