@@ -418,6 +418,7 @@ export class Game {
         const interactableStates = [
             STATE.IDLE, STATE.WALKING, STATE.GIFT_RETURNING,
             STATE.GIFT_LEAVING, STATE.GIFT_WAIT_FOR_USER_REACTION, STATE.ITEM_APPROACHING,
+            STATE.USER_INTERACTING,
         ];
         return interactableStates.includes(speaki.status.state);
     }
@@ -521,20 +522,39 @@ export class Game {
 
         if (isTap) {
             this._handleSpeakiTap(speaki);
+            speaki.interaction.isInteracting = false; // フラグだけ下ろして、状態（USER_INTERACTING）の解除はボイス終了を待つ
         }
 
         if (isTap || speaki.interaction.isActuallyDragging) {
             this._resetActionTimer(speaki, 2000);
         }
 
-        this._cleanupInteraction(speaki);
+        // 叩き（タップ）以外の時（なでなでやドラッグ終了時）は即座にクリーンアップして音を止める
+        if (!isTap) {
+            this._cleanupInteraction(speaki);
+        } else {
+            this.interactTarget = null; // タップの時は参照だけ外す
+        }
     }
 
     _handleSpeakiTap(speaki) {
-        speaki.setExpression('surprised', 'sad');
-        this._createHitEffect(speaki.interaction.lastMouseX, speaki.interaction.lastMouseY);
+        // 好感度計算
         speaki.status.friendship = Math.max(-50, speaki.status.friendship - 5);
-        this.playSound('surprised');
+        this._createHitEffect(speaki.interaction.lastMouseX, speaki.interaction.lastMouseY);
+
+        // しきい値を下回ったか（逃げ出すか）の判定
+        if (speaki.status.friendship <= -31) {
+            // 限界突破：今のリアクションをかき消して逃げる（前の音を強制停止）
+            speaki.interaction.isInteracting = false;
+            speaki.status.state = STATE.IDLE; // 一旦IDLEにしてから次フレームで即座にWALKING(隠れ家)へ移行させる
+            speaki.setExpression('idle', 'sad'); // 真っ先に悲しい表情と声にする
+            console.log(`[Game] Speaki ${speaki.id} reached breaking point and is fleeing.`);
+        } else {
+            // 通常の叩かれリアクション：Strict Stopにより、連打時は前の音が消えて新しい音が鳴る
+            speaki.setExpression('surprised', 'sad');
+        }
+
+        // 音源がない場合のフォールバック（playSoundを直接呼ばなくなったが、setExpression内で再生される）
     }
 
     _cleanupInteraction(speaki) {

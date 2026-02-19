@@ -136,4 +136,96 @@ describe('Speaki Character Logic', () => {
         speaki.update(5000);
         expect(speaki.status.friendship).toBe(0);
     });
+
+    it('should stay in USER_INTERACTING after tap until voice ends', () => {
+        // Mock isVoicePlaying to return true initially
+        const isVoicePlayingSpy = vi.spyOn(speaki, 'isVoicePlaying').mockReturnValue(true);
+
+        speaki.status.state = STATE.USER_INTERACTING;
+        speaki.interaction.isInteracting = false; // Mouse released after tap
+
+        speaki._updateStateTransition();
+
+        expect(speaki.status.state).toBe(STATE.USER_INTERACTING);
+
+        // Now mock voice ended and enough time has passed
+        isVoicePlayingSpy.mockReturnValue(false);
+        speaki.timers.stateStart -= 300; // Simulate 300ms passing
+        speaki._updateStateTransition();
+
+        expect(speaki.status.state).not.toBe(STATE.USER_INTERACTING);
+        isVoicePlayingSpy.mockRestore();
+    });
+
+    it('should allow machine-gun taps (restart voice on every tap)', () => {
+        // Strict Stop: consecutive taps interrupts the previous voice and starts a new one
+        vi.spyOn(speaki, 'isVoicePlaying').mockReturnValue(true);
+        const stopSpy = vi.spyOn(speaki, '_stopCurrentVoice');
+        global.window.game.playSound.mockClear();
+
+        speaki.status.state = STATE.USER_INTERACTING;
+
+        // 1st Tap
+        speaki.setExpression('surprised', 'sad');
+        expect(stopSpy).toHaveBeenCalledTimes(1);
+        expect(global.window.game.playSound).toHaveBeenCalledTimes(1);
+
+        // 2nd Tap (Machine Gun)
+        speaki.setExpression('surprised', 'sad');
+        expect(stopSpy).toHaveBeenCalledTimes(2);
+        expect(global.window.game.playSound).toHaveBeenCalledTimes(2);
+    });
+
+    it('should strictly stop previous voice on state change', () => {
+        const stopSpy = vi.spyOn(speaki, '_stopCurrentVoice');
+        speaki.status.state = STATE.IDLE;
+
+        // Transition to WALKING
+        speaki.status.state = STATE.WALKING;
+        speaki._onStateChanged(STATE.WALKING);
+
+        expect(stopSpy).toHaveBeenCalled();
+    });
+
+    it('should wait for voice to finish in IDLE before walking', () => {
+        const isVoicePlayingSpy = vi.spyOn(speaki, 'isVoicePlaying').mockReturnValue(true);
+        speaki.status.state = STATE.IDLE;
+        speaki.timers.stateStart = Date.now() - (speaki.timers.waitDuration + 1000); // Wait time exceeded
+
+        // But voice is playing -> should stay IDLE
+        speaki._updateStateTransition();
+        expect(speaki.status.state).toBe(STATE.IDLE);
+
+        // Voice finished -> should transition
+        isVoicePlayingSpy.mockReturnValue(false);
+        speaki._updateStateTransition();
+        expect(speaki.status.state).toBe(STATE.WALKING);
+
+        isVoicePlayingSpy.mockRestore();
+    });
+
+    it('should interrupt voice and flee when friendship hits threshold', () => {
+        // This test simulates the logic inside _handleSpeakiTap
+        speaki.status.friendship = -30;
+
+        // Mock a voice playing
+        vi.spyOn(speaki, 'isVoicePlaying').mockReturnValue(true);
+        const stopVoiceSpy = vi.spyOn(speaki, '_stopCurrentVoice');
+
+        // Logic from _handleSpeakiTap:
+        speaki.status.friendship -= 5; // hits -35
+        if (speaki.status.friendship <= -31) {
+            speaki.interaction.isInteracting = false;
+            speaki.status.state = STATE.IDLE;
+            speaki.setExpression('idle', 'sad'); // Removed forceStopVoice=true
+        }
+
+        expect(speaki.status.state).toBe(STATE.IDLE);
+        expect(stopVoiceSpy).toHaveBeenCalled(); // Previous voice was stopped
+
+        // Next transition should set to WALKING (hideout)
+        // Note: Speaki class overrides _updateStateTransition
+        speaki._updateStateTransition();
+        expect(speaki.status.state).toBe(STATE.WALKING);
+    });
 });

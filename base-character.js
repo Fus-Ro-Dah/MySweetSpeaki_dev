@@ -158,9 +158,24 @@ export class BaseCharacter {
 
         switch (this.status.state) {
             case STATE.IDLE:
-                if (now - this.timers.stateStart > this.timers.waitDuration) {
+                const elapsed = now - this.timers.stateStart;
+                // 指定時間が経過し、かつ音声が再生中でない場合のみ移動を開始する
+                if (elapsed > this.timers.waitDuration && !this.isVoicePlaying()) {
                     this.status.state = STATE.WALKING;
                     this._onStateChanged(this.status.state);
+                }
+                break;
+
+            case STATE.USER_INTERACTING:
+                // インタラクト中フラグが降りている（マウスを離した等）場合
+                if (!this.interaction.isInteracting) {
+                    const elapsed = now - this.timers.stateStart;
+                    // 音声が再生中、または開始直後（200ms未満）の場合は状態を維持する
+                    // これにより、クリック直後の音声読み込み待ちによる瞬時終了を防ぐ
+                    if (!this.isVoicePlaying() && elapsed > 200) {
+                        this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
+                        this._onStateChanged(this.status.state);
+                    }
                 }
                 break;
 
@@ -366,7 +381,7 @@ export class BaseCharacter {
     /** 状態変更時の初期化 */
     _onStateChanged(newState) {
         const isActualChange = this.status.state !== newState;
-        this._stopCurrentVoice();
+        // _applySelectedAsset内で_stopCurrentVoiceが呼ばれるため、ここでは明示的に呼ばない
         this.timers.stateStart = Date.now();
         if (isActualChange) {
             this.pos.destinationSet = false; // 実際に状態が変わった時のみリセット
@@ -423,6 +438,9 @@ export class BaseCharacter {
 
     /** アセットの選択と適用 */
     _applySelectedAsset(state) {
+        // 状態変更時は必ず以前の音声を停止する (Strict Stop)
+        this._stopCurrentVoice();
+
         const type = [STATE.ITEM_ACTION, STATE.USER_INTERACTING, STATE.GAME_REACTION].includes(state) ? 'performance' : 'mood';
 
         const emotion = this.status.emotion;
@@ -470,18 +488,23 @@ export class BaseCharacter {
         this.visual.currentAsset = assetData;
         this.visual.motionType = assetData.movePattern || 'none';
 
+        this.visual.motionType = assetData.movePattern || 'none';
         this._playAssetSound(assetData, type);
     }
 
     /** 音声再生 */
+    /** 音声再生 (内部用) */
     _playAssetSound(data, type) {
         if (!data.soundfile || typeof window === 'undefined' || !window.game) return;
+
+        // _applySelectedAsset で既に停止されているため、ここでは重ねて停止しない
 
         // 個体ごとの声の高さ (voicePitch) を反映
         this.visual.currentVoice = window.game.playSound(data.soundfile, (data.pitch || 1.0) * this.status.voicePitch);
 
         const voice = this.visual.currentVoice;
-        if (type === 'performance' && voice) {
+        // アセットのタイプに関わらず、音声の長さを取得してアクションの長さに反映する
+        if (voice) {
             const updateDur = () => {
                 if (isNaN(voice.duration) || voice.duration <= 0) return;
                 this.timers.actionDuration = (voice.duration / (data.pitch || 1.0)) * 1000;
@@ -625,5 +648,13 @@ export class BaseCharacter {
         if (action) this.status.action = action;
         if (emotion) this.status.emotion = emotion;
         this._applySelectedAsset(this.status.state);
+    }
+
+    /** 現在ボイスが再生中かどうか */
+    isVoicePlaying() {
+        const v = this.visual.currentVoice;
+        // 再生終了(ended)していない限り、一時停止(paused)であっても
+        // 読み込み中(readyState < 2)などの可能性を考慮して「再生中（または準備中）」とみなす
+        return (v && !v.ended);
     }
 }

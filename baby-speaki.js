@@ -38,7 +38,7 @@ export class BabySpeaki extends BaseCharacter {
         this.status.state = STATE.WALKING;
         this._onStateChanged(this.status.state);
         this.status.emotion = 'happy';
-        this._applySelectedAsset(this.status.state);
+        // this._onStateChanged()内でアセットが適用されるため、ここでは再呼び出しを避ける
     }
 
     /** リスト表示用のラベル */
