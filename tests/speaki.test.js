@@ -121,4 +121,19 @@ describe('Speaki Character Logic', () => {
         // _performItemAction stays in emotion 'ITEM' for non-food items
         expect(speaki.status.emotion).toBe('ITEM');
     });
+
+    it('should recover friendship over time when it is negative', () => {
+        speaki.status.friendship = -10;
+        // dt = 5000ms (5s) -> recovery should be 5000/5000 = 1
+        speaki.update(5000);
+        expect(speaki.status.friendship).toBe(-9);
+    });
+
+    it('should not increase friendship beyond 0 during auto-recovery', () => {
+        speaki.status.friendship = -0.5;
+        // dt = 5000ms (5s) -> recovery should be 1
+        // but it should be capped at 0
+        speaki.update(5000);
+        expect(speaki.status.friendship).toBe(0);
+    });
 });

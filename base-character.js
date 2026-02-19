@@ -134,6 +134,11 @@ export class BaseCharacter {
         // 空腹度の進行
         this.status.hunger = Math.max(0, this.status.hunger - dt / 5000); // 減りを緩やかに
 
+        // 好感度の自動回復 (負の値の場合のみ 0 に向かって回復)
+        if (this.status.friendship < 0) {
+            this.status.friendship = Math.min(0, this.status.friendship + dt / 5000); // 5秒で1回復
+        }
+
         // 表情の基本更新（オーバーライド可能）
         this._updateAppearanceByStatus();
     }
