@@ -17,8 +17,8 @@ export class BabySpeaki extends BaseCharacter {
 
     /** 状態遷移の拡張: 自律的な行動を追加 */
     _updateStateTransition() {
-        // 0. 進化チェック (30秒経過 && 満腹度75以上)
-        if (Date.now() - this.bornTime > 30000 && this.status.hunger >= 75) {
+        // 0. 進化チェック (60秒経過 && 満腹度75以上)
+        if (Date.now() - this.bornTime > 60000 && this.status.hunger >= 75) {
             if (window.game && window.game.evolveBaby) {
                 window.game.evolveBaby(this);
                 return; // 進化したら以降の処理は不要

@@ -135,11 +135,11 @@ export class BaseCharacter {
         this._checkSocialInteractions();
 
         // 空腹度の進行
-        this.status.hunger = Math.max(0, this.status.hunger - dt / 5000); // 減りを緩やかに
+        this.status.hunger = Math.max(0, this.status.hunger - dt / 5000); // テストとして500としている
 
         // 好感度の自動回復 (負の値の場合のみ 0 に向かって回復)
         if (this.status.friendship < 0) {
-            this.status.friendship = Math.min(0, this.status.friendship + dt / 5000); // 5秒で1回復
+            this.status.friendship = Math.min(0, this.status.friendship + dt / 10000); // 10秒で1回復
         }
 
         // 表情の基本更新（オーバーライド可能）
@@ -153,17 +153,32 @@ export class BaseCharacter {
         const arrived = dist <= 10;
 
         // 空腹時の挙動
-        if (this.status.hunger <= 0 && this.status.state === STATE.WALKING) {
-            this.status.state = STATE.IDLE;
-            this._onStateChanged(this.status.state);
-            return;
+        if (this.status.hunger <= 0) {
+            // WALKING中 または 「食べ物でないアイテム」への接近中なら停止する
+            const isApproachingNonFood = this.status.state === STATE.ITEM_APPROACHING &&
+                this.interaction.targetItem &&
+                !ITEMS[this.interaction.targetItem.id]?.isFood;
+
+            if (this.status.state === STATE.WALKING || isApproachingNonFood) {
+                this.status.state = STATE.IDLE;
+                this._onStateChanged(this.status.state);
+                return;
+            }
         }
 
         switch (this.status.state) {
             case STATE.IDLE:
                 const elapsed = now - this.timers.stateStart;
+
                 // 指定時間が経過し、かつ音声が再生中でない場合のみ移動を開始する
                 if (elapsed > this.timers.waitDuration && !this.isVoicePlaying()) {
+                    // 空腹時に食べ物がない場合は、待機状態を継続する (歩きだしモーションの誤爆を防ぐ)
+                    if (this.status.hunger <= 0 && !this._getNearbyFood()) {
+                        this.timers.stateStart = now; // タイマーリセット
+                        this._onStateChanged(this.status.state); // アセット再抽選
+                        return;
+                    }
+
                     this.status.state = STATE.WALKING;
                     this._onStateChanged(this.status.state);
                 }
@@ -362,16 +377,20 @@ export class BaseCharacter {
 
         // 1. 食べ物の探索 (空腹時: 近くにあれば100%の確率で向かう)
         if (this.status.hunger <= 0) {
-            const foodItems = game ? game.placedItems.filter(it => {
-                const def = ITEMS[it.id];
-                const dist = Math.sqrt((it.x - this.pos.x) ** 2 + (it.y - this.pos.y) ** 2);
-                return def && def.isFood && dist <= 500;
-            }) : [];
+            const food = this._getNearbyFood();
 
-            if (foodItems.length > 0) {
-                this.approachItem(foodItems[Math.floor(Math.random() * foodItems.length)]);
+            if (food) {
+                this.approachItem(food);
                 return;
             }
+
+            // 空腹時に食べ物が見つからない場合はここで停止（散歩や家具への興味をスキップ）
+            if (this.status.state !== STATE.IDLE) {
+                this.status.state = STATE.IDLE;
+                this.pos.destinationSet = false;
+                this._onStateChanged(this.status.state);
+            }
+            return;
         }
 
         // 2. アイテムへの興味 (20% の確率で近くのアイテムに寄る)
@@ -398,6 +417,21 @@ export class BaseCharacter {
         this.pos.targetX = Math.random() * (w - 100) + 50;
         this.pos.targetY = Math.random() * (h - 100) + 50;
         this.pos.destinationSet = true;
+    }
+
+    /** 近くにある食べ物を取得する */
+    _getNearbyFood(range = 500) {
+        const game = window.game;
+        if (!game) return null;
+
+        const foodItems = game.placedItems.filter(it => {
+            const def = ITEMS[it.id];
+            const dist = Math.sqrt((it.x - this.pos.x) ** 2 + (it.y - this.pos.y) ** 2);
+            return def && def.isFood && dist <= range;
+        });
+
+        if (foodItems.length === 0) return null;
+        return foodItems[Math.floor(Math.random() * foodItems.length)];
     }
 
     /** 移動処理 */

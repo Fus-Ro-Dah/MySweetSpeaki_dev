@@ -15,7 +15,8 @@ describe('Speaki Character Logic', () => {
                 playSound: vi.fn(),
                 lastGiftTime: Date.now(),
                 giftPartner: null,
-                speakis: [] // Add this to fix the error in _checkSocialInteractions
+                speakis: [],
+                placedItems: []
             },
             innerWidth: 1200,
             innerHeight: 800
@@ -44,11 +45,10 @@ describe('Speaki Character Logic', () => {
 
     it('should decrease hunger over time', () => {
         const initialHunger = speaki.status.hunger;
-        // dt is in ms. hunger decrease is dt / 5000 in update()
-        // DT = 5000 -> 5000/5000 = 1
+        // dt is in ms. hunger decrease is dt / 500 in update() (current testing speed)
+        // DT = 5000 -> 5000/500 = 10
         speaki.update(5000);
-        // 浮動小数点の誤差を考慮して toBeCloseTo を使うか、正確な計算値を期待する
-        expect(speaki.status.hunger).toBe(initialHunger - 1);
+        expect(speaki.status.hunger).toBe(initialHunger - 10);
     });
 
     it('should transition to IDLE if hunger is 0 and walking', () => {
@@ -371,5 +371,41 @@ describe('Speaki Character Logic', () => {
         expect(spy).toHaveBeenCalledWith(item);
 
         vi.restoreAllMocks();
+    });
+    it('should NOT transition from IDLE to WALKING if hunger is 0', () => {
+        speaki.status.hunger = 0;
+        speaki.status.state = STATE.IDLE;
+        speaki.timers.stateStart = Date.now() - 10000;
+        speaki.timers.waitDuration = 5000;
+
+        speaki._updateStateTransition();
+
+        expect(speaki.status.state).toBe(STATE.IDLE);
+    });
+
+    it('should transition from ITEM_APPROACHING to IDLE if starving and target is not food', () => {
+        const toy = { id: 'Pumpkin', x: 200, y: 200 };
+        speaki.status.hunger = 0;
+        speaki.status.state = STATE.ITEM_APPROACHING;
+        speaki.interaction.targetItem = toy;
+
+        speaki._updateStateTransition();
+
+        expect(speaki.status.state).toBe(STATE.IDLE);
+    });
+
+    it('should NOT pick a wandering destination if starving and no food is nearby', () => {
+        speaki.status.hunger = 0;
+        const toy = { id: 'Pumpkin', x: 200, y: 200 };
+        global.window.game.placedItems = [toy];
+
+        const spy = vi.spyOn(speaki, 'approachItem');
+        speaki.pos.destinationSet = false;
+
+        speaki._decideWanderingDestination(1200, 800);
+
+        expect(spy).not.toHaveBeenCalled();
+        expect(speaki.pos.destinationSet).toBe(false);
+        expect(speaki.status.state).toBe(STATE.IDLE);
     });
 });
