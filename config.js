@@ -155,9 +155,8 @@ export const ITEMS = {
         imagefile: 'item_pumpkin.png',
         text: '',
         size: 180,
-        pitch: 1.5,
         showInMenu: true,
-        isFood: false, // 成長用なので勝手に食べない
+        isFood: false,
         transform: { nextId: 'Pumpkin2', duration: 10000 }
     },
     Pumpkin2: {
