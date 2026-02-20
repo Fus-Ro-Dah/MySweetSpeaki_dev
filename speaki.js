@@ -194,6 +194,14 @@ export class Speaki extends BaseCharacter {
     _tryStartGiftEvent(now) {
         if (typeof window === 'undefined' || !window.game) return false;
         const game = window.game;
+
+        // 【自己修復】もし自分がギフト担当になっているのに、このメソッドが呼ばれた（＝ギフト状態ではない）場合、
+        // 状態不整合（ゾンビ）とみなして担当を解除する
+        if (game.giftPartner === this) {
+            console.warn(`[Speaki] Self-healing: Cleared zombie gift partner state for ${this.id}`);
+            game.giftPartner = null;
+        }
+
         const timeSinceLastGift = now - game.lastGiftTime;
         const canStartGift = this.status.friendship >= 31 && timeSinceLastGift >= 30000 && !game.giftPartner;
 

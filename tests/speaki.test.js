@@ -278,5 +278,98 @@ describe('Speaki Character Logic', () => {
         baby._updateStateTransition();
         expect(global.window.game.evolveBaby).toHaveBeenCalledWith(baby);
     });
-});
 
+    it('should clear giftPartner if zombie state detected (self-healing)', () => {
+        // Setup zombie state:
+        // Game thinks this speaki is the partner
+        global.window.game.giftPartner = speaki;
+
+        // But Speaki is actually just IDLE (not in any gift state)
+        speaki.status.state = STATE.IDLE;
+
+        // When _tryStartGiftEvent is called (checked every frame in updateStateTransition)
+        // It should detect the mismatch and clear it
+        speaki._tryStartGiftEvent(Date.now());
+
+        expect(global.window.game.giftPartner).toBeNull();
+    });
+
+    it('should reset destinationSet when a state is re-applied to ensure new destination selection', () => {
+        speaki.status.state = STATE.GIFT_LEAVING;
+        speaki.pos.destinationSet = true;
+
+        // Simulate re-applying the state (e.g., during event start)
+        speaki._onStateChanged(STATE.GIFT_LEAVING);
+
+        expect(speaki.pos.destinationSet).toBe(false);
+    });
+
+    it('should pop stateStack when ITEM_ACTION finishes if a state was stacked', () => {
+        speaki.status.stateStack.push(STATE.GIFT_LEAVING);
+        speaki.status.state = STATE.ITEM_ACTION;
+        speaki.timers.actionStart = Date.now() - 5000;
+        speaki.timers.actionDuration = 3000;
+
+        speaki._updateStateTransition();
+
+        expect(speaki.status.state).toBe(STATE.GIFT_LEAVING);
+    });
+
+    it('should prioritize food (100% chance) when hungry and food is nearby', () => {
+        speaki.status.hunger = 0;
+        const food = { id: 'Candy', x: 100, y: 100, consume: vi.fn() };
+        global.window.game.placedItems = [food];
+
+        // Mocking approachItem to verify it's called
+        const spy = vi.spyOn(speaki, 'approachItem');
+
+        speaki._decideWanderingDestination(1200, 800);
+
+        expect(spy).toHaveBeenCalledWith(food);
+    });
+
+    it('should ignore food items in wandering when hunger is >= 90', () => {
+        speaki.status.hunger = 90;
+        const food = { id: 'Candy', x: 200, y: 200 };
+        global.window.game.placedItems = [food];
+
+        const spy = vi.spyOn(speaki, 'approachItem');
+        vi.spyOn(Math, 'random').mockReturnValue(0.1); // Force interaction attempt
+
+        speaki._decideWanderingDestination(1200, 800);
+
+        expect(spy).not.toHaveBeenCalled();
+        vi.restoreAllMocks();
+    });
+
+    it('should still target non-food items in wandering when hunger is >= 90', () => {
+        speaki.status.hunger = 95;
+        const toy = { id: 'Pumpkin', x: 200, y: 200 };
+        global.window.game.placedItems = [toy];
+
+        const spy = vi.spyOn(speaki, 'approachItem');
+        vi.spyOn(Math, 'random').mockReturnValue(0.1); // Force interaction attempt
+
+        speaki._decideWanderingDestination(1200, 800);
+
+        expect(spy).toHaveBeenCalledWith(toy);
+        vi.restoreAllMocks();
+    });
+
+    it('should have 20% chance to target any item when not hungry', () => {
+        speaki.status.hunger = 100;
+        const item = { id: 'Pumpkin', x: 200, y: 200 };
+        global.window.game.placedItems = [item];
+
+        const spy = vi.spyOn(speaki, 'approachItem');
+
+        // Force Math.random to a value < 0.2
+        vi.spyOn(Math, 'random').mockReturnValue(0.15);
+
+        speaki._decideWanderingDestination(1200, 800);
+
+        expect(spy).toHaveBeenCalledWith(item);
+
+        vi.restoreAllMocks();
+    });
+});

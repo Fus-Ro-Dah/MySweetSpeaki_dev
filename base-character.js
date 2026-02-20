@@ -224,7 +224,7 @@ export class BaseCharacter {
             case STATE.ITEM_ACTION:
                 const duration = this.timers.actionDuration || 3000;
                 if (now - this.timers.actionStart > duration) {
-                    this.status.state = STATE.IDLE;
+                    this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
                     this._onStateChanged(this.status.state);
                 }
                 break;
@@ -240,7 +240,7 @@ export class BaseCharacter {
 
             case STATE.GAME_REACTION:
                 if (now - this.timers.actionStart > (this.timers.actionDuration || 4000)) {
-                    this.status.state = STATE.IDLE;
+                    this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
                     this._onStateChanged(this.status.state);
                 }
                 break;
@@ -358,26 +358,46 @@ export class BaseCharacter {
 
     /** ランダム散歩の目的地決定 */
     _decideWanderingDestination(w, h) {
-        // 食べ物の探索 (空腹時)
+        const game = window.game;
+
+        // 1. 食べ物の探索 (空腹時: 近くにあれば100%の確率で向かう)
         if (this.status.hunger <= 0) {
-            const game = window.game;
             const foodItems = game ? game.placedItems.filter(it => {
                 const def = ITEMS[it.id];
                 const dist = Math.sqrt((it.x - this.pos.x) ** 2 + (it.y - this.pos.y) ** 2);
-                // isFood が true のものだけを探す
                 return def && def.isFood && dist <= 500;
             }) : [];
 
-            if (foodItems.length > 0 && Math.random() < 0.5) {
+            if (foodItems.length > 0) {
                 this.approachItem(foodItems[Math.floor(Math.random() * foodItems.length)]);
                 return;
             }
         }
 
-        // 通常のランダム位置
+        // 2. アイテムへの興味 (20% の確率で近くのアイテムに寄る)
+        if (game && game.placedItems.length > 0 && Math.random() < 0.2) {
+            const itemsInRange = game.placedItems.filter(it => {
+                const dist = Math.sqrt((it.x - this.pos.x) ** 2 + (it.y - this.pos.y) ** 2);
+                if (dist > 500) return false;
+
+                // お腹いっぱいの時は食べ物を除外
+                if (this.status.hunger >= 90) {
+                    const def = ITEMS[it.id];
+                    if (def && def.isFood) return false;
+                }
+                return true;
+            });
+            if (itemsInRange.length > 0) {
+                this.approachItem(itemsInRange[Math.floor(Math.random() * itemsInRange.length)]);
+                return;
+            }
+        }
+
+        // 3. 通常のランダム位置
         this.interaction.targetItem = null;
         this.pos.targetX = Math.random() * (w - 100) + 50;
         this.pos.targetY = Math.random() * (h - 100) + 50;
+        this.pos.destinationSet = true;
     }
 
     /** 移動処理 */
@@ -408,12 +428,10 @@ export class BaseCharacter {
 
     /** 状態変更時の初期化 */
     _onStateChanged(newState) {
-        const isActualChange = this.status.state !== newState;
         // _applySelectedAsset内で_stopCurrentVoiceが呼ばれるため、ここでは明示的に呼ばない
         this.timers.stateStart = Date.now();
-        if (isActualChange) {
-            this.pos.destinationSet = false; // 実際に状態が変わった時のみリセット
-        }
+        this.pos.destinationSet = false; // 状態が変わったら（または再設定されたら）必ずリセットして、次の実行フレームで目的地を再計算させる
+
         this._applyStateAppearance(newState);
         this._applySelectedAsset(newState);
         this.visual.motionTimer = 0;
@@ -618,6 +636,10 @@ export class BaseCharacter {
         }
         this.pos.destinationSet = true;
         this._onStateChanged(this.status.state);
+
+        // 修正: _onStateChanged が destinationSet = false にリセットするため、
+        // 意図した目的地を設定した直後に再度明示的に true にする
+        this.pos.destinationSet = true;
     }
 
     /** 近くのキャラを検知して交流を開始する */

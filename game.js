@@ -376,6 +376,8 @@ export class Game {
             if (speaki.status.friendship <= -31) return;
             // 空腹時は食べ物以外無視する
             if (speaki.status.hunger <= 0 && !itemDef.isFood) return;
+            // お腹いっぱいの時は食べ物を無視する
+            if (speaki.status.hunger >= 90 && itemDef.isFood) return;
 
             const nonInterruptibleStates = [
                 STATE.GIFT_RETURNING,
@@ -554,6 +556,13 @@ export class Game {
         if (speaki.status.friendship <= -31) {
             // 限界突破：今のリアクションをかき消して逃げる（前の音を強制停止）
             speaki.interaction.isInteracting = false;
+
+            // もしこの個体がギフト担当だった場合、担当を解除してイベントを中断する (ゾンビ化防止)
+            if (this.giftPartner === speaki) {
+                this.completeGiftEvent(null); // NULLを渡してリセットのみ行う
+                console.log(`[Game] Gift event aborted because Speaki ${speaki.id} fled.`);
+            }
+
             speaki.status.state = STATE.IDLE; // 一旦IDLEにしてから次フレームで即座にWALKING(隠れ家)へ移行させる
             speaki.setExpression('idle', 'sad'); // 真っ先に悲しい表情と声にする
             console.log(`[Game] Speaki ${speaki.id} reached breaking point and is fleeing.`);
@@ -573,6 +582,7 @@ export class Game {
         speaki.pos.destinationSet = false;
         speaki.status.state = (speaki.status.stateStack.length > 0) ? speaki.status.stateStack.pop() : STATE.IDLE;
         speaki._stopCurrentVoice();
+        speaki._onStateChanged(speaki.status.state); // 追加：復帰後のアニメーション/アセットを適用
         this.interactTarget = null;
     }
 
@@ -670,6 +680,7 @@ export class Game {
         }
         this.giftPartner = null;
         this.lastGiftTime = Date.now();
+        this.updateGiftUI('hide'); // 追加：UIを確実に隠す
     }
 
     loop(time) {
@@ -729,6 +740,13 @@ export class Game {
         const index = this.speakis.findIndex(s => s.id === id);
         if (index !== -1) {
             const s = this.speakis[index];
+
+            // 削除される個体がギフト担当だった場合、担当を解除 (ゾンビ化防止)
+            if (this.giftPartner === s) {
+                this.completeGiftEvent(null);
+                console.log(`[Game] Gift event aborted because Speaki ${id} was removed.`);
+            }
+
             if (s.visual.dom.container) s.visual.dom.container.remove();
             this.speakis.splice(index, 1);
             if (this.highlightedCharId === id) this.highlightedCharId = null;
