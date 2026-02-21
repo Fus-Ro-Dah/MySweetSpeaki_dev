@@ -3,6 +3,17 @@ import { STATE, ITEMS } from '../config.js';
 import { BaseCharacter } from '../base-character.js';
 import { Game } from '../game.js';
 import { Item } from '../item.js';
+import { ASSETS } from '../config.js';
+
+// Mock Fetch and Audio APIs
+global.fetch = vi.fn(() => Promise.resolve({
+    ok: true,
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0))
+}));
+
+vi.spyOn(Game.prototype, '_loadBGM').mockImplementation(() => Promise.resolve());
+// loadResources はリソース読み込み（fetch/Audio）を伴うため完全に無効化する
+vi.spyOn(Game.prototype, 'loadResources').mockImplementation(() => { });
 
 // Mock DOM
 const mockCanvas = {
@@ -11,6 +22,8 @@ const mockCanvas = {
     parentElement: {
         getBoundingClientRect: vi.fn(() => ({ left: 0, top: 0, width: 1000, height: 800 })),
         appendChild: vi.fn(),
+        clientWidth: 1000,
+        clientHeight: 800
     },
     addEventListener: vi.fn(), // NEW: addEventListener support
 };
@@ -42,6 +55,7 @@ global.Image = vi.fn().mockImplementation(function () {
 });
 
 global.document = {
+    activeElement: null, // Mock activeElement
     createElement: vi.fn(() => ({
         appendChild: vi.fn(),
         classList: { add: vi.fn(), remove: vi.fn() },
@@ -64,6 +78,7 @@ global.document = {
             clientWidth: 1000,
             clientHeight: 800,
             dataset: {},
+            contains: vi.fn(() => false), // Mock contains
         };
         if (id === 'game-canvas') {
             return { ...baseElement, ...mockCanvas };
@@ -137,6 +152,7 @@ describe('Item and Emotion Logic', () => {
             item.isInitialGift = true;
 
             const initialFriendship = char.status.friendship;
+            game.placedItems.push(item); // 存在判定のために必要
             char._performItemAction(item);
 
             // アイテムの friendshipChange が 2 なので、+2 されているはず
@@ -165,6 +181,30 @@ describe('Item and Emotion Logic', () => {
 
             // 通常のスピキは反応する
             expect(speaki.status.state).toBe(STATE.ITEM_APPROACHING);
+        });
+    });
+
+    describe('Poteto Item Logic', () => {
+        it('should force happy emotion after eating Poteto', () => {
+            const speaki = new BaseCharacter('speaki', parentElement, 100, 100);
+            const poteto = new Item('Poteto', 200, 200);
+
+            // 最初は普通の状態
+            speaki.status.friendship = 0;
+            speaki.status.hunger = 50;
+            speaki._updateBaseEmotion();
+            expect(speaki.status.emotion).toBe('normal');
+
+            // さつまいもを食べる
+            game.placedItems.push(poteto);
+            speaki._performItemAction(poteto);
+
+            // forcedEmotion が happy にセットされているはず
+            expect(speaki.status.forcedEmotion).toBe('happy');
+
+            // 感情更新で happy になる
+            speaki._updateBaseEmotion();
+            expect(speaki.status.emotion).toBe('happy');
         });
     });
 });

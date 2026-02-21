@@ -3,6 +3,8 @@ import { STATE } from '../config.js';
 import { NPCCharacter } from '../npc-character.js';
 import { BaseCharacter } from '../base-character.js';
 import { Speaki } from '../speaki.js';
+import { Ashur } from '../ashur.js';
+import { Posher } from '../posher.js';
 
 // Mock DOM
 global.document = {
@@ -84,6 +86,43 @@ describe('Character Expansion Logic', () => {
         it('should accept characterType in options', () => {
             const variant = new Speaki('variant1', parentElement, 100, 100, { characterType: 'rabbit' });
             expect(variant.characterType).toBe('rabbit');
+        });
+    });
+
+    describe('Ashur specific logic', () => {
+        it('should initialize as ashur type', () => {
+            const ashur = new Ashur('ashur1', parentElement, 0, 0);
+            expect(ashur.characterType).toBe('ashur');
+        });
+
+        it('should find hungry Speaki as target', () => {
+            const ashur = new Ashur('ashur1', parentElement, 0, 0);
+            const hungrySpeaki = new Speaki('hungry', parentElement, 100, 100, { hunger: 20 });
+            global.window.game.speakis = [ashur, hungrySpeaki];
+
+            const target = ashur._findHungrySpeaki();
+            expect(target).toBe(hungrySpeaki);
+        });
+
+        it('should place Mocaron when rescue ability triggers', () => {
+            const ashur = new Ashur('ashur1', parentElement, 100, 100);
+            ashur._onAbilityEffect('place_item', { itemType: 'Mocaron' });
+
+            expect(global.window.game.addItem).toHaveBeenCalledWith('Mocaron', 'item', 100, 120);
+        });
+    });
+
+    describe('Posher specific logic', () => {
+        it('should initialize as posher type', () => {
+            const posher = new Posher('posher1', parentElement, 0, 0);
+            expect(posher.characterType).toBe('posher');
+        });
+
+        it('should place Poteto when rescue ability triggers', () => {
+            const posher = new Posher('posher1', parentElement, 100, 100);
+            posher._onAbilityEffect('place_item', { itemType: 'Poteto' });
+
+            expect(global.window.game.addItem).toHaveBeenCalledWith('Poteto', 'item', 100, 120);
         });
     });
 });

@@ -741,6 +741,7 @@ export class BaseCharacter {
 
     /** 近くのキャラを検知して交流を開始する */
     _checkSocialInteractions() {
+        if (!this.canInteract) return; // NPC等は交流しない
         if (![STATE.IDLE, STATE.WALKING].includes(this.status.state)) return;
 
         const now = Date.now();

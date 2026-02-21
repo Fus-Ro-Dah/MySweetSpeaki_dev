@@ -9,6 +9,7 @@ export class Ashur extends NPCCharacter {
     constructor(id, parentElement, x, y, options = {}) {
         options.characterType = options.characterType || 'ashur';
         options.speed = options.speed || 1.5;
+        options.size = options.size || 200; // NPCを少し大きく
         super(id, parentElement, x, y, options);
 
         this.baseSpeed = this.pos.speed;
@@ -18,15 +19,8 @@ export class Ashur extends NPCCharacter {
 
     /** 目的地決定ロジック (空腹スピキ探索) */
     _decideWanderingDestination(w, h) {
-        const game = window.game;
-        if (!game) return super._decideWanderingDestination(w, h);
-
         // 満腹度が30以下の他のスピキを探す
-        const hungrySpeaki = game.speakis.find(s =>
-            s !== this &&
-            s.hasHunger &&
-            s.status.hunger <= 30
-        );
+        const hungrySpeaki = this._findHungrySpeaki();
 
         if (hungrySpeaki) {
             this.targetSpeaki = hungrySpeaki;
@@ -78,5 +72,16 @@ export class Ashur extends NPCCharacter {
     getStateLabel() {
         if (this.targetSpeaki) return "Ashur(救助中)";
         return super.getStateLabel().replace("NPC", "Ashur");
+    }
+
+    /** 救助対象（空腹のスピキ）を探すヘルパー */
+    _findHungrySpeaki() {
+        const game = window.game;
+        if (!game) return null;
+        return game.speakis.find(s =>
+            s !== this &&
+            s.hasHunger &&
+            s.status.hunger <= 30
+        );
     }
 }

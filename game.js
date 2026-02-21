@@ -4,6 +4,7 @@ import { Item } from './item.js';
 import { BabySpeaki } from './baby-speaki.js';
 import { NPCCharacter } from './npc-character.js';
 import { Ashur } from './ashur.js';
+import { Posher } from './posher.js';
 
 export class Game {
     /** コンストラクタ: ゲームの初期化 */
@@ -170,6 +171,7 @@ export class Game {
 
         this.addSpeaki(); // 最初のスピキ
         this.addSpeaki(undefined, undefined, 'ashur'); // 救助者Ashur
+        this.addSpeaki(undefined, undefined, 'posher');
     }
 
     /** アイテムメニューを動的に生成 */
@@ -723,6 +725,8 @@ export class Game {
             char = new BabySpeaki(id, this.speakiRoom, finalX, finalY);
         } else if (type === 'ashur') {
             char = new Ashur(id, this.speakiRoom, finalX, finalY);
+        } else if (type === 'posher') {
+            char = new Posher(id, this.speakiRoom, finalX, finalY);
         } else if (type === 'npc' || type.startsWith('npc_')) {
             // 今降は npc_xxx で具体的なNPCクラスを使い分けられるようにする
             char = new NPCCharacter(id, this.speakiRoom, finalX, finalY, { characterType: type });

@@ -91,6 +91,7 @@ export const ASSETS = {
                 Shionmelone: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'bounce' }],
                 LeviDriver: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'bounce' }],
                 BrokenHobagi: [{ imagefile: 'speaki_sad_idle_3.png', soundfile: '慟哭.mp3', text: '慟哭', movePattern: 'shake' }],
+                Poteto: [{ imagefile: 'speaki_item_poteto.png', soundfile: '本場スピキ撫で.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
                 generic: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }]
             },
             happy: {
@@ -115,11 +116,11 @@ export const ASSETS = {
                     { imagefile: 'speaki_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ﾋﾟｷ!', movePattern: 'swing' },
                     { imagefile: 'speaki_normal_idle_2.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ!', movePattern: 'swing' }
                 ],
-                walking: [{ imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜヨ!', movePattern: 'bounce' }]
+                walking: [{ imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }]
             },
             happy: {
-                idle: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜヨ!', movePattern: 'swing' }],
-                walking: [{ imagefile: 'speaki_happy_walking_2.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜヨ!', movePattern: 'bounce' }]
+                idle: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' }],
+                walking: [{ imagefile: 'speaki_happy_walking_2.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }]
             },
             sad: {
                 idle: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｰｳ...', movePattern: 'shake' }],
@@ -136,6 +137,7 @@ export const ASSETS = {
                 Shionmelone: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'bounce' }],
                 LeviDriver: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'bounce' }],
                 BrokenHobagi: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: '慟哭.mp3', text: '慟哭', movePattern: 'bounce' }],
+                Poteto: [{ imagefile: 'speaki_item_poteto.png', soundfile: '本場スピキ撫で.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
                 generic: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }]
             }
         }
@@ -152,6 +154,21 @@ export const ASSETS = {
                 idle: [{ imagefile: 'ashur_idle_1.png', soundfile: 'スピキ.mp3', text: 'ｱｼｭｰﾙ', movePattern: 'bounce' }],
                 walking: [{ imagefile: 'ashur_walking_1.png', soundfile: 'スピキ.mp3', text: 'ｱｼｭｰﾙ', movePattern: 'bounce' }],
                 place_item: [{ imagefile: 'ashur_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'どーぞ！', movePattern: 'jump' }]
+            }
+        }
+    },
+    posher: {
+        mood: {
+            normal: {
+                idle: [{ imagefile: 'posher_idle_1.png', soundfile: 'スピキ.mp3', text: 'ﾎﾟｯｼｬｰ', movePattern: 'bounce' }],
+                walking: [{ imagefile: 'posher_walking_1.png', soundfile: 'スピキ.mp3', text: 'ﾎﾟｯｼｬｰ', movePattern: 'bounce' }]
+            }
+        },
+        performance: {
+            normal: {
+                idle: [{ imagefile: 'posher_idle_1.png', soundfile: 'スピキ.mp3', text: 'ﾎﾟｯｼｬｰ', movePattern: 'bounce' }],
+                walking: [{ imagefile: 'posher_walking_1.png', soundfile: 'スピキ.mp3', text: 'ﾎﾟｯｼｬｰ', movePattern: 'bounce' }],
+                place_item: [{ imagefile: 'posher_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'どーぞ！', movePattern: 'jump' }]
             }
         }
     }
@@ -220,6 +237,17 @@ export const ITEMS = {
         nutrition: 25,
         isFood: true,
         friendshipChange: 5,
+        forcedEmotion: 'happy'
+    },
+    Poteto: {
+        name: 'さつまいも',
+        imagefile: 'item_poteto.png',
+        size: 100,
+        text: '',
+        showInMenu: true,
+        nutrition: 25,
+        isFood: true,
+        friendshipChange: 0,
         forcedEmotion: 'happy'
     },
     AnimalCan: {
