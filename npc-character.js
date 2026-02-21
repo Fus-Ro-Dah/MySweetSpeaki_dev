@@ -15,8 +15,6 @@ export class NPCCharacter extends BaseCharacter {
         options.speed = options.speed || 1.2;
 
         super(id, parentElement, x, y, options);
-
-        this.nextAbilityTime = Date.now() + 5000 + Math.random() * 5000;
     }
 
     /** 状態遷移の判定 (NPC独自の行動ロジック) */
@@ -28,12 +26,6 @@ export class NPCCharacter extends BaseCharacter {
         switch (this.status.state) {
             case STATE.IDLE:
                 const elapsed = now - this.timers.stateStart;
-
-                // 一定時間ごとに能力（アイテム配置など）を発動
-                if (now > this.nextAbilityTime) {
-                    this._useRandomAbility();
-                    return;
-                }
 
                 if (elapsed > this.timers.waitDuration) {
                     this.status.state = STATE.WALKING;
@@ -69,25 +61,6 @@ export class NPCCharacter extends BaseCharacter {
         this.pos.destinationSet = true;
     }
 
-    /** ランダムに能力を使用する */
-    _useRandomAbility() {
-        this.executeAbility('place_item', {
-            duration: 2000,
-            itemType: 'Candy'
-        });
-        // 次回の発動時間を設定
-        this.nextAbilityTime = Date.now() + 15000 + Math.random() * 15000;
-    }
-
-    /** 能力の効果を実際に発生させる */
-    _onAbilityEffect(abilityId, options) {
-        if (abilityId === 'place_item') {
-            if (window.game) {
-                // 魔法でアイテムを出現させるような演出（実際はaddItem）
-                window.game.addItem(options.itemType || 'Candy', 'item', this.pos.x, this.pos.y + 20);
-            }
-        }
-    }
 
     /** UI表示用のラベル取得 */
     getStateLabel() {

@@ -3,6 +3,7 @@ import { Speaki } from './speaki.js';
 import { Item } from './item.js';
 import { BabySpeaki } from './baby-speaki.js';
 import { NPCCharacter } from './npc-character.js';
+import { Ashur } from './ashur.js';
 
 export class Game {
     /** コンストラクタ: ゲームの初期化 */
@@ -167,7 +168,8 @@ export class Game {
             console.log("[Audio] Playing BGM via Standard Audio (Fallback).");
         }
 
-        this.addSpeaki(); // これが最初の1匹目
+        this.addSpeaki(); // 最初のスピキ
+        this.addSpeaki(undefined, undefined, 'ashur'); // 救助者Ashur
     }
 
     /** アイテムメニューを動的に生成 */
@@ -194,15 +196,6 @@ export class Game {
                 itemList.appendChild(itemDiv);
             }
         });
-    }
-
-    /** 新しいSpeakiを追加 */
-    addSpeaki(x, y) {
-        const id = this.speakis.length;
-        const finalX = x !== undefined ? x : window.innerWidth * 0.4 + (Math.random() * 100 - 50);
-        const finalY = y !== undefined ? y : window.innerHeight * 0.5 + (Math.random() * 100 - 50);
-        const speaki = new Speaki(id, this.speakiRoom, finalX, finalY);
-        this.speakis.push(speaki);
     }
 
     /** キャンバスのサイズ調整 */
@@ -728,6 +721,8 @@ export class Game {
         let char;
         if (type === 'baby') {
             char = new BabySpeaki(id, this.speakiRoom, finalX, finalY);
+        } else if (type === 'ashur') {
+            char = new Ashur(id, this.speakiRoom, finalX, finalY);
         } else if (type === 'npc' || type.startsWith('npc_')) {
             // 今降は npc_xxx で具体的なNPCクラスを使い分けられるようにする
             char = new NPCCharacter(id, this.speakiRoom, finalX, finalY, { characterType: type });

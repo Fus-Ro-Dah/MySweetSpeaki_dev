@@ -567,7 +567,14 @@ export class BaseCharacter {
         // 状態変更時は必ず以前の音声を停止する (Strict Stop)
         this._stopCurrentVoice();
 
-        const type = [STATE.ITEM_ACTION, STATE.USER_INTERACTING, STATE.GAME_REACTION, STATE.GIFT_REACTION, STATE.GIFT_TIMEOUT].includes(state) ? 'performance' : 'mood';
+        const type = [
+            STATE.ITEM_ACTION,
+            STATE.USER_INTERACTING,
+            STATE.GAME_REACTION,
+            STATE.GIFT_REACTION,
+            STATE.GIFT_TIMEOUT,
+            STATE.ABILITY_ACTION // NEW: 特殊能力もパフォーマンス扱いに
+        ].includes(state) ? 'performance' : 'mood';
 
         const emotion = this.status.emotion;
         const action = this.status.action;
