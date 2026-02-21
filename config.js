@@ -149,6 +149,8 @@ export const ASSETS = {
         },
         performance: {
             normal: {
+                idle: [{ imagefile: 'ashur_idle_1.png', soundfile: 'スピキ.mp3', text: 'ｱｼｭｰﾙ', movePattern: 'bounce' }],
+                walking: [{ imagefile: 'ashur_walking_1.png', soundfile: 'スピキ.mp3', text: 'ｱｼｭｰﾙ', movePattern: 'bounce' }],
                 place_item: [{ imagefile: 'ashur_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'どーぞ！', movePattern: 'jump' }]
             }
         }
