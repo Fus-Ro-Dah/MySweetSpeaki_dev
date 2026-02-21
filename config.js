@@ -25,12 +25,16 @@ export const STATE = {
 
     // スピキ同士のインタラクション(今後実装予定)
     GAME_APPROACHING: 'game_approaching',
-    GAME_REACTION: 'game_reaction'
+    GAME_REACTION: 'game_reaction',
+
+    // 特殊能力(アイテム配置など)
+    ABILITY_ACTION: 'ability_action'
 };
 
 /**
  * 統合アセット定義 (ASSETS)
  * 形式: [キャラタイプ][カテゴリ][感情/ターゲット][アクション] = [バリエーション...]
+ * スピキのtextは大体半角のカタカナであることに注意
  */
 export const ASSETS = {
     speaki: {
@@ -46,7 +50,6 @@ export const ASSETS = {
             },
             happy: {
                 idle: [
-                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜヨ!', movePattern: 'none' },
                     { imagefile: 'speaki_happy_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'swing' },
                     { imagefile: 'speaki_happy_idle_3.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'swing' },
                     { imagefile: 'speaki_happy_idle_4.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
@@ -66,8 +69,8 @@ export const ASSETS = {
             sad: {
                 idle: [
                     { imagefile: 'speaki_sad_idle_1.png', soundfile: '完全詠唱.mp3', text: '完全詠唱', movePattern: 'shake' },
-                    { imagefile: 'speaki_sad_idle_2.png', soundfile: 'デルジバゼヨ.mp3', text: 'ﾃﾞﾙｼﾞﾊﾞｾﾞヨ!', movePattern: 'shake' },
-                    { imagefile: 'speaki_sad_idle_3.png', soundfile: 'ウアアスピキデルジバゼヨ.mp3', text: 'ｳｱｱ!ｽﾋﾟｷﾃﾞﾙｼﾞﾊﾞｾﾞヨ!', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_2.png', soundfile: 'デルジバゼヨ.mp3', text: 'ﾃﾞﾙｼﾞﾊﾞｾﾞﾖ!', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_3.png', soundfile: 'ウアアスピキデルジバゼヨ.mp3', text: 'ｳｱｱ!ｽﾋﾟｷﾃﾞﾙｼﾞﾊﾞｾﾞﾖ!', movePattern: 'shake' },
                     { imagefile: 'speaki_sad_idle_4.png', soundfile: 'スピキヲイジメヌンデ.mp3', text: 'ｽﾋﾟｷｦｲｼﾞﾒﾇﾝﾃﾞ...', movePattern: 'shake' },
                     { imagefile: 'speaki_sad_idle_5.png', soundfile: 'ひきつけ.mp3', text: 'ﾋｯｸ…ﾋｯｸ…', movePattern: 'shake' }
                 ],
@@ -101,7 +104,7 @@ export const ASSETS = {
             sad: {
                 idle: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'アーウ.mp3', text: 'アーーウ...', movePattern: 'bounce' }],
                 surprised: [{ imagefile: 'speaki_sad_surprised_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱｯ!', movePattern: 'shake' }],
-                gifttimeout: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'スピキヲイジメヌンデ.mp3.mp3', text: 'ｽﾋﾟｷｦｲｼﾞﾒﾇﾝﾃﾞ……', movePattern: 'stretch' }]
+                gifttimeout: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'スピキヲイジメヌンデ.mp3', text: 'ｽﾋﾟｷｦｲｼﾞﾒﾇﾝﾃﾞ……', movePattern: 'shake' }]
             }
         }
     },
@@ -197,6 +200,8 @@ export const ITEMS = {
         showInMenu: true,
         nutrition: 15,
         isFood: true,
+        friendshipChange: 2,
+        forcedEmotion: 'normal'
     },
     Mocaron: {
         name: 'モカロン',
@@ -206,6 +211,8 @@ export const ITEMS = {
         showInMenu: true,
         nutrition: 25,
         isFood: true,
+        friendshipChange: 5,
+        forcedEmotion: 'happy'
     },
     AnimalCan: {
         name: 'アニマル缶',
@@ -223,6 +230,7 @@ export const ITEMS = {
         text: '元ネタ: https://youtu.be/Py06vYKp4EY?si=V2BOhdAMiVH_Rvh1',
         isSpecialGift: true,
         isFood: false,
+        forcedEmotion: 'happy'
     },
     LeviDriver: {
         name: 'レヴィ・ドライバー',
@@ -239,6 +247,7 @@ export const ITEMS = {
         size: 100,
         isSpecialGift: true,
         isFood: false,
+        forcedEmotion: 'sad'
     },
     RandomGift: {
         name: 'ランダムギフト(ｽﾋﾟｷからもらったプラスチックの分だけ配置できる)',

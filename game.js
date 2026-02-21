@@ -2,6 +2,7 @@ import { STATE, ASSETS, ITEMS } from './config.js';
 import { Speaki } from './speaki.js';
 import { Item } from './item.js';
 import { BabySpeaki } from './baby-speaki.js';
+import { NPCCharacter } from './npc-character.js';
 
 export class Game {
     /** コンストラクタ: ゲームの初期化 */
@@ -223,12 +224,12 @@ export class Game {
             window.removeEventListener('pointerdown', unlockAudio);
         };
         window.addEventListener('pointerdown', unlockAudio); // イベントリスナーの登録
-        this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-        window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-        window.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+        this.canvas.addEventListener('pointerdown', (e) => this.handleMouseDown(e));
+        window.addEventListener('pointermove', (e) => this.handleMouseMove(e));
+        window.addEventListener('pointerup', (e) => this.handleMouseUp(e));
         this.canvas.addEventListener('contextmenu', (e) => this.handleContextMenu(e));
 
-        // タッチイベント対応
+        // タッチイベント・紛失対応
         this.canvas.addEventListener('pointercancel', (e) => this.handleMouseUp(e));
 
         document.getElementById('gift-btn-receive').onclick = () => this.receiveGift();
@@ -362,6 +363,9 @@ export class Game {
             ownerId: null // 必要に応じて将来的に設定
         });
 
+        // 手動配置されたアイテムに初回ギフトフラグを付与
+        item.isInitialGift = true;
+
         this.placedItems.push(item);
 
         if (itemDef.soundfile) {
@@ -371,6 +375,9 @@ export class Game {
         if (itemDef.ignoreReaction) return;
 
         this.speakis.forEach(speaki => {
+            // NPC（hasEmotion=false）はアイテムを完全に無視する
+            if (!speaki.hasEmotion) return;
+
             const distToItem = Math.sqrt((speaki.pos.x - x) ** 2 + (speaki.pos.y - y) ** 2);
             if (distToItem > 500) return;
             if (speaki.status.friendship <= -31) return;
@@ -395,7 +402,7 @@ export class Game {
                 speaki.status.stateStack.push(speaki.status.state);
             }
 
-            speaki.status.friendship = Math.min(50, speaki.status.friendship + 2);
+            // 好感度上昇は BaseCharacter._performItemAction （到着時）で行うため、ここでは行わない
             speaki.approachItem(item, 50);
         });
     }
@@ -419,6 +426,8 @@ export class Game {
     }
 
     _isInteractable(speaki) {
+        if (!speaki.canInteract) return false;
+
         const interactableStates = [
             STATE.IDLE, STATE.WALKING, STATE.GIFT_RETURNING,
             STATE.GIFT_LEAVING, STATE.GIFT_WAIT_FOR_USER_REACTION, STATE.ITEM_APPROACHING,
@@ -719,8 +728,11 @@ export class Game {
         let char;
         if (type === 'baby') {
             char = new BabySpeaki(id, this.speakiRoom, finalX, finalY);
+        } else if (type === 'npc' || type.startsWith('npc_')) {
+            // 今降は npc_xxx で具体的なNPCクラスを使い分けられるようにする
+            char = new NPCCharacter(id, this.speakiRoom, finalX, finalY, { characterType: type });
         } else {
-            char = new Speaki(id, this.speakiRoom, finalX, finalY);
+            char = new Speaki(id, this.speakiRoom, finalX, finalY, { characterType: type });
         }
         this.speakis.push(char);
         if (id === 0) {

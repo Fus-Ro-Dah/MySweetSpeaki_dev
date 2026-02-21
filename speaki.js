@@ -7,7 +7,7 @@ import { BaseCharacter } from './base-character.js';
  */
 export class Speaki extends BaseCharacter {
     constructor(id, parentElement, x, y, options = {}) {
-        options.characterType = 'speaki';
+        options.characterType = options.characterType || 'speaki';
         super(id, parentElement, x, y, options);
     }
 

@@ -45,10 +45,10 @@ describe('Speaki Character Logic', () => {
 
     it('should decrease hunger over time', () => {
         const initialHunger = speaki.status.hunger;
-        // dt is in ms. hunger decrease is dt / 500 in update() (current testing speed)
-        // DT = 5000 -> 5000/500 = 10
-        speaki.update(5000);
-        expect(speaki.status.hunger).toBe(initialHunger - 10);
+        // dt is in ms. hunger decrease is dt / 5000 in update()
+        // DT = 10000 -> 10000/5000 = 2
+        speaki.update(10000);
+        expect(speaki.status.hunger).toBe(initialHunger - 2);
     });
 
     it('should transition to IDLE if hunger is 0 and walking', () => {
@@ -124,16 +124,15 @@ describe('Speaki Character Logic', () => {
 
     it('should recover friendship over time when it is negative', () => {
         speaki.status.friendship = -10;
-        // dt = 5000ms (5s) -> recovery should be 5000/5000 = 1
-        speaki.update(5000);
+        // dt = 10000ms (10s) -> recovery should be 10000/10000 = 1
+        speaki.update(10000);
         expect(speaki.status.friendship).toBe(-9);
     });
-
     it('should not increase friendship beyond 0 during auto-recovery', () => {
         speaki.status.friendship = -0.5;
-        // dt = 5000ms (5s) -> recovery should be 1
+        // dt = 10000ms (10s) -> recovery should be 1
         // but it should be capped at 0
-        speaki.update(5000);
+        speaki.update(10000);
         expect(speaki.status.friendship).toBe(0);
     });
 
@@ -267,13 +266,13 @@ describe('Speaki Character Logic', () => {
         baby._updateStateTransition();
         expect(global.window.game.evolveBaby).not.toHaveBeenCalled();
 
-        // Case 2: Age > 30s but Hunger < 75
-        baby.bornTime = Date.now() - 31000;
+        // Case 2: Age > 60s but Hunger < 75
+        baby.bornTime = Date.now() - 61000;
         baby.status.hunger = 74;
         baby._updateStateTransition();
         expect(global.window.game.evolveBaby).not.toHaveBeenCalled();
 
-        // Case 3: Age > 30s and Hunger >= 75 -> Evolution
+        // Case 3: Age > 60s and Hunger >= 75 -> Evolution
         baby.status.hunger = 75;
         baby._updateStateTransition();
         expect(global.window.game.evolveBaby).toHaveBeenCalledWith(baby);

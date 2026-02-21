@@ -9,9 +9,14 @@ export class BaseCharacter {
         this.parentElement = parentElement;
         this.characterType = options.characterType || 'speaki'; // アセットのプレフィックス (speaki, mob 等)
         // const defaultNamePrefix = (this.characterType === 'baby') ? '赤ちゃんスピキ' : 'ｽﾋﾟｷ';
-        // ユーザー要望により、赤ちゃんでも大人でも「ｽﾋﾟｷ_番号」で統一
+        // こどもでも大人でも「ｽﾋﾟｷ_番号」で統一
         const defaultNamePrefix = 'ｽﾋﾟｷ';
         this.name = options.name || `${defaultNamePrefix}_${id}`;
+
+        // 0. 機能フラグ
+        this.canInteract = options.canInteract !== undefined ? options.canInteract : true;
+        this.hasHunger = options.hasHunger !== undefined ? options.hasHunger : true;
+        this.hasEmotion = options.hasEmotion !== undefined ? options.hasEmotion : true;
 
         // 1. 位置と物理状態
         this.pos = {
@@ -32,6 +37,7 @@ export class BaseCharacter {
             friendship: options.friendship || 0,
             hunger: options.hunger || 50,
             emotion: 'happy',
+            forcedEmotion: null, // NEW: アイテム等による強制感情
             action: 'idle',
             size: options.size || 160,
             voicePitch: options.voicePitch || 1.0
@@ -65,7 +71,8 @@ export class BaseCharacter {
             actionDuration: 0,
             interactStart: 0,
             waitDuration: 1000 + Math.random() * 4000,
-            lastHeartTime: 0
+            lastHeartTime: 0,
+            forcedEmotionUntil: 0 // NEW: 強制感情の終了時刻
         };
 
         if (this.parentElement) {
@@ -135,7 +142,9 @@ export class BaseCharacter {
         this._checkSocialInteractions();
 
         // 空腹度の進行
-        this.status.hunger = Math.max(0, this.status.hunger - dt / 5000); // テストとして500としている
+        if (this.hasHunger) {
+            this.status.hunger = Math.max(0, this.status.hunger - dt / 5000); // テストとして500としている
+        }
 
         // 好感度の自動回復 (負の値の場合のみ 0 に向かって回復)
         if (this.status.friendship < 0) {
@@ -259,11 +268,19 @@ export class BaseCharacter {
                     this._onStateChanged(this.status.state);
                 }
                 break;
+
+            case STATE.ABILITY_ACTION:
+                if (now - this.timers.actionStart > (this.timers.actionDuration || 3000)) {
+                    this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
+                    this._onStateChanged(this.status.state);
+                }
+                break;
         }
     }
 
     /** ステータスに基づ外見の決定 */
     _updateAppearanceByStatus() {
+        if (!this.hasEmotion) return;
         const isStarving = this.status.hunger <= 0;
         const isSpecialState = [STATE.ITEM_ACTION, STATE.GAME_REACTION].includes(this.status.state);
 
@@ -284,7 +301,8 @@ export class BaseCharacter {
         ];
         const staticStates = [
             STATE.IDLE, STATE.USER_INTERACTING, STATE.ITEM_ACTION, STATE.GAME_REACTION,
-            STATE.GIFT_SEARCHING, STATE.GIFT_WAIT_FOR_USER_REACTION, STATE.GIFT_TIMEOUT
+            STATE.GIFT_SEARCHING, STATE.GIFT_WAIT_FOR_USER_REACTION, STATE.GIFT_TIMEOUT,
+            STATE.ABILITY_ACTION
         ];
 
         if (movementStates.includes(this.status.state)) {
@@ -508,14 +526,39 @@ export class BaseCharacter {
 
     /** 好感度に基づく基本感情更新 */
     _updateBaseEmotion() {
-        const oldEmotion = this.status.emotion;
-        if (this.status.friendship <= -11 || this.status.hunger <= 0) {
-            this.status.emotion = 'sad';
-        } else if (this.status.friendship <= 10) {
+        if (!this.hasEmotion) {
             this.status.emotion = 'normal';
-        } else {
-            this.status.emotion = 'happy';
+            return false;
         }
+        const oldEmotion = this.status.emotion;
+        const now = Date.now();
+
+        // 優先度 1: 空腹 (最優先)
+        if (this.status.hunger <= 0) {
+            this.status.emotion = 'sad';
+            // 空腹時は強制感情タイマーを無効化する
+            this.timers.forcedEmotionUntil = 0;
+            this.status.forcedEmotion = null;
+        }
+        // 優先度 2: アイテム等による強制感情 (10秒間など)
+        else if (this.status.forcedEmotion && now < this.timers.forcedEmotionUntil) {
+            this.status.emotion = this.status.forcedEmotion;
+        }
+        // 優先度 3: 通常の好感度ロジック
+        else {
+            if (this.status.friendship <= -11) {
+                this.status.emotion = 'sad';
+            } else if (this.status.friendship <= 10) {
+                this.status.emotion = 'normal';
+            } else {
+                this.status.emotion = 'happy';
+            }
+            // 強制感情が終了した場合はクリア
+            if (this.status.forcedEmotion) {
+                this.status.forcedEmotion = null;
+            }
+        }
+
         return this.status.emotion !== oldEmotion;
     }
 
@@ -524,7 +567,7 @@ export class BaseCharacter {
         // 状態変更時は必ず以前の音声を停止する (Strict Stop)
         this._stopCurrentVoice();
 
-        const type = [STATE.ITEM_ACTION, STATE.USER_INTERACTING, STATE.GAME_REACTION, STATE.GIFT_REACTION].includes(state) ? 'performance' : 'mood';
+        const type = [STATE.ITEM_ACTION, STATE.USER_INTERACTING, STATE.GAME_REACTION, STATE.GIFT_REACTION, STATE.GIFT_TIMEOUT].includes(state) ? 'performance' : 'mood';
 
         const emotion = this.status.emotion;
         const action = this.status.action;
@@ -616,7 +659,6 @@ export class BaseCharacter {
 
         if (!isStillThere) {
             // アイテムが既になかった場合 (ガッカリ)
-            // STATE.ITEM_ACTION のまま、アクションを 'idle' にリセットして汎用の悲しい動作をさせる
             this.status.emotion = 'sad';
             this.status.action = 'idle';
             this.timers.actionDuration = 3000;
@@ -624,6 +666,19 @@ export class BaseCharacter {
             // 2. アイテムが存在する場合の動作
             this.status.emotion = 'ITEM';
             this.status.action = item.id;
+
+            // 【NEW】好感度変化の適用 (手動配置の初回のみ)
+            if (item.isInitialGift && def && def.friendshipChange !== undefined) {
+                this.status.friendship = Math.max(-100, Math.min(100, this.status.friendship + def.friendshipChange));
+                item.isInitialGift = false; // 適用済みフラグ
+            }
+
+            // 【NEW】強制感情の発動 (10秒間)
+            if (def && def.forcedEmotion) {
+                this.status.forcedEmotion = def.forcedEmotion;
+                this.timers.forcedEmotionUntil = Date.now() + 10000;
+                this._updateBaseEmotion(); // 即座に反映
+            }
 
             if (def && def.isFood) {
                 // 食べ物なら食べる (ステータス回復)
@@ -637,11 +692,12 @@ export class BaseCharacter {
                         if (idx !== -1) game.placedItems.splice(idx, 1);
                     }
                 }
-                // 食べられたので「うれしい」状態をセット (次回のアセット選択に影響)
-                this.status.emotion = 'happy';
+                // 食べられたので「うれしい」状態をセット (forcedEmotionがなければこちらが優先される)
+                if (!def.forcedEmotion) {
+                    this.status.emotion = 'happy';
+                }
             } else {
                 // 食べ物でないなら遊ぶだけ (消費しない)
-                // emotion=ITEM, action=item.id のまま
             }
             this.timers.actionDuration = 0; // _applySelectedAsset 等で設定される
         }
@@ -753,5 +809,27 @@ export class BaseCharacter {
             // console.log(`[Debug] Voice check: ended=${v.ended}, paused=${v.paused}, readyState=${v.readyState}, currentTime=${v.currentTime}`);
         }
         return (v && !v.ended);
+    }
+
+    /**
+     * 特殊能力を実行する
+     * @param {string} abilityId 能力のID
+     * @param {Object} options オプション (targetPos, itemType等)
+     */
+    executeAbility(abilityId, options = {}) {
+        this.status.state = STATE.ABILITY_ACTION;
+        this.status.action = abilityId;
+        this.timers.actionStart = Date.now();
+        this.timers.actionDuration = options.duration || 3000;
+
+        // 実際の効果（アイテム配置など）をトリガーするフック
+        this._onAbilityEffect(abilityId, options);
+
+        this._onStateChanged(this.status.state);
+    }
+
+    /** 能力の効果を実際に発生させる (サブクラスで要実装) */
+    _onAbilityEffect(abilityId, options) {
+        // デフォルトでは何もしない
     }
 }
