@@ -808,9 +808,6 @@ export class Game {
         const dist = Math.sqrt((char1.pos.x - char2.pos.x) ** 2 + (char1.pos.y - char2.pos.y) ** 2);
         if (dist > 1200) return;
 
-        // 交流パターンの選択
-        const pattern = SOCIAL_INTERACTIONS[Math.floor(Math.random() * SOCIAL_INTERACTIONS.length)];
-
         // 目的地（少しずらした位置）
         const midX = (char1.pos.x + char2.pos.x) / 2;
         const midY = (char1.pos.y + char2.pos.y) / 2;
@@ -821,28 +818,27 @@ export class Game {
         const d1 = Math.sqrt((char1.pos.x - target1.x) ** 2 + (char1.pos.y - target1.y) ** 2);
         const d2 = Math.sqrt((char2.pos.x - target2.x) ** 2 + (char2.pos.y - target2.y) ** 2);
 
-        // 通常の速度(1.5倍)でかかる時間
         const t1 = d1 / (char1.pos.speed * 1.5);
         const t2 = d2 / (char2.pos.speed * 1.5);
-        const targetTime = Math.max(t1, t2, 0.5); // 最低0.5秒、遅い方に合わせる
+        const targetTime = Math.max(t1, t2, 0.5);
 
         char1.pos.socialSpeed = d1 / targetTime;
         char2.pos.socialSpeed = d2 / targetTime;
 
         // 両者に移動命令
-        const startInteraction = (char, targetPos, config, partner, isFirst) => {
+        const startInteraction = (char, targetPos, partner, isFirst) => {
             char.status.state = STATE.GAME_APPROACHING;
             char.pos.targetX = targetPos.x;
             char.pos.targetY = targetPos.y;
             char.pos.destinationSet = true;
-            char.status.isMySocialTurn = isFirst; // 最初におしゃべりするかどうか
-            char.socialConfig = { ...config, partner }; // パートナー参照を追加
+            char.status.isMySocialTurn = isFirst;
+            char.socialConfig = { partner }; // パートナー参照のみ保持
             char._onStateChanged(char.status.state);
             char.pos.destinationSet = true;
         };
 
-        startInteraction(char1, target1, pattern.char1, char2, true);  // char1が先攻
-        startInteraction(char2, target2, pattern.char2, char1, false); // char2が後攻
+        startInteraction(char1, target1, char2, true);  // char1が先攻
+        startInteraction(char2, target2, char1, false); // char2が後攻
 
         // 交流開始の合図
         char1.showEmoji('💬');

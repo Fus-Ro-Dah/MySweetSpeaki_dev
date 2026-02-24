@@ -285,9 +285,10 @@ export class BaseCharacter {
                         if (partner) {
                             partner.status.isMySocialTurn = true;
                             partner.timers.actionStart = Date.now();
-                            // パートナーの次のターンの準備（アセット選択）
+                            // パートナーの次のターンのためにアセットをランダムに再抽選
                             partner._applySelectedAsset(STATE.GAME_REACTION);
                         } else {
+                            // パートナーがいない場合は（稀だが）自分で次のターンを開始
                             this.status.isMySocialTurn = true;
                             this.timers.actionStart = Date.now();
                             this._applySelectedAsset(STATE.GAME_REACTION);
@@ -395,10 +396,6 @@ export class BaseCharacter {
 
         // セリフ表示
         let displayText = (this.visual.currentAsset && this.visual.currentAsset.text) || '';
-        // 交流設定(socialConfig.text)があれば優先（1ターン目のみ）
-        if (this.status.state === STATE.GAME_REACTION && this.status.socialTurnCount === 0 && this.socialConfig && this.socialConfig.text) {
-            displayText = this.socialConfig.text;
-        }
         dom.chatText.textContent = displayText;
 
         // 名前表示
@@ -589,12 +586,11 @@ export class BaseCharacter {
                 break;
             case STATE.GAME_REACTION:
                 this.status.action = 'idle';
-                this.status.emotion = 'happy';
-                // 交流設定(socialConfig)があれば上書き
-                if (this.socialConfig) {
-                    if (this.socialConfig.emotion) this.status.emotion = this.socialConfig.emotion;
-                    if (this.socialConfig.action) this.status.action = this.socialConfig.action;
-                }
+                // 交流リアクション中は感情をランダムに（sad: 20%, happy: 60%, normal: 20%）
+                const r1 = Math.random();
+                if (r1 < 0.2) this.status.emotion = 'sad';
+                else if (r1 < 0.8) this.status.emotion = 'happy';
+                else this.status.emotion = 'normal';
                 break;
         }
     }
@@ -660,15 +656,13 @@ export class BaseCharacter {
             emotion = 'ITEM';
         }
 
-        // 交流リアクション中は個別のセリフや動きを優先（1ターン目のみ）
-        if (state === STATE.GAME_REACTION && this.status.socialTurnCount === 0 && this.socialConfig) {
-            if (this.socialConfig.emotion) emotion = this.socialConfig.emotion;
-            if (this.socialConfig.action) action = this.status.action = this.socialConfig.action;
-        }
-        // 2ターン目以降は感情をランダム化
-        else if (state === STATE.GAME_REACTION && this.status.socialTurnCount > 0) {
-            emotion = this.status.emotion = (Math.random() < 0.6 ? 'happy' : 'normal');
-            action = this.status.action = 'idle'; // おしゃべりは基本idleベース
+        // 交流リアクション中は常に（毎ターン）感情とアクションをランダムに決定する
+        if (state === STATE.GAME_REACTION) {
+            const r2 = Math.random();
+            if (r2 < 0.2) emotion = this.status.emotion = 'sad';
+            else if (r2 < 0.8) emotion = this.status.emotion = 'happy';
+            else emotion = this.status.emotion = 'normal';
+            action = this.status.action = 'idle';
         }
 
         // アセット取得の内部ヘルパー
@@ -850,11 +844,8 @@ export class BaseCharacter {
             return;
         }
 
-        // 1ターン目のみsocialConfigの動きを優先
-        if (isGameReaction && this.status.socialTurnCount === 0 && this.socialConfig && this.socialConfig.movePattern) {
-            this.visual.motionType = this.socialConfig.movePattern;
-        }
-        // 2ターン目以降やそれ以外はアセットの設定を使用（_applySelectedAssetで設定済み）
+        // 交流リアクション中はアセットの設定に基づいた動きを常に使用
+        // (_applySelectedAsset で毎ターン抽選されるため、ここでは上書きしない)
 
         switch (this.visual.motionType) {
             case 'shake':
