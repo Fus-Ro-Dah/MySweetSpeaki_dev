@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1200">
-    <title>My Sweet Speki - 癒やしのスピキ飼育スペース</title>
+    <title>My Sweet Speaki - 癒やしのスピキ飼育スペース</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,20 +44,33 @@
 
             <!-- メニュー（20%） -->
             <aside id="side-menu">
-                <h2>アイテム</h2>
-                <p class="menu-description">ドラッグアンドドロップでアイテムが配置できるよ！</p>
-                <div id="item-list">
-                    <!-- Dynamic Items from ITEMS in app.js -->
-                </div>
-                <div id="speaki-status">
-                    <h3>スピキたちの状態</h3>
-                    <p class="status-hint">ｽﾋﾟｷと仲良くなると何か持ってきてもらえるかも？</p>
-                    <p class="status-hint evolution-hint">こどもｽﾋﾟｷは、誕生から100秒経過し、満腹度が75以上になると成長するよ！</p>
+                <section id="item-section" class="menu-block">
+                    <h2>アイテム</h2>
+                    <p class="menu-description">ドラッグでアイテムを配置できるよ</p>
+                    <div id="item-list" class="draggable-container">
+                        <!-- Dynamic Items -->
+                    </div>
+                    <div id="gift-stock-display">
+                        <img src="assets/images/gift.png" alt="gift" class="stock-icon">
+                        <span>x <span id="gift-stock-count">0</span></span>
+                    </div>
+                </section>
+
+                <section id="job-section" class="menu-block">
+                    <h2>バイト</h2>
+                    <p class="menu-description">使徒たちに手伝ってもらおう</p>
+                    <div id="job-list" class="draggable-container">
+                        <!-- Dynamic NPC Call Items -->
+                    </div>
+                </section>
+
+                <section id="speaki-status" class="menu-block">
+                    <h2>ｽﾋﾟｷたち</h2>
                     <div id="speaki-list">
-                        <!-- スピキごとのエントリが動的に生成されます -->
+                        <!-- Dynamic Speaki List -->
                         <p class="empty-list">スピキはいません...</p>
                     </div>
-                </div>
+                </section>
 
                 <div id="footer-section">
                     <button id="open-info-btn" class="secondary-mini-btn">開発メモ・引用</button>
@@ -99,6 +112,7 @@
                         ・キャラクター・背景・BGM・サウンド: EPID Games 様<br>
                         ・イラスト: x(旧Twitter) @RyO03374506 様<br>
                         ・イラスト: pixiv 마신멜로우様(https://www.pixiv.net/artworks/140508635)<br>
+                        ・イラスト: x(旧Twitter) @kaniman_jp 様<br>
                         その他は登場時に表記<br>
                     </div>
                 </div>

@@ -246,10 +246,57 @@ body {
     padding: 1.2rem;
     display: flex;
     flex-direction: column;
-    gap: 1.2rem;
+    gap: 1.5rem;
     box-shadow: var(--shadow);
     overflow-y: auto;
-    /* メニュー全体が溢れた場合にスクロール可能に */
+}
+
+.menu-block {
+    background: rgba(255, 255, 255, 0.4);
+    padding: 1rem;
+    border-radius: 20px;
+    border: 1px solid #ffe4e1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
+    /* カウンター配置用 */
+}
+
+#gift-stock-display {
+    position: absolute;
+    bottom: 0.8rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #ffe4e1;
+    pointer-events: none;
+}
+
+.stock-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.mini-icon {
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    margin-top: -2px;
+}
+
+/* ｽﾋﾟｷたちのリストのみ可変長で他は固定気味に */
+#speaki-status {
+    flex: 1;
 }
 
 .menu-description {
@@ -267,11 +314,12 @@ h3 {
     color: var(--accent-color);
 }
 
-#item-list {
+#item-list,
+#job-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.8rem;
-    margin-bottom: 1rem;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
 }
 
 .draggable-item {
@@ -292,18 +340,18 @@ h3 {
     border-color: var(--accent-color);
 }
 
-#speaki-status {
-    flex: 1;
-    /* 残りのスペースをすべて使う */
-    background: rgba(255, 255, 255, 0.6);
-    padding: 1.2rem;
-    border-radius: 20px;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    /* flex内のスクロールを有効にするために必要 */
-    border: 1px solid #ffe4e1;
+.draggable-item.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+    box-shadow: 0 4px 12px rgba(255, 20, 147, 0.3);
 }
+
+.draggable-item.active:hover {
+    filter: brightness(1.1);
+}
+
+/* #speaki-status block 固有のスタイルがあればここに書くが、基本は .menu-block で統一 */
 
 .status-hint {
     font-size: 0.8rem;

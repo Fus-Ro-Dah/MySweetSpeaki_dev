@@ -1,4 +1,4 @@
-import { STATE, ASSETS, ITEMS } from './config.js';
+import { STATE, ASSETS, ITEMS, JOBS } from './config.js';
 import { Speaki } from './speaki.js';
 import { Item } from './item.js';
 import { BabySpeaki } from './baby-speaki.js';
@@ -170,34 +170,61 @@ export class Game {
         }
 
         this.addSpeaki(); // 最初のスピキ
-        this.addSpeaki(undefined, undefined, 'ashur'); // 救助者Ashur
-        this.addSpeaki(undefined, undefined, 'posher');
     }
 
     /** アイテムメニューを動的に生成 */
     initItemMenu() {
         const itemList = document.getElementById('item-list');
-        if (!itemList) return;
+        const jobList = document.getElementById('job-list');
+        if (!itemList || !jobList) return;
 
-        itemList.innerHTML = ''; // クリア
+        itemList.innerHTML = '';
+        jobList.innerHTML = '';
 
-        Object.entries(ITEMS).forEach(([id, config]) => {
-            if (config.showInMenu) {
-                let displayName = config.name || id;
-                if (id === 'RandomGift') {
-                    if (this.stockGifts <= 0) return;
-                    displayName = `${config.name}（×${this.stockGifts}）`;
-                }
+        // アイテムの描画
+        Object.keys(ITEMS).forEach(id => {
+            const def = ITEMS[id];
+            if (!def.showInMenu) return;
 
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'draggable-item';
-                itemDiv.dataset.id = id;
-                itemDiv.dataset.type = config.type || 'item';
-                itemDiv.draggable = true;
-                itemDiv.textContent = displayName;
-                itemList.appendChild(itemDiv);
-            }
+            const div = this._createDraggableMenuItem(id, def, 'item');
+            itemList.appendChild(div);
         });
+
+        // バイトの描画
+        Object.keys(JOBS).forEach(id => {
+            const def = JOBS[id];
+            if (!def.showInMenu) return;
+
+            const div = this._createDraggableMenuItem(id, def, 'job');
+            // バイトはクリックでも即実行ボタンとして機能させる
+            div.addEventListener('click', () => {
+                this.callNPC(def.npcType);
+            });
+            jobList.appendChild(div);
+        });
+
+        // 初回のUI状態反映
+        this.updateJobMenuUI();
+        this.updateGiftStockUI();
+    }
+
+    /** ドラッグ可能なアイテム要素を作成する内部ヘルパー */
+    _createDraggableMenuItem(id, def, type) {
+        const div = document.createElement('div');
+        div.className = 'draggable-item';
+        div.draggable = true;
+        if (id === 'RandomGift') {
+            div.innerHTML = `${def.name} (<img src="assets/images/gift.png" class="mini-icon"> -1)`;
+        } else {
+            div.textContent = def.name;
+        }
+        div.dataset.id = id;
+        div.dataset.type = type;
+
+        div.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', JSON.stringify({ id, type }));
+        });
+        return div;
     }
 
     /** キャンバスのサイズ調整 */
@@ -325,36 +352,59 @@ export class Game {
 
     _handleItemDrop(rawData, clientX, clientY) {
         try {
-            const data = JSON.parse(rawData);
+            let id, type;
+            try {
+                // 新しいJSON形式を試す
+                const data = JSON.parse(rawData);
+                id = data.id;
+                type = data.type;
+            } catch (e) {
+                // 従来のIDのみ(string)形式への互換性
+                id = rawData;
+                type = 'item';
+            }
+
             const rect = this.canvas.getBoundingClientRect();
-            this.addItem(data.id, data.type, clientX - rect.left, clientY - rect.top);
+            this.addItem(id, type, clientX - rect.left, clientY - rect.top);
         } catch (err) {
             console.error("[Drop] Parse error:", err);
         }
     }
 
     addItem(id, type, x, y) {
-        let finalId = id;
-        let itemDef = ITEMS[id];
+        let def;
 
+        // 【修正】バイト(Job)の場合は専用オブジェクトから取得してNPC呼出
+        if (type === 'job') {
+            def = JOBS[id];
+            if (def) {
+                this.callNPC(def.npcType);
+            }
+            return;
+        }
+
+        // --- ここから通常のアイテムロジック ---
         if (id === 'RandomGift') {
             if (this.stockGifts <= 0) return;
-            const pool = Object.entries(ITEMS).filter(([key, def]) => def.isSpecialGift);
+            const pool = Object.entries(ITEMS).filter(([key, d]) => d.isSpecialGift);
             if (pool.length > 0) {
                 const [randomId, randomDef] = pool[Math.floor(Math.random() * pool.length)];
-                finalId = randomId;
-                itemDef = randomDef;
+                id = randomId;
+                def = randomDef;
                 this.stockGifts--;
                 this.initItemMenu();
+                this.updateGiftStockUI();
             } else {
                 return;
             }
+        } else {
+            def = ITEMS[id];
         }
 
-        if (!itemDef) return;
+        if (!def) return;
 
-        const item = new Item(finalId, x, y, {
-            type: itemDef.type || type,
+        const item = new Item(id, x, y, {
+            type: def.type || type,
             ownerId: null // 必要に応じて将来的に設定
         });
 
@@ -363,11 +413,11 @@ export class Game {
 
         this.placedItems.push(item);
 
-        if (itemDef.soundfile) {
-            this.playSound(itemDef.soundfile, itemDef.pitch || 1.0);
+        if (def.soundfile) {
+            this.playSound(def.soundfile, def.pitch || 1.0);
         }
 
-        if (itemDef.ignoreReaction) return;
+        if (def.ignoreReaction) return;
 
         this.speakis.forEach(speaki => {
             // NPC（hasEmotion=false）はアイテムを完全に無視する
@@ -377,9 +427,9 @@ export class Game {
             if (distToItem > 500) return;
             if (speaki.status.friendship <= -31) return;
             // 空腹時は食べ物以外無視する
-            if (speaki.status.hunger <= 0 && !itemDef.isFood) return;
+            if (speaki.status.hunger <= 0 && !def.isFood) return;
             // お腹いっぱいの時は食べ物を無視する
-            if (speaki.status.hunger >= 90 && itemDef.isFood) return;
+            if (speaki.status.hunger >= 90 && def.isFood) return;
 
             const nonInterruptibleStates = [
                 STATE.GIFT_RETURNING,
@@ -675,6 +725,7 @@ export class Game {
             this.playSound('happy');
             this.stockGifts++;
             this.initItemMenu();
+            this.updateGiftStockUI();
         }
     }
 
@@ -762,6 +813,7 @@ export class Game {
             this.speakis.splice(index, 1);
             if (this.highlightedCharId === id) this.highlightedCharId = null;
             this.updateSpeakiListUI(true);
+            this.updateJobMenuUI(); // NPCが削除されたらバイトメニューも更新
         }
     }
 
@@ -854,9 +906,12 @@ export class Game {
 
         // 入力中（フォーカスがある場合）は、forceがfalseなら更新をスキップして、入力を妨げないようにする
         if (!force && listContainer.contains(document.activeElement)) return;
-        if (this.speakis.length === 0) {
-            // ゲーム開始後のみ自動追加。startGameでも1回呼ばれるが、
-            // 万が一削除された場合やタイミングの競合に備える。
+
+        // 【修正】NPC（canInteractがfalseまたは救助者など）はリストに表示しない
+        const displaySpeakis = this.speakis.filter(s => s.canInteract && s.characterType !== 'ashur' && s.characterType !== 'posher');
+
+        if (displaySpeakis.length === 0) {
+            // ゲーム開始後のみ自動追加。
             if (this.isGameStarted) {
                 this.addSpeaki();
             }
@@ -864,7 +919,7 @@ export class Game {
         }
 
         let html = '';
-        this.speakis.forEach(s => {
+        displaySpeakis.forEach(s => {
             const state = s.getStateLabel();
             const emotionLabel = this._getEmotionLabel(s);
             const isHighlighted = this.highlightedCharId === s.id;
@@ -948,5 +1003,57 @@ export class Game {
         this.placedItems.forEach(item => {
             item.draw(this.ctx, this.images);
         });
+    }
+    /**
+     * NPCを呼び出す (シングルトン・トグル式)
+     * @param {string} type NPCのタイプ ('ashur', 'posher'等)
+     */
+    callNPC(type) {
+        // すでに同じタイプのNPCがいれば、それを削除（退勤）する
+        const existingNPC = this.speakis.find(s => s.characterType === type);
+        if (existingNPC) {
+            console.log(`[Game] NPC ${type} already exists. Removing (Leaving)...`);
+            this.removeSpeaki(existingNPC.id);
+            return;
+        }
+
+        // 存在しない場合は、画面中央上部 (y=100) に登場（出勤）
+        const centerX = (this.speakiRoom ? this.speakiRoom.clientWidth : 1200) / 2;
+        const topY = 100;
+
+        this.addSpeaki(centerX, topY, type);
+        console.log(`[Game] Called NPC: ${type}`);
+        this.updateJobMenuUI(); // 追加後にUI更新
+    }
+
+    /** バイトメニューのUI状態を更新 */
+    updateJobMenuUI() {
+        const jobList = document.getElementById('job-list');
+        if (!jobList) return;
+
+        const jobItems = jobList.querySelectorAll('.draggable-item');
+        jobItems.forEach(btn => {
+            const id = btn.dataset.id;
+            const def = JOBS[id];
+            if (!def) return;
+
+            const isAttending = this.speakis.some(s => s.characterType === def.npcType);
+
+            if (isAttending) {
+                btn.classList.add('active');
+                btn.textContent = `${def.name}(退勤させる)`;
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = `${def.name}(出勤させる)`;
+            }
+        });
+    }
+
+    /** ギフト（プラスチック）の在庫表示を更新 */
+    updateGiftStockUI() {
+        const countEl = document.getElementById('gift-stock-count');
+        if (countEl) {
+            countEl.textContent = this.stockGifts;
+        }
     }
 }

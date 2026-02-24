@@ -160,14 +160,22 @@ export const ASSETS = {
     posher: {
         mood: {
             normal: {
-                idle: [{ imagefile: 'posher_idle_1.png', soundfile: 'スピキ.mp3', text: 'ﾎﾟｯｼｬｰ', movePattern: 'bounce' }],
-                walking: [{ imagefile: 'posher_walking_1.png', soundfile: 'スピキ.mp3', text: 'ﾎﾟｯｼｬｰ', movePattern: 'bounce' }]
+                idle: [
+                    { imagefile: 'posher_idle_1.png', soundfile: 'さつまいも.mp3', text: 'さつまいも', movePattern: 'bounce' },
+                    { imagefile: 'posher_idle_1.png', soundfile: '無音08.mp3', text: '・・・', movePattern: 'none' },
+                    { imagefile: 'posher_idle_2.png', soundfile: 'いももかぼちゃのなかまポ.mp3', text: 'いももかぼちゃのなかまポ？', movePattern: 'bounce' }
+                ],
+                walking: [
+                    //idleもwalkingも同じ画像としている
+                    { imagefile: 'posher_idle_1.png', soundfile: 'さつまいもかぼちゃ.mp3', text: 'さつまいもかぼちゃ', movePattern: 'none' },
+                    { imagefile: 'posher_idle_2.png', soundfile: 'いいわよ_ポーシャー.mp3', text: 'いいわよ', movePattern: 'none' }
+                ]
             }
         },
         performance: {
             normal: {
-                idle: [{ imagefile: 'posher_idle_1.png', soundfile: 'スピキ.mp3', text: 'ﾎﾟｯｼｬｰ', movePattern: 'bounce' }],
-                walking: [{ imagefile: 'posher_walking_1.png', soundfile: 'スピキ.mp3', text: 'ﾎﾟｯｼｬｰ', movePattern: 'bounce' }],
+                idle: [{ imagefile: 'posher_idle_1.png', soundfile: '無音08.mp3', text: '・・・', movePattern: 'bounce' }],
+                walking: [{ imagefile: 'posher_idle_2.png', soundfile: 'いももかぼちゃのなかまポ.mp3', text: 'いももかぼちゃのなかまポ？', movePattern: 'bounce' }],
                 place_item: [{ imagefile: 'posher_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'どーぞ！', movePattern: 'jump' }]
             }
         }
@@ -286,10 +294,30 @@ export const ITEMS = {
         forcedEmotion: 'sad'
     },
     RandomGift: {
-        name: 'ランダムギフト(ｽﾋﾟｷからもらったプラスチックの分だけ配置できる)',
+        name: 'ランダムアイテム',
         imagefile: 'gift.png', // ギフト画像を使用
         size: 50,
         showInMenu: true,
         isRandomTool: true // 内部的な識別用
+    }
+};
+
+/**
+ * バイト(NPC呼出)定義 (JOBS)
+ */
+export const JOBS = {
+    /*     CallAshur: {
+            name: 'エシュール(救助)',
+            imagefile: 'ashur_idle_1.png',
+            size: 80,
+            showInMenu: true,
+            npcType: 'ashur'
+        }, */
+    CallPosher: {
+        name: '給餌係 Pさん',
+        imagefile: 'posher_idle_1.png',
+        size: 150,
+        showInMenu: true,
+        npcType: 'posher'
     }
 };

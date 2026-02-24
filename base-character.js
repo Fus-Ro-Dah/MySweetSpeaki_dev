@@ -11,7 +11,7 @@ export class BaseCharacter {
         // const defaultNamePrefix = (this.characterType === 'baby') ? '赤ちゃんスピキ' : 'ｽﾋﾟｷ';
         // こどもでも大人でも「ｽﾋﾟｷ_番号」で統一
         const defaultNamePrefix = 'ｽﾋﾟｷ';
-        this.name = options.name || `${defaultNamePrefix}_${id}`;
+        this.name = options.name || `${id + 1}ﾋﾟｷめの${defaultNamePrefix}`;
 
         // 0. 機能フラグ
         this.canInteract = options.canInteract !== undefined ? options.canInteract : true;
@@ -576,8 +576,14 @@ export class BaseCharacter {
             STATE.ABILITY_ACTION // NEW: 特殊能力もパフォーマンス扱いに
         ].includes(state) ? 'performance' : 'mood';
 
-        const emotion = this.status.emotion;
+        let emotion = this.status.emotion;
         const action = this.status.action;
+
+        // 【修正】アイテム実行中は、forcedEmotionによるhappy等への上書きを無視して
+        // 専用演出(ITEMカテゴリ)を優先的に探しに行くようにする
+        if (state === STATE.ITEM_ACTION) {
+            emotion = 'ITEM';
+        }
 
         // アセット取得の内部ヘルパー
         const getVariations = (charType, e, a) => {
@@ -741,27 +747,43 @@ export class BaseCharacter {
 
     /** 近くのキャラを検知して交流を開始する */
     _checkSocialInteractions() {
-        if (!this.canInteract) return; // NPC等は交流しない
+        //インタラクション可能かどうかの基本チェック
+        if (!this.canInteract) return; // NPC(給餌係など)は自律的な交流を行わない
+
+        // 現在の状態が暇（IDLE）または散歩中（WALKING）であるかチェック
+        // 食事中やユーザーとのふれあい中は割り込まない
         if (![STATE.IDLE, STATE.WALKING].includes(this.status.state)) return;
 
+        // 一定の間隔（8秒）を空ける
         const now = Date.now();
         if (now - (this.timers.lastSocialCheck || 0) < 8000) return;
         this.timers.lastSocialCheck = now;
 
+        // ゲーム内に自分以外のスピキが存在するか確認
         const game = window.game;
         if (!game || game.speakis.length < 2) return;
 
-        // 低確率で発動
+        // 交流の頻度を抑えるための確率判定（約30%の確率で実行）
         if (Math.random() > 0.3) return;
 
+        // 相手を探す：自分以外の、同じく暇または散歩中のキャラを1体見つける
         const other = game.speakis.find(s => s !== this && [STATE.IDLE, STATE.WALKING].includes(s.status.state));
+
         if (other) {
+            // 相手との距離を計算
             const dist = Math.sqrt((other.pos.x - this.pos.x) ** 2 + (other.pos.y - this.pos.y) ** 2);
+
+            // 7. 近すぎず遠すぎない（100px〜400px）範囲にいる場合に接近を開始
             if (dist < 400 && dist > 100) {
+                // 接近状態（GAME_APPROACHING）に移行
                 this.status.state = STATE.GAME_APPROACHING;
+
+                // 相手の座標の周囲（±40px）を目標地点に設定
                 this.pos.targetX = other.pos.x + (Math.random() * 80 - 40);
                 this.pos.targetY = other.pos.y + (Math.random() * 80 - 40);
                 this.pos.destinationSet = true;
+
+                // 状態変化に伴う初期化（アニメーションや音声の適用）
                 this._onStateChanged(this.status.state);
             }
         }
