@@ -39,6 +39,7 @@ export class BaseCharacter {
             emotion: 'happy',
             forcedEmotion: null, // NEW: アイテム等による強制感情
             action: 'idle',
+            socialTurnCount: 0, // 交流中の再生回数
             size: options.size || 160,
             voicePitch: options.voicePitch || 1.0
         };
@@ -256,15 +257,34 @@ export class BaseCharacter {
                 if (arrived) {
                     this.status.state = STATE.GAME_REACTION;
                     this.timers.actionStart = Date.now();
-                    this.timers.actionDuration = 4000;
+                    // game.jsで設定されたactionDurationを維持（なければデフォルト9秒）
+                    if (!this.timers.actionDuration) this.timers.actionDuration = 9000;
                     this._onStateChanged(this.status.state);
                 }
                 break;
 
             case STATE.GAME_REACTION:
-                if (now - this.timers.actionStart > (this.timers.actionDuration || 4000)) {
-                    this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
-                    this._onStateChanged(this.status.state);
+                const timeInAction = now - this.timers.actionStart;
+                const currentDuration = this.timers.actionDuration || 3000;
+
+                if (timeInAction > currentDuration) {
+                    this.status.socialTurnCount++;
+
+                    if (this.status.socialTurnCount < 3) {
+                        // 次のターンへ
+                        this.timers.actionStart = now;
+                        // 2回目以降は感情をランダムに
+                        this.status.emotion = Math.random() < 0.6 ? 'happy' : 'normal';
+                        // 固有のsocialConfig.textをクリアしてアセットのセリフに戻す
+                        if (this.socialConfig) this.socialConfig.text = null;
+
+                        this._applySelectedAsset(this.status.state);
+                    } else {
+                        // 3回終了したらIDLEへ
+                        this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
+                        this.status.socialTurnCount = 0;
+                        this._onStateChanged(this.status.state);
+                    }
                 }
                 break;
 
@@ -353,7 +373,12 @@ export class BaseCharacter {
         dom.sprite.style.transform = transform;
 
         // セリフ表示
-        dom.chatText.textContent = (this.visual.currentAsset && this.visual.currentAsset.text) || '';
+        let displayText = (this.visual.currentAsset && this.visual.currentAsset.text) || '';
+        // 交流設定(socialConfig.text)があれば優先
+        if (this.status.state === STATE.GAME_REACTION && this.socialConfig && this.socialConfig.text) {
+            displayText = this.socialConfig.text;
+        }
+        dom.chatText.textContent = displayText;
 
         // 名前表示
         if (dom.nameTag) {
@@ -490,6 +515,11 @@ export class BaseCharacter {
         this._applyStateAppearance(newState);
         this._applySelectedAsset(newState);
         this.visual.motionTimer = 0;
+
+        // 状態リセット
+        if (newState === STATE.GAME_REACTION) {
+            this.status.socialTurnCount = 0;
+        }
 
         // 交流開始時、パートナーの方を向く
         if ([STATE.GAME_APPROACHING, STATE.GAME_REACTION].includes(newState) && this.socialConfig && this.socialConfig.partner) {
@@ -677,7 +707,9 @@ export class BaseCharacter {
         if (voice) {
             const updateDur = () => {
                 if (isNaN(voice.duration) || voice.duration <= 0) return;
-                this.timers.actionDuration = (voice.duration / (data.pitch || 1.0)) * 1000;
+                // 交流リアクション中も、ボイスの長さに合わせてカウントを進めるために時間を反映させる
+                // (少しだけ余韻を持たせるために 500ms 追加)
+                this.timers.actionDuration = (voice.duration / (data.pitch || 1.0)) * 1000 + 500;
             };
             if (voice.readyState >= 1) updateDur();
             else voice.addEventListener('loadedmetadata', updateDur, { once: true });

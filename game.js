@@ -36,7 +36,7 @@ export class Game {
 
         // 交流管理用プロパティ
         this.lastSocialTime = Date.now();
-        this.socialInterval = 12000 + Math.random() * 8000; // 12-20秒おき
+        this.socialInterval = 5000 + Math.random() * 5000; // 5-10秒おき
 
         Game.instance = this;
 
@@ -835,7 +835,6 @@ export class Game {
             char.pos.targetX = targetPos.x;
             char.pos.targetY = targetPos.y;
             char.pos.destinationSet = true;
-            char.timers.actionDuration = pattern.duration;
             char.socialConfig = { ...config, partner }; // パートナー参照を追加
             char._onStateChanged(char.status.state);
             char.pos.destinationSet = true;
