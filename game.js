@@ -36,7 +36,7 @@ export class Game {
 
         // 交流管理用プロパティ
         this.lastSocialTime = Date.now();
-        this.socialInterval = 5000 + Math.random() * 5000; // 5-10秒おき
+        this.socialInterval = 12000 + Math.random() * 8000; // 12-20秒おき
 
         Game.instance = this;
 
@@ -804,9 +804,9 @@ export class Game {
             [char1, char2] = [char2, char1];
         }
 
-        // あまりに遠すぎる場合は避ける
+        // 距離制限を緩和
         const dist = Math.sqrt((char1.pos.x - char2.pos.x) ** 2 + (char1.pos.y - char2.pos.y) ** 2);
-        if (dist > 600) return;
+        if (dist > 1200) return;
 
         // 交流パターンの選択
         const pattern = SOCIAL_INTERACTIONS[Math.floor(Math.random() * SOCIAL_INTERACTIONS.length)];
@@ -830,18 +830,19 @@ export class Game {
         char2.pos.socialSpeed = d2 / targetTime;
 
         // 両者に移動命令
-        const startInteraction = (char, targetPos, config, partner) => {
+        const startInteraction = (char, targetPos, config, partner, isFirst) => {
             char.status.state = STATE.GAME_APPROACHING;
             char.pos.targetX = targetPos.x;
             char.pos.targetY = targetPos.y;
             char.pos.destinationSet = true;
+            char.status.isMySocialTurn = isFirst; // 最初におしゃべりするかどうか
             char.socialConfig = { ...config, partner }; // パートナー参照を追加
             char._onStateChanged(char.status.state);
             char.pos.destinationSet = true;
         };
 
-        startInteraction(char1, target1, pattern.char1, char2);
-        startInteraction(char2, target2, pattern.char2, char1);
+        startInteraction(char1, target1, pattern.char1, char2, true);  // char1が先攻
+        startInteraction(char2, target2, pattern.char2, char1, false); // char2が後攻
 
         // 交流開始の合図
         char1.showEmoji('💬');

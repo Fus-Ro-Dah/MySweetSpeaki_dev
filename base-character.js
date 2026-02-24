@@ -40,6 +40,7 @@ export class BaseCharacter {
             forcedEmotion: null, // NEW: アイテム等による強制感情
             action: 'idle',
             socialTurnCount: 0, // 交流中の再生回数
+            isMySocialTurn: false, // 自分の喋る番かどうか
             size: options.size || 160,
             voicePitch: options.voicePitch || 1.0
         };
@@ -264,26 +265,46 @@ export class BaseCharacter {
                 break;
 
             case STATE.GAME_REACTION:
+                // 自分の番でない場合はタイマーをリセットし続けて待機
+                if (!this.status.isMySocialTurn) {
+                    this.timers.actionStart = now;
+                    return;
+                }
+
                 const timeInAction = now - this.timers.actionStart;
                 const currentDuration = this.timers.actionDuration || 3000;
 
                 if (timeInAction > currentDuration) {
                     this.status.socialTurnCount++;
+                    this.status.isMySocialTurn = false;
 
-                    if (this.status.socialTurnCount < 3) {
-                        // 次のターンへ
-                        this.timers.actionStart = now;
-                        // 2回目以降は感情をランダムに
-                        this.status.emotion = Math.random() < 0.6 ? 'happy' : 'normal';
-                        // 固有のsocialConfig.textをクリアしてアセットのセリフに戻す
-                        if (this.socialConfig) this.socialConfig.text = null;
+                    const partner = this.socialConfig ? this.socialConfig.partner : null;
+                    const bothFinished = (this.status.socialTurnCount >= 3 && (!partner || partner.status.socialTurnCount >= 3));
 
-                        this._applySelectedAsset(this.status.state);
+                    if (!bothFinished) {
+                        if (partner) {
+                            partner.status.isMySocialTurn = true;
+                            partner.timers.actionStart = Date.now();
+                            // パートナーの次のターンの準備（アセット選択）
+                            partner._applySelectedAsset(STATE.GAME_REACTION);
+                        } else {
+                            this.status.isMySocialTurn = true;
+                            this.timers.actionStart = Date.now();
+                            this._applySelectedAsset(STATE.GAME_REACTION);
+                        }
                     } else {
-                        // 3回終了したらIDLEへ
+                        // 終了処理
                         this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
                         this.status.socialTurnCount = 0;
+                        this.status.isMySocialTurn = false;
                         this._onStateChanged(this.status.state);
+
+                        if (partner && partner.status.state === STATE.GAME_REACTION) {
+                            partner.status.state = STATE.IDLE;
+                            partner.status.socialTurnCount = 0;
+                            partner.status.isMySocialTurn = false;
+                            partner._onStateChanged(partner.status.state);
+                        }
                     }
                 }
                 break;
@@ -374,8 +395,8 @@ export class BaseCharacter {
 
         // セリフ表示
         let displayText = (this.visual.currentAsset && this.visual.currentAsset.text) || '';
-        // 交流設定(socialConfig.text)があれば優先
-        if (this.status.state === STATE.GAME_REACTION && this.socialConfig && this.socialConfig.text) {
+        // 交流設定(socialConfig.text)があれば優先（1ターン目のみ）
+        if (this.status.state === STATE.GAME_REACTION && this.status.socialTurnCount === 0 && this.socialConfig && this.socialConfig.text) {
             displayText = this.socialConfig.text;
         }
         dom.chatText.textContent = displayText;
@@ -513,12 +534,22 @@ export class BaseCharacter {
         this.pos.destinationSet = false; // 状態が変わったら（または再設定されたら）必ずリセットして、次の実行フレームで目的地を再計算させる
 
         this._applyStateAppearance(newState);
-        this._applySelectedAsset(newState);
         this.visual.motionTimer = 0;
 
         // 状態リセット
         if (newState === STATE.GAME_REACTION) {
             this.status.socialTurnCount = 0;
+            // 自分の番の時だけアセットを適用する（後攻はここでは再生しない）
+            if (this.status.isMySocialTurn) {
+                this._applySelectedAsset(newState);
+            } else {
+                // 自分の番でない時はIDLEポーズで待機
+                this.status.action = 'idle';
+                this._applySelectedAsset(newState);
+                this._stopCurrentVoice(); // 余分な音声が鳴らないように念のため
+            }
+        } else {
+            this._applySelectedAsset(newState);
         }
 
         // 交流開始時、パートナーの方を向く
@@ -621,7 +652,7 @@ export class BaseCharacter {
         ].includes(state) ? 'performance' : 'mood';
 
         let emotion = this.status.emotion;
-        const action = this.status.action;
+        let action = this.status.action;
 
         // 【修正】アイテム実行中は、forcedEmotionによるhappy等への上書きを無視して
         // 専用演出(ITEMカテゴリ)を優先的に探しに行くようにする
@@ -629,12 +660,15 @@ export class BaseCharacter {
             emotion = 'ITEM';
         }
 
-        // 交流リアクション中は個別のセリフや動きを優先
-        if (state === STATE.GAME_REACTION && this.socialConfig) {
-            if (this.socialConfig.text !== undefined) {
-                // セリフ表示を即座に更新 (syncDOMで使われる)
-                // 実際のアセット選択ロジックをバイパスするか、アセットのtextを上書きする
-            }
+        // 交流リアクション中は個別のセリフや動きを優先（1ターン目のみ）
+        if (state === STATE.GAME_REACTION && this.status.socialTurnCount === 0 && this.socialConfig) {
+            if (this.socialConfig.emotion) emotion = this.socialConfig.emotion;
+            if (this.socialConfig.action) action = this.status.action = this.socialConfig.action;
+        }
+        // 2ターン目以降は感情をランダム化
+        else if (state === STATE.GAME_REACTION && this.status.socialTurnCount > 0) {
+            emotion = this.status.emotion = (Math.random() < 0.6 ? 'happy' : 'normal');
+            action = this.status.action = 'idle'; // おしゃべりは基本idleベース
         }
 
         // アセット取得の内部ヘルパー
@@ -801,6 +835,13 @@ export class BaseCharacter {
 
     /** 歪みアニメーション更新 */
     _updateDistortion(dt) {
+        const isGameReaction = this.status.state === STATE.GAME_REACTION;
+
+        // 交流中で自分の番でない場合は動きを「凍結」させる
+        if (isGameReaction && !this.status.isMySocialTurn) {
+            return; // motionTimerも進めないし、distortionも更新しない
+        }
+
         this.visual.motionTimer += dt || 16;
         if (this.interaction.isPetting) {
             this.visual.distortion.skewX += (this.visual.targetDistortion.skewX - this.visual.distortion.skewX) * 0.15;
@@ -809,15 +850,11 @@ export class BaseCharacter {
             return;
         }
 
-        // 交流リアクション中のセリフ表示 (syncDOMで使われる。motionTimerに合わせて表示を制御してもよい)
-        if (this.status.state === STATE.GAME_REACTION && this.socialConfig && this.socialConfig.text) {
-            if (this.visual.dom.chatText) {
-                this.visual.dom.chatText.textContent = this.socialConfig.text;
-            }
-            if (this.socialConfig.movePattern) {
-                this.visual.motionType = this.socialConfig.movePattern;
-            }
+        // 1ターン目のみsocialConfigの動きを優先
+        if (isGameReaction && this.status.socialTurnCount === 0 && this.socialConfig && this.socialConfig.movePattern) {
+            this.visual.motionType = this.socialConfig.movePattern;
         }
+        // 2ターン目以降やそれ以外はアセットの設定を使用（_applySelectedAssetで設定済み）
 
         switch (this.visual.motionType) {
             case 'shake':
