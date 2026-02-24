@@ -627,10 +627,32 @@ button:hover {
 .speaki-emoji-overlay,
 .char-emoji-overlay {
     position: absolute;
-    top: -40px;
+    top: -50px;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) scale(0.5);
     font-size: 32px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 150;
+    pointer-events: none;
+}
+
+.char-emoji-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) scale(1.2);
+    animation: bounceEmoji 0.5s ease infinite alternate;
+}
+
+@keyframes bounceEmoji {
+    from {
+        transform: translateX(-50%) scale(1.1) translateY(0);
+    }
+
+    to {
+        transform: translateX(-50%) scale(1.2) translateY(-5px);
+    }
 }
 
 .speaki-gift-overlay,

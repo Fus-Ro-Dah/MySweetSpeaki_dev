@@ -138,8 +138,7 @@ export class BaseCharacter {
         // 4. 実行フェーズ：現在のSTATEに応じた行動をとる
         this._executeStateAction(dt);
 
-        // 5. 社会的相互作用（他のキャラを検知）
-        this._checkSocialInteractions();
+        // 5. 社会的相互作用（中央管理に移行したため削除）
 
         // 空腹度の進行
         if (this.hasHunger) {
@@ -366,6 +365,7 @@ export class BaseCharacter {
     _handleArrival() {
         this.timers.stateStart = Date.now();
         this.pos.destinationSet = false;
+        this.pos.socialSpeed = null; // 同期移動が終わったらクリア
         this.timers.waitDuration = 2000 + Math.random() * 6000;
         if (this.status.state === STATE.WALKING) {
             this.status.action = 'idle';
@@ -465,8 +465,11 @@ export class BaseCharacter {
             return;
         }
 
-        // 好感度が低い(怯えている)場合は常に高速移動
-        const moveSpeed = (this.status.friendship <= -31) ? 8.0 : this.pos.speed;
+        // 好感度が低い(怯えている)場合は常に高速移動。交流時は計算された同期速度を使用。
+        let moveSpeed = (this.status.friendship <= -31) ? 8.0 : this.pos.speed;
+        if (this.status.state === STATE.GAME_APPROACHING) {
+            moveSpeed = this.pos.socialSpeed || (moveSpeed * 1.5);
+        }
 
         const angle = Math.atan2(dy, dx);
         this.pos.x += Math.cos(angle) * moveSpeed;
@@ -487,6 +490,12 @@ export class BaseCharacter {
         this._applyStateAppearance(newState);
         this._applySelectedAsset(newState);
         this.visual.motionTimer = 0;
+
+        // 交流開始時、パートナーの方を向く
+        if ([STATE.GAME_APPROACHING, STATE.GAME_REACTION].includes(newState) && this.socialConfig && this.socialConfig.partner) {
+            const partner = this.socialConfig.partner;
+            this.pos.facingLeft = (this.pos.x > partner.pos.x);
+        }
     }
 
     /** 音声の停止 */
@@ -520,6 +529,11 @@ export class BaseCharacter {
             case STATE.GAME_REACTION:
                 this.status.action = 'idle';
                 this.status.emotion = 'happy';
+                // 交流設定(socialConfig)があれば上書き
+                if (this.socialConfig) {
+                    if (this.socialConfig.emotion) this.status.emotion = this.socialConfig.emotion;
+                    if (this.socialConfig.action) this.status.action = this.socialConfig.action;
+                }
                 break;
         }
     }
@@ -583,6 +597,14 @@ export class BaseCharacter {
         // 専用演出(ITEMカテゴリ)を優先的に探しに行くようにする
         if (state === STATE.ITEM_ACTION) {
             emotion = 'ITEM';
+        }
+
+        // 交流リアクション中は個別のセリフや動きを優先
+        if (state === STATE.GAME_REACTION && this.socialConfig) {
+            if (this.socialConfig.text !== undefined) {
+                // セリフ表示を即座に更新 (syncDOMで使われる)
+                // 実際のアセット選択ロジックをバイパスするか、アセットのtextを上書きする
+            }
         }
 
         // アセット取得の内部ヘルパー
@@ -745,50 +767,6 @@ export class BaseCharacter {
         this.pos.destinationSet = true;
     }
 
-    /** 近くのキャラを検知して交流を開始する */
-    _checkSocialInteractions() {
-        //インタラクション可能かどうかの基本チェック
-        if (!this.canInteract) return; // NPC(給餌係など)は自律的な交流を行わない
-
-        // 現在の状態が暇（IDLE）または散歩中（WALKING）であるかチェック
-        // 食事中やユーザーとのふれあい中は割り込まない
-        if (![STATE.IDLE, STATE.WALKING].includes(this.status.state)) return;
-
-        // 一定の間隔（8秒）を空ける
-        const now = Date.now();
-        if (now - (this.timers.lastSocialCheck || 0) < 8000) return;
-        this.timers.lastSocialCheck = now;
-
-        // ゲーム内に自分以外のスピキが存在するか確認
-        const game = window.game;
-        if (!game || game.speakis.length < 2) return;
-
-        // 交流の頻度を抑えるための確率判定（約30%の確率で実行）
-        if (Math.random() > 0.3) return;
-
-        // 相手を探す：自分以外の、同じく暇または散歩中のキャラを1体見つける
-        const other = game.speakis.find(s => s !== this && [STATE.IDLE, STATE.WALKING].includes(s.status.state));
-
-        if (other) {
-            // 相手との距離を計算
-            const dist = Math.sqrt((other.pos.x - this.pos.x) ** 2 + (other.pos.y - this.pos.y) ** 2);
-
-            // 7. 近すぎず遠すぎない（100px〜400px）範囲にいる場合に接近を開始
-            if (dist < 400 && dist > 100) {
-                // 接近状態（GAME_APPROACHING）に移行
-                this.status.state = STATE.GAME_APPROACHING;
-
-                // 相手の座標の周囲（±40px）を目標地点に設定
-                this.pos.targetX = other.pos.x + (Math.random() * 80 - 40);
-                this.pos.targetY = other.pos.y + (Math.random() * 80 - 40);
-                this.pos.destinationSet = true;
-
-                // 状態変化に伴う初期化（アニメーションや音声の適用）
-                this._onStateChanged(this.status.state);
-            }
-        }
-    }
-
     /** 歪みアニメーション更新 */
     _updateDistortion(dt) {
         this.visual.motionTimer += dt || 16;
@@ -797,6 +775,16 @@ export class BaseCharacter {
             this.visual.distortion.rotateX += (this.visual.targetDistortion.rotateX - this.visual.distortion.rotateX) * 0.15;
             this.visual.distortion.scale += (this.visual.targetDistortion.scale - this.visual.distortion.scale) * 0.15;
             return;
+        }
+
+        // 交流リアクション中のセリフ表示 (syncDOMで使われる。motionTimerに合わせて表示を制御してもよい)
+        if (this.status.state === STATE.GAME_REACTION && this.socialConfig && this.socialConfig.text) {
+            if (this.visual.dom.chatText) {
+                this.visual.dom.chatText.textContent = this.socialConfig.text;
+            }
+            if (this.socialConfig.movePattern) {
+                this.visual.motionType = this.socialConfig.movePattern;
+            }
         }
 
         switch (this.visual.motionType) {
@@ -830,6 +818,19 @@ export class BaseCharacter {
         if (action) this.status.action = action;
         if (emotion) this.status.emotion = emotion;
         this._applySelectedAsset(this.status.state);
+    }
+
+    /** 絵文字（吹き出し）を表示 */
+    showEmoji(text, duration = 3000) {
+        if (!this.visual.dom.emoji) return;
+        this.visual.dom.emoji.textContent = text;
+        this.visual.dom.emoji.classList.add('visible');
+
+        if (this.timers.emojiTimer) clearTimeout(this.timers.emojiTimer);
+        this.timers.emojiTimer = setTimeout(() => {
+            this.visual.dom.emoji.classList.remove('visible');
+            this.timers.emojiTimer = null;
+        }, duration);
     }
 
     /** 現在ボイスが再生中かどうか */

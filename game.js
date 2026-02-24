@@ -5,6 +5,7 @@ import { BabySpeaki } from './baby-speaki.js';
 import { NPCCharacter } from './npc-character.js';
 import { Ashur } from './ashur.js';
 import { Posher } from './posher.js';
+import { SOCIAL_INTERACTIONS } from './config.js';
 
 export class Game {
     /** コンストラクタ: ゲームの初期化 */
@@ -32,6 +33,10 @@ export class Game {
         // 音声管理
         this.audioEnabled = false;
         this.isGameStarted = false; // 二重起動防止用フラグ
+
+        // 交流管理用プロパティ
+        this.lastSocialTime = Date.now();
+        this.socialInterval = 12000 + Math.random() * 8000; // 12-20秒おき
 
         Game.instance = this;
 
@@ -169,7 +174,8 @@ export class Game {
             console.log("[Audio] Playing BGM via Standard Audio (Fallback).");
         }
 
-        this.addSpeaki(); // 最初のスピキ
+        this.addSpeaki(); // 1匹目のスピキ
+        this.addSpeaki(); // 2匹目のスピキ (検証用)
     }
 
     /** アイテムメニューを動的に生成 */
@@ -755,11 +761,92 @@ export class Game {
         this.speakis.forEach(speaki => speaki.update(dt));
         this._updateItemLifecycles(dt);
 
+        // 交流の更新
+        this._updateSocialInteractions(dt);
+
         // UIの定期更新 (約250msごと)
         if (!this.lastUIUpdate || Date.now() - this.lastUIUpdate > 250) {
             this.updateSpeakiListUI();
             this.lastUIUpdate = Date.now();
         }
+    }
+
+    /** 中央管理による交流（ソーシャル）の更新 */
+    _updateSocialInteractions(dt) {
+        const now = Date.now();
+        if (now - this.lastSocialTime < this.socialInterval) return;
+
+        // 次回の間隔を再設定
+        this.lastSocialTime = now;
+        this.socialInterval = 15000 + Math.random() * 10000;
+
+        // 候補のピックアップ
+        const candidates = this.speakis.filter(s =>
+            s.canInteract &&
+            [STATE.IDLE, STATE.WALKING].includes(s.status.state) &&
+            !s.interaction.isInteracting
+        );
+
+        if (candidates.length < 2) return;
+
+        // ランダムに2匹選ぶ
+        const idx1 = Math.floor(Math.random() * candidates.length);
+        let idx2 = Math.floor(Math.random() * candidates.length);
+        while (idx1 === idx2) {
+            idx2 = Math.floor(Math.random() * candidates.length);
+        }
+
+        let char1 = candidates[idx1];
+        let char2 = candidates[idx2];
+
+        // 常に左にいる方をchar1, 右にいる方をchar2にする (交差を防ぐ)
+        if (char1.pos.x > char2.pos.x) {
+            [char1, char2] = [char2, char1];
+        }
+
+        // あまりに遠すぎる場合は避ける
+        const dist = Math.sqrt((char1.pos.x - char2.pos.x) ** 2 + (char1.pos.y - char2.pos.y) ** 2);
+        if (dist > 600) return;
+
+        // 交流パターンの選択
+        const pattern = SOCIAL_INTERACTIONS[Math.floor(Math.random() * SOCIAL_INTERACTIONS.length)];
+
+        // 目的地（少しずらした位置）
+        const midX = (char1.pos.x + char2.pos.x) / 2;
+        const midY = (char1.pos.y + char2.pos.y) / 2;
+        const target1 = { x: midX - 80, y: midY };
+        const target2 = { x: midX + 80, y: midY };
+
+        // 同時に到着するように速度を計算
+        const d1 = Math.sqrt((char1.pos.x - target1.x) ** 2 + (char1.pos.y - target1.y) ** 2);
+        const d2 = Math.sqrt((char2.pos.x - target2.x) ** 2 + (char2.pos.y - target2.y) ** 2);
+
+        // 通常の速度(1.5倍)でかかる時間
+        const t1 = d1 / (char1.pos.speed * 1.5);
+        const t2 = d2 / (char2.pos.speed * 1.5);
+        const targetTime = Math.max(t1, t2, 0.5); // 最低0.5秒、遅い方に合わせる
+
+        char1.pos.socialSpeed = d1 / targetTime;
+        char2.pos.socialSpeed = d2 / targetTime;
+
+        // 両者に移動命令
+        const startInteraction = (char, targetPos, config, partner) => {
+            char.status.state = STATE.GAME_APPROACHING;
+            char.pos.targetX = targetPos.x;
+            char.pos.targetY = targetPos.y;
+            char.pos.destinationSet = true;
+            char.timers.actionDuration = pattern.duration;
+            char.socialConfig = { ...config, partner }; // パートナー参照を追加
+            char._onStateChanged(char.status.state);
+            char.pos.destinationSet = true;
+        };
+
+        startInteraction(char1, target1, pattern.char1, char2);
+        startInteraction(char2, target2, pattern.char2, char1);
+
+        // 交流開始の合図
+        char1.showEmoji('💬');
+        char2.showEmoji('💬');
     }
 
     addSpeaki(x, y, type = 'speaki') {

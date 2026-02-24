@@ -234,7 +234,7 @@ export const ITEMS = {
         nutrition: 15,
         isFood: true,
         friendshipChange: 2,
-        forcedEmotion: 'normal'
+        forcedEmotion: 'happy'
     },
     Mocaron: {
         name: 'モカロン',
@@ -321,3 +321,34 @@ export const JOBS = {
         npcType: 'posher'
     }
 };
+
+/**
+ * 交流パターン定義 (SOCIAL_INTERACTIONS)
+ * 集まる2匹それぞれの振る舞いを定義
+ */
+export const SOCIAL_INTERACTIONS = [
+    {
+        name: 'Greeting',
+        duration: 4000,
+        char1: { emotion: 'happy', action: 'idle', text: 'ｺﾝﾆﾁﾜ!' },
+        char2: { emotion: 'happy', action: 'idle', text: 'ｽﾋﾟｷｰ!' }
+    },
+    {
+        name: 'Dancing',
+        duration: 5000,
+        char1: { emotion: 'happy', action: 'idle', text: 'ﾁｮﾜﾖｰ!', movePattern: 'bounce' },
+        char2: { emotion: 'happy', action: 'idle', text: 'ﾁｮﾜﾖｰ!', movePattern: 'bounce' }
+    },
+    {
+        name: 'Curiosity',
+        duration: 4000,
+        char1: { emotion: 'normal', action: 'idle', text: 'ｽﾋﾟｷ?' },
+        char2: { emotion: 'normal', action: 'idle', text: 'ｽﾋﾟｷ!' }
+    },
+    {
+        name: 'JumpJump',
+        duration: 3000,
+        char1: { emotion: 'happy', action: 'idle', text: 'ﾋﾟｮﾝ!', movePattern: 'stretch' },
+        char2: { emotion: 'happy', action: 'idle', text: 'ﾋﾟｮﾝ!', movePattern: 'stretch' }
+    }
+];

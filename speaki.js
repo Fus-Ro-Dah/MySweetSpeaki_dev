@@ -225,6 +225,8 @@ export class Speaki extends BaseCharacter {
             case STATE.ITEM_APPROACHING: return "発見！";
             case STATE.ITEM_ACTION: return "遊び中";
             case STATE.USER_INTERACTING: return "ふれあい中";
+            case STATE.GAME_APPROACHING:
+            case STATE.GAME_REACTION: return "交流中";
             default: return "ぼーっと";
         }
     }
