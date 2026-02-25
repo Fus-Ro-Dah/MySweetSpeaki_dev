@@ -2,10 +2,11 @@ import { STATE, ASSETS, ITEMS, JOBS } from './config.js';
 import { Speaki } from './speaki.js';
 import { Item } from './item.js';
 import { BabySpeaki } from './baby-speaki.js';
+import { ChildSpeaki } from './child-speaki.js';
 import { NPCCharacter } from './npc-character.js';
 import { Ashur } from './ashur.js';
 import { Posher } from './posher.js';
-import { SOCIAL_INTERACTIONS } from './config.js';
+
 
 export class Game {
     /** コンストラクタ: ゲームの初期化 */
@@ -143,40 +144,48 @@ export class Game {
 
     /** タイトル画面を閉じてゲームを開始する */
     startGame() {
-        if (this.isGameStarted) return;
-        this.isGameStarted = true;
+        try {
+            if (this.isGameStarted) return;
+            this.isGameStarted = true;
 
-        const titleScreen = document.getElementById('title-screen');
-        if (titleScreen) {
-            titleScreen.classList.add('fade-out');
-        }
-
-        this.audioEnabled = true;
-
-        if (this.audioCtx && this.audioCtx.state === 'suspended') {
-            this.audioCtx.resume();
-        }
-
-        if (this.bgmBuffer) {
-            if (!this.bgmSource) {
-                this.bgmSource = this.audioCtx.createBufferSource();
-                this.bgmSource.buffer = this.bgmBuffer;
-                this.bgmSource.loop = true;
-                const gainNode = this.audioCtx.createGain();
-                gainNode.gain.value = 0.5;
-                this.bgmSource.connect(gainNode);
-                gainNode.connect(this.audioCtx.destination);
-                this.bgmSource.start(0);
-                console.log("[Audio] Playing BGM via Web Audio API (Seamless).");
+            const titleScreen = document.getElementById('title-screen');
+            if (titleScreen) {
+                titleScreen.classList.add('fade-out');
             }
-        } else if (this.bgmFallback) {
-            this.bgmFallback.play().catch(e => console.log("[Audio] Fallback playback failed:", e));
-            console.log("[Audio] Playing BGM via Standard Audio (Fallback).");
-        }
 
-        this.addSpeaki(); // 1匹目のスピキ
-        this.addSpeaki(); // 2匹目のスピキ (検証用)
+            this.audioEnabled = true;
+
+            if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                this.audioCtx.resume();
+            }
+
+            if (this.bgmBuffer) {
+                if (!this.bgmSource) {
+                    this.bgmSource = this.audioCtx.createBufferSource();
+                    this.bgmSource.buffer = this.bgmBuffer;
+                    this.bgmSource.loop = true;
+                    const gainNode = this.audioCtx.createGain();
+                    gainNode.gain.value = 0.5;
+                    this.bgmSource.connect(gainNode);
+                    gainNode.connect(this.audioCtx.destination);
+                    this.bgmSource.start(0);
+                    console.log("[Audio] Playing BGM via Web Audio API (Seamless).");
+                }
+            } else if (this.bgmFallback) {
+                this.bgmFallback.play().catch(e => console.log("[Audio] Fallback playback failed:", e));
+                console.log("[Audio] Playing BGM via Standard Audio (Fallback).");
+            }
+
+            this.addSpeaki(undefined, undefined, 'baby');   // 赤ちゃん
+            this.addSpeaki(undefined, undefined, 'child');  // 子供
+            this.addSpeaki(undefined, undefined, 'speaki'); // 大人
+
+        } catch (e) {
+            alert("Error starting game: " + e.message + "\n" + e.stack);
+            console.error(e);
+        }
     }
+
 
     /** アイテムメニューを動的に生成 */
     initItemMenu() {
@@ -260,9 +269,9 @@ export class Game {
         // タッチイベント・紛失対応
         this.canvas.addEventListener('pointercancel', (e) => this.handleMouseUp(e));
 
-        document.getElementById('gift-btn-receive').onclick = () => this.receiveGift();
-        document.getElementById('reaction-btn-1').onclick = () => this.handleReaction(1);
-        document.getElementById('reaction-btn-2').onclick = () => this.handleReaction(2);
+        document.getElementById('gift-btn-receive')?.addEventListener('click', () => this.receiveGift());
+        document.getElementById('reaction-btn-1')?.addEventListener('click', () => this.handleReaction(1));
+        document.getElementById('reaction-btn-2')?.addEventListener('click', () => this.handleReaction(2));
 
         // 情報モーダルの制御
         const openInfoBtn = document.getElementById('open-info-btn');
@@ -442,7 +451,9 @@ export class Game {
                 STATE.GIFT_WAIT_FOR_USER_REACTION,
                 STATE.GIFT_REACTION,
                 STATE.GIFT_TIMEOUT,
-                STATE.USER_INTERACTING
+                STATE.USER_INTERACTING,
+                STATE.GAME_APPROACHING,
+                STATE.GAME_REACTION
             ];
             if (nonInterruptibleStates.includes(speaki.status.state)) return;
 
@@ -783,6 +794,7 @@ export class Game {
         // 候補のピックアップ
         const candidates = this.speakis.filter(s =>
             s.canInteract &&
+            s.status.friendship > -31 && // 好感度-30以下（逃げ出す状態）は交流しない
             [STATE.IDLE, STATE.WALKING].includes(s.status.state) &&
             !s.interaction.isInteracting
         );
@@ -808,18 +820,32 @@ export class Game {
         const dist = Math.sqrt((char1.pos.x - char2.pos.x) ** 2 + (char1.pos.y - char2.pos.y) ** 2);
         if (dist > 1200) return;
 
+        // 両者が赤ちゃんなら中止
+        if (char1.characterType === 'baby' && char2.characterType === 'baby') return;
+
         // 目的地（少しずらした位置）
-        const midX = (char1.pos.x + char2.pos.x) / 2;
-        const midY = (char1.pos.y + char2.pos.y) / 2;
-        const target1 = { x: midX - 80, y: midY };
-        const target2 = { x: midX + 80, y: midY };
+        let target1, target2;
+        if (char1.characterType === 'baby') {
+            // char1が赤ちゃんなら、char2が寄ってくる
+            target1 = { x: char1.pos.x, y: char1.pos.y };
+            target2 = { x: char1.pos.x + 80, y: char1.pos.y };
+        } else if (char2.characterType === 'baby') {
+            // char2が赤ちゃんなら、char1が寄ってくる
+            target1 = { x: char2.pos.x - 80, y: char2.pos.y };
+            target2 = { x: char2.pos.x, y: char2.pos.y };
+        } else {
+            const midX = (char1.pos.x + char2.pos.x) / 2;
+            const midY = (char1.pos.y + char2.pos.y) / 2;
+            target1 = { x: midX - 80, y: midY };
+            target2 = { x: midX + 80, y: midY };
+        }
 
         // 同時に到着するように速度を計算
         const d1 = Math.sqrt((char1.pos.x - target1.x) ** 2 + (char1.pos.y - target1.y) ** 2);
         const d2 = Math.sqrt((char2.pos.x - target2.x) ** 2 + (char2.pos.y - target2.y) ** 2);
 
-        const t1 = d1 / (char1.pos.speed * 1.5);
-        const t2 = d2 / (char2.pos.speed * 1.5);
+        const t1 = d1 / (char1.pos.speed * 1.5 || 1);
+        const t2 = d2 / (char2.pos.speed * 1.5 || 1);
         const targetTime = Math.max(t1, t2, 0.5);
 
         char1.pos.socialSpeed = d1 / targetTime;
@@ -834,7 +860,7 @@ export class Game {
             char.status.isMySocialTurn = isFirst;
             char.socialConfig = { partner }; // パートナー参照のみ保持
             char._onStateChanged(char.status.state);
-            char.pos.destinationSet = true;
+            char.pos.destinationSet = (char.characterType !== 'baby'); // 赤ちゃんは目的地へ動かない
         };
 
         startInteraction(char1, target1, char2, true);  // char1が先攻
@@ -857,6 +883,8 @@ export class Game {
         let char;
         if (type === 'baby') {
             char = new BabySpeaki(id, this.speakiRoom, finalX, finalY);
+        } else if (type === 'child') {
+            char = new ChildSpeaki(id, this.speakiRoom, finalX, finalY);
         } else if (type === 'ashur') {
             char = new Ashur(id, this.speakiRoom, finalX, finalY);
         } else if (type === 'posher') {
@@ -873,6 +901,7 @@ export class Game {
         }
         this.updateSpeakiListUI();
     }
+
 
     /** ハイライト設定 */
     setHighlight(id) {
@@ -909,29 +938,52 @@ export class Game {
         }
     }
 
-    /** 赤ちゃんスピキの進化 */
-    evolveBaby(baby) {
+    /** 赤ちゃんスピキの進化（子供へ） */
+    evolveBabyToChild(baby) {
         if (!baby) return;
-        console.log(`[Game] BabySpeaki ${baby.id} is evolving!`);
+        console.log(`[Game] BabySpeaki ${baby.id} is evolving into Child!`);
 
-        // DOM削除
         if (baby.visual.dom.container) baby.visual.dom.container.remove();
 
-        // 配列から削除
         const index = this.speakis.indexOf(baby);
         if (index !== -1) {
             this.speakis.splice(index, 1);
         }
 
-        // 大人のSpeakiを生成（IDは引き継ぐ）
-        const adult = new Speaki(baby.id, this.speakiRoom, baby.pos.x, baby.pos.y);
+        // 子供のSpeakiを生成
+        const child = new ChildSpeaki(baby.id, this.speakiRoom, baby.pos.x, baby.pos.y);
+        child.name = baby.name;
+        child.status.friendship = baby.status.friendship;
+        child.status.hunger = baby.status.hunger;
 
-        // ステータスの継承
-        adult.name = baby.name; // 名前継承
-        adult.status.friendship = baby.status.friendship;
-        adult.status.hunger = baby.status.hunger;
+        if (index !== -1) {
+            this.speakis.splice(index, 0, child);
+        } else {
+            this.speakis.push(child);
+        }
 
-        // 配列に追加（元の位置へ）
+        this.playSound('happy', 1.2);
+        this.updateSpeakiListUI(true);
+    }
+
+    /** 子供スピキの進化（大人へ） */
+    evolveChildToAdult(child) {
+        if (!child) return;
+        console.log(`[Game] ChildSpeaki ${child.id} is evolving into Adult!`);
+
+        if (child.visual.dom.container) child.visual.dom.container.remove();
+
+        const index = this.speakis.indexOf(child);
+        if (index !== -1) {
+            this.speakis.splice(index, 1);
+        }
+
+        // 大人のSpeakiを生成
+        const adult = new Speaki(child.id, this.speakiRoom, child.pos.x, child.pos.y);
+        adult.name = child.name;
+        adult.status.friendship = child.status.friendship;
+        adult.status.hunger = child.status.hunger;
+
         if (index !== -1) {
             this.speakis.splice(index, 0, adult);
         } else {

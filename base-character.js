@@ -160,7 +160,7 @@ export class BaseCharacter {
     _updateStateTransition() {
         const now = Date.now();
         const dist = this.pos.destinationSet ? Math.sqrt(Math.pow(this.pos.targetX - this.pos.x, 2) + Math.pow(this.pos.targetY - this.pos.y, 2)) : 999;
-        const arrived = dist <= 10;
+        const arrived = !this.pos.destinationSet || dist <= 10;
 
         // 空腹時の挙動
         if (this.status.hunger <= 0) {
@@ -300,12 +300,14 @@ export class BaseCharacter {
                         this.status.isMySocialTurn = false;
                         this._onStateChanged(this.status.state);
 
-                        if (partner && partner.status.state === STATE.GAME_REACTION) {
-                            partner.status.state = STATE.IDLE;
+                        // パートナーもIDLEに戻す（同期漏れ防止）
+                        if (partner) {
+                            partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
                             partner.status.socialTurnCount = 0;
                             partner.status.isMySocialTurn = false;
                             partner._onStateChanged(partner.status.state);
                         }
+
                     }
                 }
                 break;
@@ -666,36 +668,50 @@ export class BaseCharacter {
         }
 
         // アセット取得の内部ヘルパー
-        const getVariations = (charType, e, a) => {
+        const getVariations = (charType, category, e, a) => {
             const charAssets = ASSETS[charType];
-            if (charAssets && charAssets[type] && charAssets[type][e] && charAssets[type][e][a]) {
-                return charAssets[type][e][a];
+            if (charAssets && charAssets[category] && charAssets[category][e] && charAssets[category][e][a]) {
+                return charAssets[category][e][a];
             }
             return null;
         };
 
         // 1. 指定されたキャラ・感情・アクションで検索
-        let variations = getVariations(this.characterType, emotion, action);
+        let variations = getVariations(this.characterType, type, emotion, action);
 
         // 2. なければ 'normal' 感情で再試行
         if (!variations) {
-            variations = getVariations(this.characterType, 'normal', action);
+            variations = getVariations(this.characterType, type, 'normal', action);
+        }
+
+        // 2.5 【NEW】 performanceで見つからない場合、moodカテゴリで再試行 (同じキャラタイプ内でのフォールバックを優先)
+        if (!variations && type === 'performance') {
+            variations = getVariations(this.characterType, 'mood', emotion, action) ||
+                getVariations(this.characterType, 'mood', 'normal', action);
         }
 
         // 3. それでもなければ汎用アイテムリアクション
         if (!variations && state === STATE.ITEM_ACTION) {
-            variations = getVariations(this.characterType, 'ITEM', 'generic');
+            variations = getVariations(this.characterType, 'performance', 'ITEM', 'generic'); // performanceカテゴリ内
         }
 
         // 4. 【NEW】 キャラ指定で見つからない場合、基本の 'speaki' アセットで再試行 (継承)
         if (!variations && this.characterType !== 'speaki') {
-            variations = getVariations('speaki', emotion, action) ||
-                getVariations('speaki', 'normal', action);
+            variations = getVariations('speaki', type, emotion, action) ||
+                getVariations('speaki', type, 'normal', action);
+
+            // speakiのperformanceにもなければ、speakiのmoodを探す
+            if (!variations && type === 'performance') {
+                variations = getVariations('speaki', 'mood', emotion, action) ||
+                    getVariations('speaki', 'mood', 'normal', action);
+            }
 
             if (!variations && state === STATE.ITEM_ACTION) {
-                variations = getVariations('speaki', 'ITEM', 'generic');
+                variations = getVariations('speaki', 'performance', 'ITEM', 'generic');
             }
         }
+
+
 
         if (!variations || variations.length === 0) {
             this.visual.currentAsset = null;

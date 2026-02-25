@@ -111,6 +111,48 @@ export const ASSETS = {
     },
     baby: {
         mood: {
+            //画像素材が足りないため、normal、idleの画像を使い回している
+            normal: {
+                idle: [
+                    { imagefile: 'baby_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ばぶぅ', movePattern: 'none' },
+                    { imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ…', movePattern: 'bounce' }
+                ],
+                walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'none' }]
+            },
+            happy: {
+                idle: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'none' }],
+                walking: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶぅ!', movePattern: 'bounce' }]
+            },
+            sad: {
+                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ふええ...', movePattern: 'shake' }],
+                walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }]
+            }
+        },
+        performance: {
+            ITEM: {
+                Pumpkin: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶ!', movePattern: 'bounce' }],
+                BabySpeaki: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶぅ!', movePattern: 'bounce', pitch: 2.0 }],
+                Candy: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ぺろぺろ', movePattern: 'swing' }],
+                Mocaron: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'もぐもぐ', movePattern: 'bounce' }],
+                AnimalCan: [{ imagefile: 'コミー.png', soundfile: 'これを食べて眠気を覚ますにゃん.mp3', text: 'ばぶぅん', movePattern: 'swing' }],
+                Shionmelone: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'ウアア.mp3', text: 'いや!', movePattern: 'bounce' }],
+                LeviDriver: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'ウアア.mp3', text: 'だめ!', movePattern: 'bounce' }],
+                BrokenHobagi: [{ imagefile: 'baby_normal_idle_1.png', soundfile: '慟哭.mp3', text: 'うわぁぁん', movePattern: 'bounce' }],
+                Poteto: [{ imagefile: 'baby_happy_idle_1.png', soundfile: '本場スピキ撫で.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
+                generic: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶぅ', movePattern: 'bounce' }]
+            },
+            normal: {
+                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ばぶぅ', movePattern: 'bounce' }],
+                surprised: [{ imagefile: 'baby_normal_idle_2.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ!!', movePattern: 'shake' }]
+            },
+            sad: {
+                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ...', movePattern: 'bounce' }],
+                surprised: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }]
+            }
+        }
+    },
+    child: {
+        mood: {
             normal: {
                 idle: [
                     { imagefile: 'speaki_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ﾋﾟｷ!', movePattern: 'swing' },
@@ -138,7 +180,15 @@ export const ASSETS = {
                 LeviDriver: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'bounce' }],
                 BrokenHobagi: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: '慟哭.mp3', text: '慟哭', movePattern: 'bounce' }],
                 Poteto: [{ imagefile: 'speaki_item_poteto.png', soundfile: '本場スピキ撫で.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
-                generic: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }]
+                generic: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜヨ!', movePattern: 'bounce' }]
+            },
+            normal: {
+                idle: [{ imagefile: 'speaki_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ﾋﾟｷ?', movePattern: 'bounce' }],
+                surprised: [{ imagefile: 'speaki_normal_idle_2.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ！？', movePattern: 'bounce' }]
+            },
+            sad: {
+                idle: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｰｳ...', movePattern: 'bounce' }],
+                surprised: [{ imagefile: 'speaki_sad_surprised_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱｯ！', movePattern: 'shake' }]
             }
         }
     },
@@ -321,34 +371,3 @@ export const JOBS = {
         npcType: 'posher'
     }
 };
-
-/**
- * 交流パターン定義 (SOCIAL_INTERACTIONS)
- * 集まる2匹それぞれの振る舞いを定義
- */
-export const SOCIAL_INTERACTIONS = [
-    {
-        name: 'Greeting',
-        duration: 4000,
-        char1: { emotion: 'happy', action: 'idle', text: 'ｺﾝﾆﾁﾜ!' },
-        char2: { emotion: 'happy', action: 'idle', text: 'ｽﾋﾟｷｰ!' }
-    },
-    {
-        name: 'Dancing',
-        duration: 5000,
-        char1: { emotion: 'happy', action: 'idle', text: 'ﾁｮﾜﾖｰ!', movePattern: 'bounce' },
-        char2: { emotion: 'happy', action: 'idle', text: 'ﾁｮﾜﾖｰ!', movePattern: 'bounce' }
-    },
-    {
-        name: 'Curiosity',
-        duration: 4000,
-        char1: { emotion: 'normal', action: 'idle', text: 'ｽﾋﾟｷ?' },
-        char2: { emotion: 'normal', action: 'idle', text: 'ｽﾋﾟｷ!' }
-    },
-    {
-        name: 'JumpJump',
-        duration: 3000,
-        char1: { emotion: 'happy', action: 'idle', text: 'ﾋﾟｮﾝ!', movePattern: 'stretch' },
-        char2: { emotion: 'happy', action: 'idle', text: 'ﾋﾟｮﾝ!', movePattern: 'stretch' }
-    }
-];
