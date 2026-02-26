@@ -17,6 +17,7 @@ export class ChildSpeaki extends BaseCharacter {
 
     /** 状態遷移の拡張: 自律的な行動を追加 */
     _updateStateTransition() {
+        if (this.status.state === STATE.DYING) return; // 死亡中は遷移しない
         // 0. 進化チェック (60秒経過 && 満腹度75以上)
         if (Date.now() - this.childStartTime > 60000 && this.status.hunger >= 75) {
             if (window.game && window.game.evolveChildToAdult) {

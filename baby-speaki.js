@@ -35,8 +35,8 @@ export class BabySpeaki extends BaseCharacter {
             }
         }
 
-        // 2. 特殊状態（ユーザー交流、他スピキとの交流）の時は基底クラスに任せる
-        const interactiveStates = [STATE.USER_INTERACTING, STATE.GAME_APPROACHING, STATE.GAME_REACTION];
+        // 2. 特殊状態（ユーザー交流、他スピキとの交流、死亡）の時は基底クラスに任せる
+        const interactiveStates = [STATE.USER_INTERACTING, STATE.GAME_APPROACHING, STATE.GAME_REACTION, STATE.DYING];
         if (interactiveStates.includes(this.status.state)) {
             super._updateStateTransition();
             return;

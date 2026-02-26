@@ -28,7 +28,10 @@ export const STATE = {
     GAME_REACTION: 'game_reaction',
 
     // 特殊能力(アイテム配置など)
-    ABILITY_ACTION: 'ability_action'
+    ABILITY_ACTION: 'ability_action',
+
+    // 死亡・輪廻
+    DYING: 'dying'
 };
 
 /**

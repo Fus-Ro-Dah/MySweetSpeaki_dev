@@ -13,6 +13,7 @@ export class Speaki extends BaseCharacter {
 
     /** 状態遷移の判定 (Speaki固有のギフトイベント、隠れ行動を追加) */
     _updateStateTransition() {
+        if (this.status.state === STATE.DYING) return; // 死亡中は遷移しない
         const now = Date.now();
         const dist = this.pos.destinationSet ? Math.sqrt(Math.pow(this.pos.targetX - this.pos.x, 2) + Math.pow(this.pos.targetY - this.pos.y, 2)) : 999;
         const arrived = dist <= 10;

@@ -42,8 +42,10 @@ export class BaseCharacter {
             socialTurnCount: 0, // 交流中の再生回数
             isMySocialTurn: false, // 自分の喋る番かどうか
             size: options.size || 160,
-            voicePitch: options.voicePitch || 1.0
+            voicePitch: options.voicePitch || 1.0,
+            deathProgress: 0, // 死亡演出の進行度 (0.0 - 1.0)
         };
+        this.isPendingDeletion = false; // 死亡演出完了後に削除するためのフラグ
 
         // 3. 表示とアニメーション
         this.visual = {
@@ -147,6 +149,22 @@ export class BaseCharacter {
             this.status.hunger = Math.max(0, this.status.hunger - dt / 5000); // テストとして500としている
         }
 
+        // 死亡判定 (DYING状態でないときのみ判定)
+        if (this.status.state !== STATE.DYING) {
+            const isStarving = this.hasHunger && this.status.hunger <= 0;
+            const isDespaired = this.status.friendship <= -49.5; // 自動回復に食われないよう少し余裕を持たせる
+            if (isStarving || isDespaired) {
+                this.status.state = STATE.DYING;
+                this.status.deathProgress = 0;
+                this.timers.stateStart = Date.now();
+                // 死亡時は他の音を止める
+                if (this.visual.currentVoice) {
+                    this.visual.currentVoice.pause();
+                }
+                console.log(`[BaseCharacter] ${this.name} is dying. (Starving: ${isStarving}, Despaired: ${isDespaired})`);
+            }
+        }
+
         // 好感度の自動回復 (負の値の場合のみ 0 に向かって回復)
         if (this.status.friendship < 0) {
             this.status.friendship = Math.min(0, this.status.friendship + dt / 10000); // 10秒で1回復
@@ -158,6 +176,7 @@ export class BaseCharacter {
 
     /** 状態遷移の判定 (サブクラスで拡張可能) */
     _updateStateTransition() {
+        if (this.status.state === STATE.DYING) return; // 死亡中は遷移しない
         const now = Date.now();
         const dist = this.pos.destinationSet ? Math.sqrt(Math.pow(this.pos.targetX - this.pos.x, 2) + Math.pow(this.pos.targetY - this.pos.y, 2)) : 999;
         const arrived = !this.pos.destinationSet || dist <= 10;
@@ -338,6 +357,18 @@ export class BaseCharacter {
 
     /** 現在の状態に応じた行動の実行 */
     _executeStateAction(dt) {
+        if (this.status.state === STATE.DYING) {
+            // 死亡演出: 3秒かけて真っ黒になる
+            const duration = 3000;
+            const elapsed = Date.now() - this.timers.stateStart;
+            this.status.deathProgress = Math.min(1.0, elapsed / duration);
+
+            if (this.status.deathProgress >= 1.0) {
+                this.isPendingDeletion = true;
+            }
+            return;
+        }
+
         const movementStates = [
             STATE.WALKING, STATE.ITEM_APPROACHING, STATE.GAME_APPROACHING,
             STATE.GIFT_LEAVING, STATE.GIFT_RETURNING
@@ -380,6 +411,17 @@ export class BaseCharacter {
             if (img && dom.sprite.src !== img.src) {
                 dom.sprite.src = img.src;
             }
+        }
+
+        // 死亡演出の反映 (真っ黒にする)
+        if (this.status.deathProgress > 0) {
+            const p = this.status.deathProgress;
+            // 進行度に合わせて明るさを下げ、グレースケールを上げる
+            const brightness = 1.0 - p;
+            const grayscale = p;
+            dom.sprite.style.filter = `brightness(${brightness}) grayscale(${grayscale})`;
+        } else {
+            dom.sprite.style.filter = '';
         }
 
         // 位置とサイズ

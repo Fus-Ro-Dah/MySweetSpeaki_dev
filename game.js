@@ -769,7 +769,39 @@ export class Game {
     }
 
     update(dt) {
-        this.speakis.forEach(speaki => speaki.update(dt));
+        // 死亡・削除予定のスピキを処理
+        for (let i = this.speakis.length - 1; i >= 0; i--) {
+            const s = this.speakis[i];
+            s.update(dt);
+
+            if (s.isPendingDeletion) {
+                // 削除前にその場に「かぼちゃ（Pumpkin）」を配置
+                console.log(`[Game] Speaki ${s.id} died and returned to Pumpkin.`);
+                this.addItem('Pumpkin', 'item', s.pos.x, s.pos.y);
+
+                // --- クリーンアップ ---
+                if (this.interactTarget === s) this.interactTarget = null;
+                if (this.giftPartner === s) this.completeGiftEvent(null);
+
+                if (s.socialConfig && s.socialConfig.partner) {
+                    const partner = s.socialConfig.partner;
+                    console.log(`[Game] Releasing partner ${partner.id} from social interaction.`);
+                    partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
+                    partner.status.socialTurnCount = 0;
+                    partner.status.isMySocialTurn = false;
+                    partner.socialConfig = null;
+                    partner._onStateChanged(partner.status.state);
+                }
+
+                // DOM削除
+                if (s.visual.dom.container) {
+                    s.visual.dom.container.remove();
+                }
+                // リストから削除
+                this.speakis.splice(i, 1);
+            }
+        }
+
         this._updateItemLifecycles(dt);
 
         // 交流の更新
@@ -1046,10 +1078,6 @@ export class Game {
         const displaySpeakis = this.speakis.filter(s => s.canInteract && s.characterType !== 'ashur' && s.characterType !== 'posher');
 
         if (displaySpeakis.length === 0) {
-            // ゲーム開始後のみ自動追加。
-            if (this.isGameStarted) {
-                this.addSpeaki();
-            }
             return;
         }
 
