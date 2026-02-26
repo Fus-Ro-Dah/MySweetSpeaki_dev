@@ -114,8 +114,10 @@ export const ASSETS = {
             //画像素材が足りないため、normal、idleの画像を使い回している
             normal: {
                 idle: [
-                    { imagefile: 'baby_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ばぶぅ', movePattern: 'none' },
-                    { imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ…', movePattern: 'bounce' }
+                    { imagefile: 'baby_normal_idle_1.png', soundfile: 'ピキ.mp3', text: 'ﾋﾟｷ!', movePattern: 'none' },
+                    { imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ…', movePattern: 'bounce' },
+                    { imagefile: 'baby_normal_idle_1.png', soundfile: '無音08.mp3', text: '……', movePattern: 'bounce' },
+                    { imagefile: 'baby_normal_idle_1.png', soundfile: '無音08.mp3', text: '……', movePattern: 'bounce' }
                 ],
                 walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'none' }]
             },
@@ -192,7 +194,7 @@ export const ASSETS = {
             }
         }
     },
-    ashur: {
+    /* ashur: {
         mood: {
             normal: {
                 idle: [{ imagefile: 'ashur_idle_1.png', soundfile: 'スピキ.mp3', text: 'ｱｼｭｰﾙ', movePattern: 'bounce' }],
@@ -206,14 +208,14 @@ export const ASSETS = {
                 place_item: [{ imagefile: 'ashur_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'どーぞ！', movePattern: 'jump' }]
             }
         }
-    },
+    }, */
     posher: {
         mood: {
             normal: {
                 idle: [
                     { imagefile: 'posher_idle_1.png', soundfile: 'さつまいも.mp3', text: 'さつまいも', movePattern: 'bounce' },
                     { imagefile: 'posher_idle_1.png', soundfile: '無音08.mp3', text: '・・・', movePattern: 'none' },
-                    { imagefile: 'posher_idle_2.png', soundfile: 'いももかぼちゃのなかまポ.mp3', text: 'いももかぼちゃのなかまポ？', movePattern: 'bounce' }
+                    { imagefile: 'posher_idle_2.png', soundfile: 'いももかぼちゃのなかまでしょ.mp3', text: 'いももかぼちゃのなかまでしょ？', movePattern: 'bounce' }
                 ],
                 walking: [
                     //idleもwalkingも同じ画像としている
@@ -225,8 +227,8 @@ export const ASSETS = {
         performance: {
             normal: {
                 idle: [{ imagefile: 'posher_idle_1.png', soundfile: '無音08.mp3', text: '・・・', movePattern: 'bounce' }],
-                walking: [{ imagefile: 'posher_idle_2.png', soundfile: 'いももかぼちゃのなかまポ.mp3', text: 'いももかぼちゃのなかまポ？', movePattern: 'bounce' }],
-                place_item: [{ imagefile: 'posher_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'どーぞ！', movePattern: 'jump' }]
+                walking: [{ imagefile: 'posher_idle_2.png', soundfile: 'いももかぼちゃのなかまでしょ.mp3', text: 'いももかぼちゃのなかまでしょ？', movePattern: 'bounce' }],
+                place_item: [{ imagefile: 'posher_idle_1.png', soundfile: 'さつまいも.mp3', text: 'どーぞ！', movePattern: 'jump' }]
             }
         }
     }
@@ -236,24 +238,36 @@ export const ASSETS = {
  * 統合アイテム定義 (ITEMS)
  */
 export const ITEMS = {
-    Pumpkin: {
-        name: 'かぼちゃ',
+    NormalPumpkin: {
+        name: ' ﾎﾊﾞｷﾞ',
         imagefile: 'item_pumpkin.png',
         text: '',
         size: 180,
         showInMenu: true,
         isFood: false,
-        transform: { nextId: 'Pumpkin2', duration: 10000 }
+        friendshipChange: 2,
+        forcedEmotion: 'happy'
+    },
+    Pumpkin: {
+        name: 'ﾌｼｷﾞなﾎﾊﾞｷﾞ',
+        imagefile: 'item_pumpkin.png',
+        text: '',
+        size: 180,
+        showInMenu: true,
+        isFood: false,
+        transform: { nextId: 'Pumpkin2', duration: 10000 },
+        friendshipChange: 2,
+        forcedEmotion: 'happy'
     },
     Pumpkin2: {
-        name: 'かぼちゃ_割れ',
+        name: 'ﾌｼｷﾞなﾎﾊﾞｷﾞ_割れ',
         imagefile: 'item_pumpkin2.png',
         soundfile: 'ピキ.mp3',
         text: '',
         size: 180,
         pitch: 1.5,
         isFood: false,
-        transform: { nextId: 'BabySpeaki', duration: 10000 }
+        transform: { isAdult: 'baby', duration: 10000 }
     },
     BabySpeaki: {
         name: '赤ちゃんスピキ',
@@ -303,9 +317,9 @@ export const ITEMS = {
         size: 100,
         text: '',
         showInMenu: true,
-        nutrition: 25,
+        nutrition: 15,
         isFood: true,
-        friendshipChange: 0,
+        friendshipChange: 0, //ポーシャーから与えられるため
         forcedEmotion: 'happy'
     },
     AnimalCan: {
@@ -357,7 +371,7 @@ export const ITEMS = {
  */
 export const JOBS = {
     /*     CallAshur: {
-            name: 'エシュール(救助)',
+            name: 'エシュール(モカロン屋さん)',
             imagefile: 'ashur_idle_1.png',
             size: 80,
             showInMenu: true,

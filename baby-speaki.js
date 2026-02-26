@@ -13,6 +13,7 @@ export class BabySpeaki extends BaseCharacter {
         options.speed = 0;                             // 動かない
         super(id, parentElement, x, y, options);
         this.idleGrowthTime = 0; // 実時間ではなくIDLE状態の累積時間で成長させる
+        this.hasHunger = false;  // 赤ちゃんは空腹度が減らない
     }
 
     /** フレーム更新: IDLE時のみ成長タイマーを進める */
@@ -26,8 +27,6 @@ export class BabySpeaki extends BaseCharacter {
 
     /** 状態遷移の制限と自動進化、喋りループ */
     _updateStateTransition() {
-        const now = Date.now();
-
         // 1. 進化チェック (累積IDLE時間が60秒経過で子供へ)
         if (this.idleGrowthTime > 60000) {
             if (window.game && window.game.evolveBabyToChild) {
@@ -36,22 +35,22 @@ export class BabySpeaki extends BaseCharacter {
             }
         }
 
-
-        // 2. 常に何もしないIDLE状態を維持（USER_INTERACTING, 交流中以外）
-        const allowedStates = [STATE.USER_INTERACTING, STATE.GAME_APPROACHING, STATE.GAME_REACTION];
-        if (!allowedStates.includes(this.status.state)) {
-            this.status.state = STATE.IDLE;
+        // 2. 特殊状態（ユーザー交流、他スピキとの交流）の時は基底クラスに任せる
+        const interactiveStates = [STATE.USER_INTERACTING, STATE.GAME_APPROACHING, STATE.GAME_REACTION];
+        if (interactiveStates.includes(this.status.state)) {
+            super._updateStateTransition();
+            return;
         }
 
+        // 3. それ以外は常にIDLE状態を維持（WALKINGへの遷移を封印）
+        this.status.state = STATE.IDLE;
 
-        super._updateStateTransition();
-
-        // 3. 喋りループ: 音声が再生されていないIDLE時、常に次のアセットを再生
-        if (this.status.state === STATE.IDLE && !this.visual.currentVoice) {
-            // アセット適用を強制（_onStateChangedを呼ぶことでASSETSからランダム選択される）
+        // 4. 喋りループ: 音声が再生終了したら、次のアセットを再生（BABY専用の常時お喋り）
+        if (!this.isVoicePlaying()) {
             this._onStateChanged(STATE.IDLE);
         }
     }
+
 
     /** 移動を封印 */
     _decideWanderingDestination(w, h) {
