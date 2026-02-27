@@ -146,7 +146,8 @@ export class BaseCharacter {
 
         // 空腹度の進行
         if (this.hasHunger) {
-            this.status.hunger = Math.max(0, this.status.hunger - dt / 5000); // テストとして500としている
+            const modifier = (window.game && window.game.unlocks.hungerDecayModifier) || 1.0;
+            this.status.hunger = Math.max(0, this.status.hunger - (dt / 5000) * modifier);
         }
 
         // 死亡判定 (DYING状態でないときのみ判定)
@@ -170,8 +171,25 @@ export class BaseCharacter {
             this.status.friendship = Math.min(0, this.status.friendship + dt / 10000); // 10秒で1回復
         }
 
+        // 好感度の自然減少 (正の値の場合)
+        if (this.status.friendship > 0) {
+            const modifier = (window.game && window.game.unlocks.affectionDecayModifier) || 1.0;
+            // 1分で 0.5 程度下がる設定 (60000ms / 120000 = 0.5)
+            this.status.friendship = Math.max(0, this.status.friendship - (dt / 120000) * modifier);
+        }
+
         // 表情の基本更新（オーバーライド可能）
         this._updateAppearanceByStatus();
+
+        // しあわせスピキ状態の視覚効果用フラグ更新
+        if (this.visual.dom.container) {
+            const isHappySpeaki = this.canInteract && this.status.friendship >= 40 && this.status.hunger >= 80;
+            if (isHappySpeaki) {
+                this.visual.dom.container.classList.add('is-happy');
+            } else {
+                this.visual.dom.container.classList.remove('is-happy');
+            }
+        }
     }
 
     /** 状態遷移の判定 (サブクラスで拡張可能) */
@@ -274,59 +292,71 @@ export class BaseCharacter {
                 break;
 
             case STATE.GAME_APPROACHING:
-                if (arrived) {
-                    this.status.state = STATE.GAME_REACTION;
-                    this.timers.actionStart = Date.now();
-                    // game.jsで設定されたactionDurationを維持（なければデフォルト9秒）
-                    if (!this.timers.actionDuration) this.timers.actionDuration = 9000;
-                    this._onStateChanged(this.status.state);
-                }
-                break;
-
             case STATE.GAME_REACTION:
-                // 自分の番でない場合はタイマーをリセットし続けて待機
-                if (!this.status.isMySocialTurn) {
-                    this.timers.actionStart = now;
+                // 安全策: パートナーがいない、または削除されている場合はIDLEに戻す
+                const socialPartner = this.socialConfig ? this.socialConfig.partner : null;
+                const isPartnerValid = socialPartner && socialPartner.visual && socialPartner.visual.dom && socialPartner.visual.dom.container;
+                const isPartnerInSocialState = socialPartner && [STATE.GAME_APPROACHING, STATE.GAME_REACTION].includes(socialPartner.status.state);
+
+                if (!isPartnerValid || !isPartnerInSocialState) {
+                    console.warn(`[BaseCharacter] Social partner lost or invalid for ${this.id}. Resetting to IDLE.`);
+                    this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
+                    this.status.socialTurnCount = 0;
+                    this.status.isMySocialTurn = false;
+                    this._onStateChanged(this.status.state);
                     return;
                 }
 
-                const timeInAction = now - this.timers.actionStart;
-                const currentDuration = this.timers.actionDuration || 3000;
-
-                if (timeInAction > currentDuration) {
-                    this.status.socialTurnCount++;
-                    this.status.isMySocialTurn = false;
-
-                    const partner = this.socialConfig ? this.socialConfig.partner : null;
-                    const bothFinished = (this.status.socialTurnCount >= 3 && (!partner || partner.status.socialTurnCount >= 3));
-
-                    if (!bothFinished) {
-                        if (partner) {
-                            partner.status.isMySocialTurn = true;
-                            partner.timers.actionStart = Date.now();
-                            // パートナーの次のターンのためにアセットをランダムに再抽選
-                            partner._applySelectedAsset(STATE.GAME_REACTION);
-                        } else {
-                            // パートナーがいない場合は（稀だが）自分で次のターンを開始
-                            this.status.isMySocialTurn = true;
-                            this.timers.actionStart = Date.now();
-                            this._applySelectedAsset(STATE.GAME_REACTION);
-                        }
-                    } else {
-                        // 終了処理
-                        this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
-                        this.status.socialTurnCount = 0;
-                        this.status.isMySocialTurn = false;
+                if (this.status.state === STATE.GAME_APPROACHING) {
+                    if (arrived) {
+                        this.status.state = STATE.GAME_REACTION;
+                        this.timers.actionStart = Date.now();
+                        // game.jsで設定されたactionDurationを維持（なければデフォルト9秒）
+                        if (!this.timers.actionDuration) this.timers.actionDuration = 9000;
                         this._onStateChanged(this.status.state);
+                    }
+                } else {
+                    // STATE.GAME_REACTION の処理
+                    // 自分の番でない場合はタイマーをリセットし続けて待機
+                    if (!this.status.isMySocialTurn) {
+                        this.timers.actionStart = now;
+                        return;
+                    }
 
-                        // パートナーもIDLEに戻す（同期漏れ防止）
-                        if (partner) {
-                            partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
-                            partner.status.socialTurnCount = 0;
-                            partner.status.isMySocialTurn = false;
-                            partner._onStateChanged(partner.status.state);
+                    const timeInAction = now - this.timers.actionStart;
+                    const currentDuration = this.timers.actionDuration || 3000;
+
+                    if (timeInAction > currentDuration) {
+                        this.status.socialTurnCount++;
+                        this.status.isMySocialTurn = false;
+
+                        const partner = this.socialConfig.partner; // ここでは存在が保証されている
+                        const bothFinished = (this.status.socialTurnCount >= 3 && (!partner || partner.status.socialTurnCount >= 3));
+
+                        if (!bothFinished) {
+                            if (partner) {
+                                partner.status.isMySocialTurn = true;
+                                partner.timers.actionStart = Date.now();
+                                partner._applySelectedAsset(STATE.GAME_REACTION);
+                            } else {
+                                this.status.isMySocialTurn = true;
+                                this.timers.actionStart = Date.now();
+                                this._applySelectedAsset(STATE.GAME_REACTION);
+                            }
+                        } else {
+                            // 終了処理
+                            this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
+                            this.status.socialTurnCount = 0;
+                            this.status.isMySocialTurn = false;
+                            this._onStateChanged(this.status.state);
+
+                            if (partner) {
+                                partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
+                                partner.status.socialTurnCount = 0;
+                                partner.status.isMySocialTurn = false;
+                                partner._onStateChanged(partner.status.state);
+                            }
                         }
-
                     }
                 }
                 break;
@@ -694,9 +724,9 @@ export class BaseCharacter {
         let emotion = this.status.emotion;
         let action = this.status.action;
 
-        // 【修正】アイテム実行中は、forcedEmotionによるhappy等への上書きを無視して
-        // 専用演出(ITEMカテゴリ)を優先的に探しに行くようにする
-        if (state === STATE.ITEM_ACTION) {
+        // 【修正】アイテム実行中は、専用演出(ITEMカテゴリ)を優先的に探しに行くようにする。
+        // ただし、actionが'idle'（横取りガッカリ状態）の場合は、設定されたsad感情を優先する。
+        if (state === STATE.ITEM_ACTION && action !== 'idle') {
             emotion = 'ITEM';
         }
 

@@ -263,10 +263,18 @@ body {
     /* カウンター配置用 */
 }
 
-#gift-stock-display {
-    position: absolute;
-    bottom: 0.8rem;
-    right: 1rem;
+/* サイドメニュー上部のリソース表示エリア */
+.resource-displays {
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+}
+
+#gift-stock-display,
+#seed-stock-display {
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -278,12 +286,11 @@ body {
     color: var(--accent-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     border: 1px solid #ffe4e1;
-    pointer-events: none;
 }
 
 .stock-icon {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     object-fit: contain;
 }
 
@@ -320,6 +327,34 @@ h3 {
     flex-wrap: wrap;
     gap: 0.6rem;
     margin-bottom: 0.5rem;
+}
+
+.horizontal-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: space-between;
+    padding: 5px;
+}
+
+.job-buttons-container {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    flex: 1;
+}
+
+.primary-btn.mini-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+    width: auto;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.job-item {
+    flex: 1;
+    min-width: 100px;
 }
 
 .draggable-item {
@@ -880,6 +915,22 @@ button:hover {
     }
 }
 
+#unlock-shop-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 5px 10px;
+    font-size: 12px;
+    background: rgba(255, 140, 0, 0.8);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.2s, background 0.2s;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
 .modal-close {
     position: absolute;
     top: 1.5rem;
@@ -926,4 +977,188 @@ button:hover {
 
 .modal-overlay.hidden {
     display: none;
+}
+
+/* しあわせスピキのエフェクト */
+.char-sprite-container.is-happy .char-sprite {
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1));
+    animation: happy-shimmer 2s infinite alternate ease-in-out;
+}
+
+@keyframes happy-shimmer {
+    from {
+        filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.7));
+    }
+
+    to {
+        filter: drop-shadow(0 0 25px rgba(255, 215, 0, 1)) brightness(1.2);
+    }
+}
+
+/* 疑似要素での後光が重なる問題を避けるため、メインのspriteにフィルターをかける方式に変更 */
+
+/* 幸福度ゲージ UI */
+#happiness-container {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 100;
+    pointer-events: none;
+}
+
+#happiness-pumpkin {
+    width: 60px;
+    height: 60px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+    margin-bottom: 5px;
+}
+
+#happiness-bar-wrapper {
+    width: 200px;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    border: 2px solid #fff;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+#happiness-bar-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #ffd700, #ff4500);
+    transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ゲームクリア画面 */
+#game-clear-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 1s;
+    pointer-events: auto;
+}
+
+#game-clear-overlay:not(.hidden) {
+    opacity: 1;
+}
+
+.clear-content {
+    text-align: center;
+    background: white;
+    padding: 3rem 5rem;
+    border-radius: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    border: 4px solid #ffd700;
+}
+
+.clear-content h1 {
+    font-size: 3rem;
+    color: #ff4500;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 0px #ffd700;
+}
+
+/* アンロックモーダル特有 */
+.unlock-modal-content {
+    max-width: 800px !important;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#unlock-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.unlock-item {
+    background: white;
+    border: 2px solid #ffe4e1;
+    border-radius: 16px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.unlock-item.unlocked {
+    border-color: #4ae281;
+    background: #f0fff4;
+}
+
+.unlock-item.locked {
+    filter: grayscale(0.5);
+    opacity: 0.8;
+}
+
+.unlock-item h4 {
+    margin: 0;
+    color: var(--accent-color);
+}
+
+.unlock-item .price {
+    font-weight: bold;
+    color: #e67e22;
+    font-size: 0.9rem;
+}
+
+.unlock-btn {
+    margin-top: auto;
+}
+
+/* クールダウン表示 */
+.draggable-item.cooldown {
+    filter: grayscale(0.8) brightness(0.7);
+    cursor: wait;
+    position: relative;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.draggable-item.cooldown::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    animation: cooldown-anim linear forwards;
+}
+
+@keyframes cooldown-anim {
+    from {
+        height: 100%;
+    }
+
+    to {
+        height: 0%;
+    }
+}
+
+.cooldown-timer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    z-index: 2;
+    font-size: 0.8rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }

@@ -36,6 +36,22 @@
         <div id="game-container">
             <!-- 飼育スペース (80%) -->
             <main id="speaki-room">
+                <!-- 幸福度ゲージ UI -->
+                <div id="happiness-container">
+                    <img src="assets/images/item_pumpkin.png" alt="Happiness Pumpkin" id="happiness-pumpkin">
+                    <div id="happiness-bar-wrapper">
+                        <div id="happiness-bar-fill"></div>
+                    </div>
+                </div>
+
+                <!-- ゲームクリア画面 -->
+                <div id="game-clear-overlay" class="hidden">
+                    <div class="clear-content">
+                        <h1>Game Clear!</h1>
+                        <p>幸福度がMAXになりました！ずっと一緒にいてね！</p>
+                    </div>
+                </div>
+
                 <canvas id="game-canvas"></canvas>
                 <!-- 隠れ家 (常に最前面) -->
                 <img id="speaki-hideout" src="assets/images/hideout.png" alt="hideout">
@@ -50,17 +66,26 @@
                     <div id="item-list" class="draggable-container">
                         <!-- Dynamic Items -->
                     </div>
-                    <div id="gift-stock-display">
-                        <img src="assets/images/gift.png" alt="gift" class="stock-icon">
-                        <span>x <span id="gift-stock-count">0</span></span>
+                    <div class="resource-displays">
+                        <div id="gift-stock-display">
+                            <img src="assets/images/gift.png" alt="gift" class="stock-icon" title="プラスチック">
+                            <span>x <span id="gift-stock-count">0</span></span>
+                        </div>
+                        <div id="seed-stock-display">
+                            <img src="assets/images/gift.png" alt="seed" class="stock-icon" title="かぼちゃの種">
+                            <span>x <span id="seed-stock-count">0</span></span>
+                        </div>
                     </div>
                 </section>
 
-                <section id="job-section" class="menu-block">
-                    <h2>バイト</h2>
-                    <p class="menu-description">使徒たちに手伝ってもらおう</p>
-                    <div id="job-list" class="draggable-container">
-                        <!-- Dynamic NPC Call Items -->
+                <section id="action-section" class="menu-block">
+                    <div class="horizontal-actions">
+                        <div id="job-list" class="job-buttons-container">
+                            <!-- Dynamic NPC Call Items -->
+                        </div>
+                        <div id="unlock-container">
+                            <button id="open-unlock-btn" class="primary-btn mini-btn">機能解放</button>
+                        </div>
                     </div>
                 </section>
 
@@ -137,6 +162,20 @@
             <div id="reaction-group" class="hidden">
                 <button id="reaction-btn-1">ﾁｮﾜﾖ!</button>
                 <button id="reaction-btn-2">ｱﾘｶﾞﾄｳ!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 機能解放 (アンロック) モーダル -->
+    <div id="unlock-modal" class="modal-overlay hidden">
+        <div class="modal-content unlock-modal-content">
+            <button id="close-unlock-btn" class="modal-close">&times;</button>
+            <div class="modal-header">
+                <h3>機能解放 (かぼちゃの種を消費します)</h3>
+                <div class="current-seeds">所持: <span id="modal-seed-count">0</span> 個</div>
+            </div>
+            <div class="modal-body" id="unlock-list">
+                <!-- Dynamic unlock items -->
             </div>
         </div>
     </div>

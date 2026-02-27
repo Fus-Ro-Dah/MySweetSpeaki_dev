@@ -148,7 +148,7 @@ export const ASSETS = {
             },
             normal: {
                 idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ばぶぅ', movePattern: 'bounce' }],
-                surprised: [{ imagefile: 'baby_normal_idle_2.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ!!', movePattern: 'shake' }]
+                surprised: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ!!', movePattern: 'shake' }]
             },
             sad: {
                 idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ...', movePattern: 'bounce' }],
@@ -241,6 +241,7 @@ export const ASSETS = {
  * 統合アイテム定義 (ITEMS)
  */
 export const ITEMS = {
+    //ただのかぼちゃ
     NormalPumpkin: {
         name: ' ﾎﾊﾞｷﾞ',
         imagefile: 'item_pumpkin.png',
@@ -248,9 +249,10 @@ export const ITEMS = {
         size: 180,
         showInMenu: true,
         isFood: false,
-        friendshipChange: 2,
+        friendshipChange: 10,
         forcedEmotion: 'happy'
     },
+    //スピキが生まれるかぼちゃ
     Pumpkin: {
         name: 'ﾌｼｷﾞなﾎﾊﾞｷﾞ',
         imagefile: 'item_pumpkin.png',
@@ -262,6 +264,18 @@ export const ITEMS = {
         friendshipChange: 2,
         forcedEmotion: 'happy'
     },
+    //スピキが死んだ場所に生成されるかぼちゃ
+    DeathPumpkin: {
+        name: '復活ﾎﾊﾞｷﾞ',
+        imagefile: 'item_pumpkin.png',
+        text: '',
+        size: 180,
+        showInMenu: true,
+        isFood: false,
+        transform: { nextId: 'Pumpkin2', duration: 10000 },
+        friendshipChange: 0,
+        forcedEmotion: 'sad'
+    },
     Pumpkin2: {
         name: 'ﾌｼｷﾞなﾎﾊﾞｷﾞ_割れ',
         imagefile: 'item_pumpkin2.png',
@@ -270,7 +284,8 @@ export const ITEMS = {
         size: 180,
         pitch: 1.5,
         isFood: false,
-        transform: { isAdult: 'baby', duration: 10000 }
+        transform: { isAdult: 'baby', duration: 10000 },
+        showInMenu: false,
     },
     BabySpeaki: {
         name: '赤ちゃんスピキ',
@@ -280,7 +295,8 @@ export const ITEMS = {
         size: 80,
         pitch: 1.5,
         isFood: false,
-        transform: { nextId: 'BabySpeaki2', duration: 20000 }
+        transform: { nextId: 'BabySpeaki2', duration: 20000 },
+        showInMenu: false,
     },
     BabySpeaki2: {
         name: '赤ちゃんスピキ2',
@@ -290,7 +306,15 @@ export const ITEMS = {
         size: 80,
         pitch: 1.5,
         isFood: false,
-        transform: { isAdult: 'baby', duration: 20000 }
+        transform: { isAdult: 'baby', duration: 20000 },
+        showInMenu: false,
+    },
+    PumpkinSeed: {
+        name: 'かぼちゃの種',
+        imagefile: 'gift.png', // Temporary placeholder until seed.png is provided
+        size: 50,
+        showInMenu: false, // 右メニューには出さない
+        isFood: false,
     },
     Candy: {
         name: 'キャンディ',
@@ -301,28 +325,30 @@ export const ITEMS = {
         nutrition: 15,
         isFood: true,
         friendshipChange: 2,
-        forcedEmotion: 'happy'
+        forcedEmotion: 'happy',
+        reloadTime: 10000,
     },
     Mocaron: {
         name: 'モカロン',
         imagefile: 'item_モカロン.png',
         size: 100,
         text: '',
-        showInMenu: true,
+        showInMenu: false, // 初期は未解放なのでfalseにする
         nutrition: 25,
         isFood: true,
         friendshipChange: 5,
-        forcedEmotion: 'happy'
+        forcedEmotion: 'happy',
+        reloadTime: 20000,
     },
     Poteto: {
         name: 'さつまいも',
         imagefile: 'item_poteto.png',
         size: 100,
         text: '',
-        showInMenu: true,
-        nutrition: 15,
+        showInMenu: false, // 右メニューには出さない
+        nutrition: 40,
         isFood: true,
-        friendshipChange: 0, //ポーシャーから与えられるため
+        friendshipChange: 8,
         forcedEmotion: 'happy'
     },
     AnimalCan: {
@@ -332,6 +358,7 @@ export const ITEMS = {
         size: 100,
         text: 'エルフ族特製!',
         isSpecialGift: true,
+        showInMenu: false,
     },
     Shionmelone: {
         name: 'シオン・ザ・メロンブレッド',
@@ -341,7 +368,8 @@ export const ITEMS = {
         text: '元ネタ: https://youtu.be/Py06vYKp4EY?si=V2BOhdAMiVH_Rvh1',
         isSpecialGift: true,
         isFood: false,
-        forcedEmotion: 'happy'
+        forcedEmotion: 'happy',
+        showInMenu: false,
     },
     LeviDriver: {
         name: 'レヴィ・ドライバー',
@@ -351,6 +379,7 @@ export const ITEMS = {
         text: '元ネタ: https://youtu.be/WsQKUin6sb0?si=lltZElvtIdY4qbA6',
         isSpecialGift: true,
         isFood: false,
+        showInMenu: false,
     },
     BrokenHobagi: {
         name: 'かぼちゃ粥',
@@ -358,14 +387,15 @@ export const ITEMS = {
         size: 100,
         isSpecialGift: true,
         isFood: false,
-        forcedEmotion: 'sad'
+        forcedEmotion: 'sad',
+        showInMenu: false,
     },
     RandomGift: {
-        name: 'ランダムアイテム',
+        name: 'プラスチック',
         imagefile: 'gift.png', // ギフト画像を使用
         size: 50,
-        showInMenu: true,
-        isRandomTool: true // 内部的な識別用
+        showInMenu: false, // 右メニューには出さない
+        isRandomTool: true, // 内部的な識別用
     }
 };
 

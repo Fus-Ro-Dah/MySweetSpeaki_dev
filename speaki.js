@@ -182,7 +182,8 @@ export class Speaki extends BaseCharacter {
         const nonInterruptibleStates = [
             STATE.GIFT_LEAVING, STATE.GIFT_SEARCHING, STATE.GIFT_RETURNING,
             STATE.GIFT_WAIT_FOR_USER_REACTION, STATE.GIFT_REACTION, STATE.GIFT_TIMEOUT,
-            STATE.USER_INTERACTING
+            STATE.USER_INTERACTING,
+            STATE.GAME_APPROACHING, STATE.GAME_REACTION // 交流中もお土産イベントで離席しないようにする
         ];
 
         if (nonInterruptibleStates.includes(this.status.state)) {
