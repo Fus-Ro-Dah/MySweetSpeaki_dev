@@ -22,7 +22,7 @@ export class Game {
         this.placedItems = [];
         this.interactTarget = null; // 現在操作（タップ・なでなで）中のスピキ
         this.lastGiftTime = Date.now() - 20000; // 起動後10秒程度でギフト可能にする
-        this.stockGifts = 0;        // 溜まったギフト回数
+        this.plastics = 0;        // 溜まったプラスチック（旧ギフト）回数
         this.bgmBuffer = null;      // Web Audio API用デコード済みデータ
         this.bgmSource = null;      // 再生用ノード
         this.audioCtx = null;       // AudioContext
@@ -42,12 +42,10 @@ export class Game {
         // 新機能用ステート
         this.happiness = 0;
         this.maxHappiness = 5000; // 仮のMAX値
-        this.pumpkinSeeds = 0;
-        this.plastics = 0; // 旧 stockGifts をこちらに統合するか併用する
         this.unlocks = {
             feeder: false,
             hungerDecayLv: 0, // 0から始まり、解放ごとに+1
-            affectionDecayModifier: 1.0,
+            affectionDecayLv: 0, // NEW: 0から始まり、解放ごとに+1
             autoReceive: false,
             mocaronUnlocked: false,
             reloadModifier: 1.0
@@ -157,9 +155,9 @@ export class Game {
         this.setupInteractions();
         this.setupDragAndDrop();
 
-        // 幸福度と種の初期表示
+        // 幸福度とプラスチックの初期表示
         this.updateHappinessUI();
-        this.updateSeedStockUI();
+        this.updatePlasticStockUI();
 
         // アンロックメニューのリスナー
         const openUnlockBtn = document.getElementById('open-unlock-btn');
@@ -227,36 +225,41 @@ export class Game {
     initItemMenu() {
         const itemList = document.getElementById('item-list');
         const jobList = document.getElementById('job-list');
-        if (!itemList || !jobList) return;
 
-        itemList.innerHTML = '';
-        jobList.innerHTML = '';
+        if (itemList) itemList.innerHTML = '';
+        if (jobList) jobList.innerHTML = '';
+
+        if (!itemList && !jobList) return;
 
         // アイテムの描画
-        Object.keys(ITEMS).forEach(id => {
-            const def = ITEMS[id];
-            if (def.showInMenu === false) return;
+        if (itemList) {
+            Object.keys(ITEMS).forEach(id => {
+                const def = ITEMS[id];
+                if (def.showInMenu === false) return;
 
-            const div = this._createDraggableMenuItem(id, def, 'item');
-            itemList.appendChild(div);
-        });
+                const div = this._createDraggableMenuItem(id, def, 'item');
+                itemList.appendChild(div);
+            });
+        }
 
         // バイトの描画
-        Object.keys(JOBS).forEach(id => {
-            const def = JOBS[id];
-            if (def.showInMenu === false) return;
+        if (jobList) {
+            Object.keys(JOBS).forEach(id => {
+                const def = JOBS[id];
+                if (def.showInMenu === false) return;
 
-            const div = this._createDraggableMenuItem(id, def, 'job');
-            // バイトはクリックでも即実行ボタンとして機能させる
-            div.addEventListener('click', () => {
-                this.callNPC(def.npcType);
+                const div = this._createDraggableMenuItem(id, def, 'job');
+                // バイトはクリックでも即実行ボタンとして機能させる
+                div.addEventListener('click', () => {
+                    this.callNPC(def.npcType);
+                });
+                jobList.appendChild(div);
             });
-            jobList.appendChild(div);
-        });
+        }
 
         // 初回のUI状態反映
         this.updateJobMenuUI();
-        this.updateGiftStockUI();
+        this.updatePlasticStockUI();
     }
 
     /** ドラッグ可能なアイテム要素を作成する内部ヘルパー */
@@ -447,8 +450,8 @@ export class Game {
 
         // --- ここから通常のアイテムロジック ---
         if (id === 'RandomGift') {
-            // プラスチック（旧 stockGifts）を消費
-            if (this.stockGifts <= 0) {
+            // プラスチックを消費
+            if (this.plastics <= 0) {
                 this.playSound('アーウ.mp3', 0.5);
                 return;
             }
@@ -457,9 +460,9 @@ export class Game {
                 const [randomId, randomDef] = pool[Math.floor(Math.random() * pool.length)];
                 id = randomId;
                 def = randomDef;
-                this.stockGifts--;
+                this.plastics--;
                 this.initItemMenu();
-                this.updateGiftStockUI();
+                this.updatePlasticStockUI();
             } else {
                 return;
             }
@@ -801,18 +804,12 @@ export class Game {
         }
     }
 
-    /** かぼちゃの種の在庫表示更新 */
-    updateSeedStockUI() {
-        const count = document.getElementById('seed-stock-count');
-        const modalCount = document.getElementById('modal-seed-count');
-        if (count) count.textContent = Math.floor(this.pumpkinSeeds);
-        if (modalCount) modalCount.textContent = Math.floor(this.pumpkinSeeds);
-    }
-
-    /** プラスチック（旧ギフト）の在庫表示更新 */
-    updateGiftStockUI() {
+    /** プラスチックの在庫表示更新 */
+    updatePlasticStockUI() {
         const count = document.getElementById('gift-stock-count');
-        if (count) count.textContent = this.stockGifts;
+        const modalCount = document.getElementById('modal-plastic-count');
+        if (count) count.textContent = Math.floor(this.plastics);
+        if (modalCount) modalCount.textContent = Math.floor(this.plastics);
     }
 
     startGiftReceiveEvent(speaki) {
@@ -844,25 +841,15 @@ export class Game {
             this.giftPartner._onStateChanged(this.giftPartner.status.state);
             this.playSound('happy');
 
-            // 報酬の計算
-            // 好感度が高いほど多くもらえる
+            // プラスチックの報酬計算
             const friendship = this.giftPartner.status.friendship;
-
-            // プラスチック (旧 stockGifts)
             let plasticGain = 1;
-            if (friendship > 60) plasticGain = 2;
-            if (friendship > 90) plasticGain = 3;
-            this.stockGifts += plasticGain;
-
-            // かぼちゃの種
-            let seedGain = 1;
-            if (friendship > 50) seedGain = 3;
-            if (friendship > 80) seedGain = 5;
-            this.pumpkinSeeds += seedGain;
+            if (friendship > 50) plasticGain = 3;
+            if (friendship > 80) plasticGain = 5;
+            this.plastics += plasticGain;
 
             this.initItemMenu();
-            this.updateGiftStockUI();
-            this.updateSeedStockUI();
+            this.updatePlasticStockUI();
         }
     }
 
@@ -896,8 +883,8 @@ export class Game {
 
             if (s.isPendingDeletion) {
                 // 削除前にその場に「かぼちゃ（Pumpkin）」を配置
-                console.log(`[Game] Speaki ${s.id} died and returned to Pumpkin.`);
-                this.addItem('DeathPumpkin', 'item', s.pos.x, s.pos.y);
+                console.log(`[Game] Speaki ${s.id} died and returned to DeathWimple.`);
+                this.addItem('DeathWimple', 'item', s.pos.x, s.pos.y);
 
                 // --- クリーンアップ ---
                 if (this.interactTarget === s) this.interactTarget = null;
@@ -1064,7 +1051,7 @@ export class Game {
     /** ハイライト設定 */
     setHighlight(id) {
         this.highlightedCharId = (this.highlightedCharId === id) ? null : id;
-        this.updateSpeakiListUI(true); // UI側の反映（強制更新）
+        this.updateSpeakiList(true); // UI側の反映（強制更新）
     }
 
     /** キャラクター削除 */
@@ -1163,7 +1150,7 @@ export class Game {
         }
 
         this.playSound('happy', 1.0);
-        this.updateSpeakiListUI(true);
+        this.updateSpeakiList(true);
     }
 
     _updateItemLifecycles(dt) {
@@ -1363,11 +1350,15 @@ export class Game {
         });
     }
 
-    /** ギフト（プラスチック）の在庫表示を更新 */
-    updateGiftStockUI() {
+    /** プラスチックの在庫表示を更新 */
+    updatePlasticStockUI() {
         const countEl = document.getElementById('gift-stock-count');
+        const modalCountEl = document.getElementById('modal-plastic-count');
         if (countEl) {
-            countEl.textContent = this.stockGifts;
+            countEl.textContent = Math.floor(this.plastics);
+        }
+        if (modalCountEl) {
+            modalCountEl.textContent = Math.floor(this.plastics);
         }
     }
 
@@ -1388,11 +1379,7 @@ export class Game {
             const gain = (dt / 1000) * happySpeakCount;
             this.happiness = Math.min(this.maxHappiness, this.happiness + gain);
 
-            // ついでに 種 も少しずつ増える (幸福度の 1/10 程度)
-            this.pumpkinSeeds += gain * 0.1;
-
             this.updateHappinessUI();
-            this.updateSeedStockUI();
         }
 
         // 自動ごはん係の処理
@@ -1428,7 +1415,14 @@ export class Game {
                 current: false, // 繰り返し可能にするため常にfalse
                 isUpgrade: true
             },
-            { id: 'affectionDecay', name: '好感度減少の緩和', price: 1, desc: 'スピキの好感度が下がる速度が20%低下します', current: this.unlocks.affectionDecayModifier < 1.0 },
+            {
+                id: 'affectionDecay',
+                name: `好感度減少の緩和 (Lv.${this.unlocks.affectionDecayLv})`,
+                price: 1,
+                desc: `減少速度を遅くします。現在: ${2 + this.unlocks.affectionDecayLv}秒に1 → 次: ${3 + this.unlocks.affectionDecayLv}秒に1`,
+                current: false,
+                isUpgrade: true
+            },
             { id: 'autoReceive', name: 'プレゼント自動回収', price: 1, desc: 'スピキが持ってきたお土産を自動で受け取ります', current: this.unlocks.autoReceive },
             { id: 'unlockMocaron', name: 'モカロンの解放', price: 1, desc: '高級な食べ物「モカロン」が置けるようになります', current: this.unlocks.mocaronUnlocked },
             { id: 'cooldownReduction', name: 'リロード時間短縮', price: 1, desc: 'アイテム配置のリロード時間が30%短縮されます', current: this.unlocks.reloadModifier < 1.0 }
@@ -1443,7 +1437,7 @@ export class Game {
                 <h4>${def.name}</h4>
                 <p>${def.desc}</p>
                 <div class="price">${def.current ? '解放済み' : `消費: ${def.price} 個`}</div>
-                <button class="primary-btn unlock-btn" ${(def.current || this.pumpkinSeeds < def.price) ? 'disabled' : ''} 
+                <button class="primary-btn unlock-btn" ${(def.current || this.plastics < def.price) ? 'disabled' : ''} 
                     onclick="window.game.unlockFeature('${def.id}', ${def.price})">
                     ${def.current ? '解放済み' : (def.isUpgrade ? '強化する' : '解放する')}
                 </button>
@@ -1454,13 +1448,13 @@ export class Game {
 
     /** 実際のアンロック処理 */
     unlockFeature(id, price) {
-        if (this.pumpkinSeeds < price) return;
-        this.pumpkinSeeds -= price;
+        if (this.plastics < price) return;
+        this.plastics -= price;
 
         switch (id) {
             case 'feeder': this.unlocks.feeder = true; break;
             case 'hungerDecay': this.unlocks.hungerDecayLv++; break;
-            case 'affectionDecay': this.unlocks.affectionDecayModifier = 0.8; break;
+            case 'affectionDecay': this.unlocks.affectionDecayLv++; break;
             case 'autoReceive': this.unlocks.autoReceive = true; break;
             case 'unlockMocaron':
                 this.unlocks.mocaronUnlocked = true;
@@ -1471,7 +1465,7 @@ export class Game {
         }
 
         this.playSound('happy', 1.2);
-        this.updateSeedStockUI();
+        this.updatePlasticStockUI();
         this.initUnlockMenu(); // 再描画
     }
 

@@ -174,9 +174,10 @@ export class BaseCharacter {
 
         // 好感度の自然減少 (正の値の場合)
         if (this.status.friendship > 0) {
-            const modifier = (window.game && window.game.unlocks.affectionDecayModifier) || 1.0;
-            // 1分で 0.5 程度下がる設定 (60000ms / 120000 = 0.5)
-            this.status.friendship = Math.max(0, this.status.friendship - (dt / 120000) * modifier);
+            const affectionDecayLv = (window.game && window.game.unlocks.affectionDecayLv) || 0;
+            const secondsPerPoint = 2 + affectionDecayLv;
+            // 指定された秒数で 1ポイント下がるよう計算 (dt / (秒数 * 1000))
+            this.status.friendship = Math.max(0, this.status.friendship - (dt / (secondsPerPoint * 1000)));
         }
 
         // 表情の基本更新（オーバーライド可能）

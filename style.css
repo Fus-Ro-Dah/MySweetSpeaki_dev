@@ -278,8 +278,7 @@ body {
     border-radius: 12px;
 }
 
-#gift-stock-display,
-#seed-stock-display {
+#gift-stock-display {
     display: flex;
     align-items: center;
     gap: 0.4rem;

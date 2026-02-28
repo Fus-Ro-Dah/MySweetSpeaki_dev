@@ -88,7 +88,7 @@ export const ASSETS = {
         performance: {
             ITEM: {
                 Pumpkin: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'bounce' }],
-                DeathPumpkin: [{ imagefile: 'speaki_sad_idle_5.png', soundfile: 'ひきつけ.mp3', text: 'ﾋｯｸ…ﾋｯｸ…', movePattern: 'shake' }],
+                DeathWimple: [{ imagefile: 'speaki_sad_idle_5.png', soundfile: 'ひきつけ.mp3', text: 'ﾋｯｸ…ﾋｯｸ…', movePattern: 'shake' }],
                 BabySpeaki: [{ imagefile: 'speaki_happy_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'bounce' }],
                 Candy: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' }],
                 Mocaron: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
@@ -136,7 +136,7 @@ export const ASSETS = {
             },
             ITEM: {
                 Pumpkin: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
-                DeathPumpkin: [{ imagefile: 'speaki_sad_idle_5.png', soundfile: 'ひきつけ.mp3', text: '…………', movePattern: 'shake' }],
+                DeathWimple: [{ imagefile: 'speaki_sad_idle_5.png', soundfile: 'ひきつけ.mp3', text: '…………', movePattern: 'shake' }],
                 BabySpeaki: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce', pitch: 1.5 }],
                 Candy: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' }],
                 Mocaron: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
@@ -223,9 +223,9 @@ export const ASSETS = {
  * アイテム定義 (ITEMS)
  */
 export const ITEMS = {
-    //ただのかぼちゃ
+    //かぼちゃ
     NormalPumpkin: {
-        name: ' ﾎﾊﾞｷﾞ',                 //メニューに表示する名前
+        name: ' ﾎﾊﾞｷﾞのおもちゃ',         //メニューに表示する名前
         imagefile: 'item_pumpkin.png',  //使用する画像ファイル
         text: '',                       //配置時に表示するテキスト
         size: 180,                      //サイズ
@@ -234,48 +234,27 @@ export const ITEMS = {
         friendshipChange: 10,           //友好度の変化量
         forcedEmotion: 'happy'          //反応したｽﾋﾟｷがどんな感情になるか(この感情は10秒持続する)
     },
-    //スピキが生まれるかぼちゃ
-    Pumpkin: {
-        name: 'ﾌｼｷﾞなﾎﾊﾞｷﾞ',
-        imagefile: 'item_pumpkin.png',
+    //ウィンプル
+    wimple: {
+        name: 'ウィンプル',
+        imagefile: 'item_wimple.png',
         text: '',
-        size: 180,
+        size: 80,
         showInMenu: true,
         isFood: false,
-        transform: { nextId: 'Pumpkin2', duration: 10000 }, //10秒後にPumpkin2に変化する
-        friendshipChange: 2,
-        forcedEmotion: 'happy'
-    },
-    //スピキが死んだ場所に生成されるかぼちゃ(フシギなホバギとほぼ同じだが、ｽﾋﾟｷに悲しいリアクションをとらせるため分けている)
-    DeathPumpkin: {
-        name: '復活ﾎﾊﾞｷﾞ',
-        imagefile: 'item_pumpkin.png',
-        text: '',
-        size: 180,
-        showInMenu: true,
-        isFood: false,
-        transform: { nextId: 'Pumpkin2', duration: 10000 },
-        friendshipChange: 0,
-        forcedEmotion: 'sad'
-    },
-    //スピキが生まれる寸前のかぼちゃ
-    Pumpkin2: {
-        name: 'ﾌｼｷﾞなﾎﾊﾞｷﾞ_割れ',
-        imagefile: 'item_pumpkin2.png',
-        soundfile: 'ピキ.mp3',
-        text: '',
-        size: 180,
-        pitch: 1.5,
-        isFood: false,
+        forcedEmotion: 'happy',
         transform: { isAdult: 'baby', duration: 10000 },
-        showInMenu: false,
     },
-    PumpkinSeed: {
-        name: 'かぼちゃの種',
-        imagefile: 'gift.png', // Temporary placeholder until seed.png is provided
-        size: 50,
-        showInMenu: false, // 右メニューには出さない
+    //スピキが死んだ場所に生成されるウィンプル (DeathWimple)
+    DeathWimple: {
+        name: 'ウィンプル',
+        imagefile: 'item_wimple.png',
+        text: '',
+        size: 80,
+        showInMenu: false,
         isFood: false,
+        forcedEmotion: 'sad',
+        transform: { isAdult: 'baby', duration: 10000 },
     },
     //食べ物アイテム
     Candy: {
@@ -319,7 +298,7 @@ export const ITEMS = {
         name: 'ランダムアイテム',
         imagefile: 'gift.png', // ギフト画像を使用
         size: 50,
-        showInMenu: false, // 右メニューには出さない
+        showInMenu: true,
         isRandomTool: true, // 内部的な識別用(これにしか使わない)
     },
     //ランダムアイテム
