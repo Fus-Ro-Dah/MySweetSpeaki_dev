@@ -217,19 +217,6 @@ export class Speaki extends BaseCharacter {
 
     /** UI表示用のラベル取得 */
     getStateLabel() {
-        switch (this.status.state) {
-            case STATE.IDLE: return "のんびり";
-            case STATE.WALKING: return "お散歩";
-            case STATE.GIFT_LEAVING:
-            case STATE.GIFT_SEARCHING:
-            case STATE.GIFT_RETURNING: return "お土産探し";
-            case STATE.GIFT_WAIT_FOR_USER_REACTION: return "お土産！";
-            case STATE.ITEM_APPROACHING: return "発見！";
-            case STATE.ITEM_ACTION: return "遊び中";
-            case STATE.USER_INTERACTING: return "ふれあい中";
-            case STATE.GAME_APPROACHING:
-            case STATE.GAME_REACTION: return "交流中";
-            default: return "ぼーっと";
-        }
+        return "ｽﾋﾟｷ";
     }
 }

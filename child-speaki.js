@@ -89,13 +89,7 @@ export class ChildSpeaki extends BaseCharacter {
 
     /** リスト表示用のラベル */
     getStateLabel() {
-        switch (this.status.state) {
-            case STATE.IDLE: return "こども(のんびり)";
-            case STATE.WALKING: return "こども(てくてく)";
-            case STATE.ITEM_APPROACHING: return "なにかある！";
-            case STATE.ITEM_ACTION: return "あそんでる！";
-            default: return "こどもスピキ";
-        }
+        return "こども";
     }
 }
 

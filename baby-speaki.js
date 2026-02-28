@@ -70,10 +70,6 @@ export class BabySpeaki extends BaseCharacter {
 
     /** リスト表示用のラベル */
     getStateLabel() {
-        switch (this.status.state) {
-            case STATE.IDLE: return "赤ちゃん(ばぶばぶ)";
-            case STATE.USER_INTERACTING: return "赤ちゃん(ふれあい中)";
-            default: return "赤ちゃんスピキ";
-        }
+        return "赤ちゃん";
     }
 }

@@ -146,8 +146,9 @@ export class BaseCharacter {
 
         // 空腹度の進行
         if (this.hasHunger) {
-            const modifier = (window.game && window.game.unlocks.hungerDecayModifier) || 1.0;
-            this.status.hunger = Math.max(0, this.status.hunger - (dt / 5000) * modifier);
+            const hungerDecayLv = (window.game && window.game.unlocks.hungerDecayLv) || 0;
+            const secondsPerPoint = 2 + hungerDecayLv;
+            this.status.hunger = Math.max(0, this.status.hunger - (dt / (secondsPerPoint * 1000)));
         }
 
         // 死亡判定 (DYING状態でないときのみ判定)

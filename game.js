@@ -46,7 +46,7 @@ export class Game {
         this.plastics = 0; // 旧 stockGifts をこちらに統合するか併用する
         this.unlocks = {
             feeder: false,
-            hungerDecayModifier: 1.0,
+            hungerDecayLv: 0, // 0から始まり、解放ごとに+1
             affectionDecayModifier: 1.0,
             autoReceive: false,
             mocaronUnlocked: false,
@@ -893,7 +893,7 @@ export class Game {
             if (s.isPendingDeletion) {
                 // 削除前にその場に「かぼちゃ（Pumpkin）」を配置
                 console.log(`[Game] Speaki ${s.id} died and returned to Pumpkin.`);
-                this.addItem('Pumpkin', 'item', s.pos.x, s.pos.y);
+                this.addItem('DeathPumpkin', 'item', s.pos.x, s.pos.y);
 
                 // --- クリーンアップ ---
                 if (this.interactTarget === s) this.interactTarget = null;
@@ -931,7 +931,7 @@ export class Game {
 
         // UIの定期更新 (約250msごと)
         if (!this.lastUIUpdate || Date.now() - this.lastUIUpdate > 250) {
-            this.updateSpeakiListUI();
+            this.updateSpeakiList();
             this.lastUIUpdate = Date.now();
         }
     }
@@ -972,7 +972,7 @@ export class Game {
 
         // 距離制限を緩和
         const dist = Math.sqrt((char1.pos.x - char2.pos.x) ** 2 + (char1.pos.y - char2.pos.y) ** 2);
-        if (dist > 1200) return;
+        if (dist > 400) return;
 
         // 両者が赤ちゃんなら中止
         if (char1.characterType === 'baby' && char2.characterType === 'baby') return;
@@ -1053,7 +1053,7 @@ export class Game {
         if (id === 0) {
             console.log(char);
         }
-        this.updateSpeakiListUI();
+        this.updateSpeakiList();
     }
 
 
@@ -1078,7 +1078,7 @@ export class Game {
             if (s.visual.dom.container) s.visual.dom.container.remove();
             this.speakis.splice(index, 1);
             if (this.highlightedCharId === id) this.highlightedCharId = null;
-            this.updateSpeakiListUI(true);
+            this.updateSpeakiList(true);
             this.updateJobMenuUI(); // NPCが削除されたらバイトメニューも更新
         }
     }
@@ -1088,7 +1088,7 @@ export class Game {
         const s = this.speakis.find(s => s.id === id);
         if (s) {
             s.name = newName;
-            this.updateSpeakiListUI(true);
+            this.updateSpeakiList(true);
         }
     }
 
@@ -1124,7 +1124,7 @@ export class Game {
         }
 
         this.playSound('happy', 1.2);
-        this.updateSpeakiListUI(true);
+        this.updateSpeakiList(true);
     }
 
     /** 子供スピキの進化（大人へ） */
@@ -1203,7 +1203,26 @@ export class Game {
         }
     }
 
-    updateSpeakiListUI(force = false) {
+    _getEmotionLabel(s) {
+        const stateMapping = {
+            [STATE.IDLE]: 'のんびり',
+            [STATE.WALKING]: 'てくてく',
+            [STATE.GIFT_LEAVING]: 'お出かけ',
+            [STATE.GIFT_SEARCHING]: 'さがしもの',
+            [STATE.GIFT_RETURNING]: 'かえってきた',
+            [STATE.GIFT_WAIT_FOR_USER_REACTION]: 'とくいげ',
+            [STATE.GIFT_REACTION]: 'とくいげ',
+            [STATE.GIFT_TIMEOUT]: 'しょげている',
+            [STATE.ITEM_APPROACHING]: '何かを見つけた',
+            [STATE.GAME_APPROACHING]: 'おしゃべり中',
+            [STATE.GAME_REACTION]: 'おしゃべり中',
+            [STATE.DYING]: 'ああ…'
+        };
+
+        return stateMapping[s.status.state] || '';
+    }
+
+    updateSpeakiList(force = false) {
         const listContainer = document.getElementById('speaki-list');
         if (!listContainer) return;
 
@@ -1214,20 +1233,17 @@ export class Game {
         const displaySpeakis = this.speakis.filter(s => s.canInteract && s.characterType !== 'ashur' && s.characterType !== 'posher');
 
         if (displaySpeakis.length === 0) {
+            listContainer.innerHTML = '<p class="empty-list">スピキはいません...</p>';
             return;
         }
 
         let html = '';
         displaySpeakis.forEach(s => {
+            const isHighlighted = (s.id === this.highlightedCharId);
             const state = s.getStateLabel();
             const emotionLabel = this._getEmotionLabel(s);
-            const isHighlighted = this.highlightedCharId === s.id;
 
-            // 好感度ゲージの計算 (-50 ~ 50 を 0% ~ 100% にマッピング)
-            const friendshipScore = Math.min(50, Math.max(-50, s.status.friendship));
-            const friendshipPct = ((friendshipScore + 50) / 100) * 100;
-
-            // 空腹度ゲージの計算 (0 ~ 100)
+            const friendshipPct = Math.min(100, Math.max(0, s.status.friendship + 50));
             const hungerPct = Math.min(100, Math.max(0, s.status.hunger));
 
             html += `
@@ -1239,7 +1255,7 @@ export class Game {
                     </button>
                     <input class="speaki-name-input" value="${s.name}" 
                         onchange="window.game.renameSpeaki(${s.id}, this.value)">
-                    <span class="speaki-state-tag">${state} [${emotionLabel}]</span>
+                    ${emotionLabel ? '<span class="speaki-state-tag">' + emotionLabel + '</span>' : ''}
                 </div>
                 
                 <div class="speaki-gauges">
@@ -1285,17 +1301,6 @@ export class Game {
         Object.values(node).forEach(child => this._loadNestedAssets(child));
     }
 
-    _getEmotionLabel(s) {
-        if (s.status.state === STATE.USER_INTERACTING) {
-            if (s.status.emotion === 'sad') return 'いたい...';
-            if (s.status.friendship >= 11) return 'うれしい！';
-            return 'なでなで';
-        }
-        if (s.status.emotion === 'ITEM') return 'ワクワク';
-        if (s.status.emotion === 'happy') return 'しあわせ';
-        if (s.status.emotion === 'sad') return 'かなしい';
-        return '穏やか';
-    }
 
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -1399,9 +1404,20 @@ export class Game {
         const list = document.getElementById('unlock-list');
         if (!list) return;
 
+        const hungerDecayPrice = 1; // 開発中は固定1 (本来は 1 + this.unlocks.hungerDecayLv * 3)
+        const currentHungerSec = 2 + this.unlocks.hungerDecayLv;
+        const nextHungerSec = currentHungerSec + 1;
+
         const unlockDefs = [
             { id: 'feeder', name: 'ごはん係 (給餌係)', price: 1, desc: 'Pさんが定期的にお腹を空かせたスピキにごはんをあげに来ます', current: this.unlocks.feeder },
-            { id: 'hungerDecay', name: '空腹度減少の緩和', price: 1, desc: 'スピキがお腹を空かせる速度が20%低下します', current: this.unlocks.hungerDecayModifier < 1.0 },
+            {
+                id: 'hungerDecay',
+                name: `空腹度減少の緩和 (Lv.${this.unlocks.hungerDecayLv})`,
+                price: hungerDecayPrice,
+                desc: `減少速度を遅くします。現在: ${currentHungerSec}秒に1 → 次: ${nextHungerSec}秒に1`,
+                current: false, // 繰り返し可能にするため常にfalse
+                isUpgrade: true
+            },
             { id: 'affectionDecay', name: '好感度減少の緩和', price: 1, desc: 'スピキの好感度が下がる速度が20%低下します', current: this.unlocks.affectionDecayModifier < 1.0 },
             { id: 'autoReceive', name: 'プレゼント自動回収', price: 1, desc: 'スピキが持ってきたお土産を自動で受け取ります', current: this.unlocks.autoReceive },
             { id: 'unlockMocaron', name: 'モカロンの解放', price: 1, desc: '高級な食べ物「モカロン」が置けるようになります', current: this.unlocks.mocaronUnlocked },
@@ -1411,6 +1427,7 @@ export class Game {
         list.innerHTML = '';
         unlockDefs.forEach(def => {
             const div = document.createElement('div');
+            // isUpgrade の場合は unlocked クラスをつけない（常にボタンを押せるように）
             div.className = `unlock-item ${def.current ? 'unlocked' : 'locked'}`;
             div.innerHTML = `
                 <h4>${def.name}</h4>
@@ -1418,7 +1435,7 @@ export class Game {
                 <div class="price">${def.current ? '解放済み' : `消費: ${def.price} 個`}</div>
                 <button class="primary-btn unlock-btn" ${(def.current || this.pumpkinSeeds < def.price) ? 'disabled' : ''} 
                     onclick="window.game.unlockFeature('${def.id}', ${def.price})">
-                    ${def.current ? '解放済み' : '解放する'}
+                    ${def.current ? '解放済み' : (def.isUpgrade ? '強化する' : '解放する')}
                 </button>
             `;
             list.appendChild(div);
@@ -1432,7 +1449,7 @@ export class Game {
 
         switch (id) {
             case 'feeder': this.unlocks.feeder = true; break;
-            case 'hungerDecay': this.unlocks.hungerDecayModifier = 0.8; break;
+            case 'hungerDecay': this.unlocks.hungerDecayLv++; break;
             case 'affectionDecay': this.unlocks.affectionDecayModifier = 0.8; break;
             case 'autoReceive': this.unlocks.autoReceive = true; break;
             case 'unlockMocaron':
