@@ -1260,11 +1260,17 @@ export class Game {
                 
                 <div class="speaki-gauges">
                     <div class="gauge-item mini-row">
-                        <span class="mini-label">好感度: ${s.status.friendship.toFixed(0)}</span>
+                        <div class="icon-wrapper">
+                            <img src="assets/images/icon_heart.png" class="gauge-icon" alt="friendship">
+                            <span class="gauge-value">${s.status.friendship.toFixed(0)}</span>
+                        </div>
                         <div class="gauge-bar"><div class="gauge-fill friendship" style="width: ${friendshipPct}%"></div></div>
                     </div>
                     <div class="gauge-item mini-row">
-                        <span class="mini-label">空腹度: ${s.status.hunger.toFixed(0)}%</span>
+                        <div class="icon-wrapper">
+                            <img src="assets/images/icon_stomach.png" class="gauge-icon" alt="hunger">
+                            <span class="gauge-value">${s.status.hunger.toFixed(0)}</span>
+                        </div>
                         <div class="gauge-bar"><div class="gauge-fill hunger" style="width: ${hungerPct}%"></div></div>
                     </div>
                 </div>
