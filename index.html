@@ -60,6 +60,17 @@
 
             <!-- メニュー（20%） -->
             <aside id="side-menu">
+                <div id="side-menu-header">
+                    <button id="open-unlock-btn" class="header-main-btn">
+                        <div class="header-btn-icon-wrapper">
+                            <img src="assets/images/icon_unlock.png" alt="unlock icon" class="header-icon-img">
+                        </div>
+                        <span class="header-btn-text">機能解放</span>
+                    </button>
+                    <!-- 「？」ボタンはチュートリアル用 -->
+                    <button id="open-tutorial-btn" class="header-square-btn">?</button>
+                </div>
+
                 <section id="item-section" class="menu-block">
                     <h2>アイテム</h2>
                     <p class="menu-description">ドラッグでアイテムを配置できるよ</p>
@@ -78,16 +89,6 @@
                     </div>
                 </section>
 
-                <section id="action-section" class="menu-block">
-                    <div class="horizontal-actions">
-                        <div id="job-list" class="job-buttons-container">
-                            <!-- Dynamic NPC Call Items -->
-                        </div>
-                        <div id="unlock-container">
-                            <button id="open-unlock-btn" class="primary-btn mini-btn">機能解放</button>
-                        </div>
-                    </div>
-                </section>
 
                 <section id="speaki-status" class="menu-block">
                     <h2>ｽﾋﾟｷたち</h2>
@@ -98,18 +99,43 @@
                 </section>
 
                 <div id="footer-section">
-                    <button id="open-info-btn" class="secondary-mini-btn">開発メモ・引用</button>
+                    <button id="open-memo-btn" class="secondary-mini-btn">開発メモ・引用</button>
                 </div>
             </aside>
         </div>
     </div>
 
-    <!-- 情報・引用素材 モーダル -->
-    <div id="info-modal" class="modal-overlay hidden">
+    <!-- チュートリアル モーダル -->
+    <div id="tutorial-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <button id="close-info-btn" class="modal-close">&times;</button>
+            <button id="close-tutorial-btn" class="modal-close">&times;</button>
             <div class="modal-header">
-                <h3>My Sweet Speaki - 情報・引用素材</h3>
+                <h3>遊び方ガイド</h3>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info-block">
+                    <h4>1. アイコンと数値の見方</h4>
+                    <p>❤：好感度（-50 ~ 50）。高いとお土産を持ってきたり、おしゃべりしたりします。</p>
+                    <p>😋：満腹度（0 ~ 100）。0になると死んでしまうので、アイテムをあげてね。</p>
+                </div>
+                <div class="modal-info-block">
+                    <h4>2. アイテムのあげかた</h4>
+                    <p>メニューのアイテムをドラッグして、スピキの近くにドロップしてね。</p>
+                </div>
+                <div class="modal-info-block">
+                    <h4>3. 機能解放</h4>
+                    <p>お土産でもらえる「かぼちゃの種」を使って、便利な機能を増やせるよ！</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 開発メモ・引用素材 モーダル (旧info-modal) -->
+    <div id="memo-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="close-memo-btn" class="modal-close">&times;</button>
+            <div class="modal-header">
+                <h3>My Sweet Speaki - 開発メモ・引用素材</h3>
             </div>
             <div class="modal-body">
                 <div class="modal-info-block">

@@ -309,28 +309,32 @@ export class Game {
         document.getElementById('reaction-btn-1')?.addEventListener('click', () => this.handleReaction(1));
         document.getElementById('reaction-btn-2')?.addEventListener('click', () => this.handleReaction(2));
 
-        // 情報モーダルの制御
-        const openInfoBtn = document.getElementById('open-info-btn');
-        const closeInfoBtn = document.getElementById('close-info-btn');
-        const infoModal = document.getElementById('info-modal');
+        // モーダルの制御（共通化）
+        const setupModal = (btnId, closeId, modalId) => {
+            const btn = document.getElementById(btnId);
+            const close = document.getElementById(closeId);
+            const modal = document.getElementById(modalId);
+            if (btn && modal) {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    modal.classList.remove('hidden');
+                };
+            }
+            if (close && modal) {
+                close.onclick = (e) => {
+                    e.stopPropagation();
+                    modal.classList.add('hidden');
+                };
+            }
+            if (modal) {
+                modal.onclick = (e) => {
+                    if (e.target === modal) modal.classList.add('hidden');
+                };
+            }
+        };
 
-        if (openInfoBtn && infoModal) {
-            openInfoBtn.onclick = (e) => {
-                e.stopPropagation();
-                infoModal.classList.remove('hidden');
-            };
-        }
-        if (closeInfoBtn && infoModal) {
-            closeInfoBtn.onclick = (e) => {
-                e.stopPropagation();
-                infoModal.classList.add('hidden');
-            };
-        }
-        if (infoModal) {
-            infoModal.onclick = (e) => {
-                if (e.target === infoModal) infoModal.classList.add('hidden');
-            };
-        }
+        setupModal('open-tutorial-btn', 'close-tutorial-btn', 'tutorial-modal');
+        setupModal('open-memo-btn', 'close-memo-btn', 'memo-modal');
     }
 
     /** ドラッグ＆ドロップの設定 */

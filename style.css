@@ -238,7 +238,10 @@ body {
 
 /* メニュー (20%) */
 #side-menu {
-    flex: 0 0 22%;
+    flex: 0 0 20%;
+    /* 22%から20%に戻す、または環境に合わせて調整 */
+    min-width: 250px;
+    /* 極端に狭くなるのを防ぐ */
     background: var(--glass-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -249,6 +252,8 @@ body {
     gap: 1.5rem;
     box-shadow: var(--shadow);
     overflow-y: auto;
+    overflow-x: hidden;
+    /* 横スクロールの発生を抑止 */
 }
 
 .menu-block {
@@ -400,7 +405,7 @@ h3 {
     flex-direction: column;
     gap: 0.8rem;
     overflow-y: auto;
-    padding-right: 5px;
+    overflow-x: hidden;
     flex: 1;
 }
 
@@ -1187,9 +1192,93 @@ button:hover {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: white;
-    font-weight: bold;
-    z-index: 2;
-    font-size: 0.8rem;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    object-fit: contain;
+}
+
+/* サイドメニューヘッダー */
+#side-menu-header {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    margin-bottom: 5px;
+    align-items: center;
+    /* 上下のずれを解消 */
+    justify-content: space-between;
+}
+
+.header-main-btn {
+    flex: 1;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* 両端に寄せる */
+    background: white;
+    /* 白に戻す */
+    border: 2px solid #2c3e50;
+    border-radius: 12px;
+    padding: 0 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 0 #2c3e50;
+    overflow: hidden;
+}
+
+.header-main-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #2c3e50;
+}
+
+.header-main-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2c3e50;
+}
+
+.header-btn-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.header-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.header-btn-text {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #2c3e50;
+}
+
+.header-square-btn {
+    width: 54px;
+    height: 54px;
+    background: white;
+    border: 2px solid #2c3e50;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #2c3e50;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 0 #2c3e50;
+    flex-shrink: 0;
+}
+
+.header-square-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #2c3e50;
+}
+
+.header-square-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2c3e50;
 }
