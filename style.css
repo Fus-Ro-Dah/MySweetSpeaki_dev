@@ -142,13 +142,140 @@ body.mode-relaxed #happiness-container {
     filter: brightness(1.05);
 }
 
-/* 雲のスタイリング */
+.project-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 4.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(to right, #ff9a9e, #fecfef, #a1c4fd, #fecfef, #ff9a9e);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 5s linear infinite;
+    filter: drop-shadow(0 5px 15px rgba(255, 154, 158, 0.4));
+    letter-spacing: -2px;
+    text-transform: uppercase;
+}
+
+@keyframes shine {
+    to {
+        background-position: 200% center;
+    }
+}
+
+.fan-disclaimer {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+/* ｽﾋﾟｷたちが流れるアニメーション */
+#speaki-flow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.flowing-speaki {
+    position: absolute;
+    height: 120px;
+    width: auto;
+    opacity: 0.4;
+    filter: blur(1px);
+    pointer-events: none;
+    will-change: transform;
+}
+
+@keyframes speakiFlowLeft {
+    from {
+        transform: translateX(110vw) rotate(5deg);
+    }
+
+    to {
+        transform: translateX(-20vw) rotate(-5deg);
+    }
+}
+
+@keyframes speakiFlowRight {
+    from {
+        transform: translateX(-20vw) rotate(-5deg);
+    }
+
+    to {
+        transform: translateX(110vw) rotate(5deg);
+    }
+}
+
+/* 個別の調整（速度と高さ） */
+.flowing-speaki.s1 {
+    top: 10%;
+    animation: speakiFlowLeft 25s linear infinite;
+}
+
+.flowing-speaki.s2 {
+    top: 25%;
+    animation: speakiFlowRight 30s linear infinite;
+    animation-delay: -5s;
+}
+
+.flowing-speaki.s3 {
+    top: 40%;
+    animation: speakiFlowLeft 20s linear infinite;
+    animation-delay: -2s;
+    height: 80px;
+}
+
+.flowing-speaki.s4 {
+    top: 60%;
+    animation: speakiFlowRight 35s linear infinite;
+    animation-delay: -10s;
+}
+
+.flowing-speaki.s5 {
+    top: 75%;
+    animation: speakiFlowLeft 28s linear infinite;
+    animation-delay: -15s;
+}
+
+.flowing-speaki.s6 {
+    top: 15%;
+    animation: speakiFlowRight 22s linear infinite;
+    animation-delay: -8s;
+    height: 80px;
+}
+
+.flowing-speaki.s7 {
+    top: 85%;
+    animation: speakiFlowRight 40s linear infinite;
+}
+
+.flowing-speaki.s8 {
+    top: 50%;
+    animation: speakiFlowLeft 32s linear infinite;
+    animation-delay: -12s;
+}
+
+/* 既存の雲のスタイリング */
 .title-cloud {
     position: absolute;
     background: white;
     border-radius: 100px;
     opacity: 0.8;
-    z-index: 1;
+    z-index: 2;
+    /* ｽﾋﾟｷより手前に */
     filter: blur(2px);
 }
 
