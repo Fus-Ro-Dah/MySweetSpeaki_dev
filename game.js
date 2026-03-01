@@ -48,7 +48,7 @@ export class Game {
             affectionDecayLv: 0, // NEW: 0から始まり、解放ごとに+1
             autoReceive: false,
             mocaronUnlocked: false,
-            reloadModifier: 1.0
+            reloadReductionLv: 0
         };
         this.itemCooldowns = {}; // { itemId: endTimestamp }
         this.isGameCleared = false;
@@ -63,13 +63,46 @@ export class Game {
 
         this.lastTime = performance.now();
 
-        // 開始ボタンの待機
-        const startBtn = document.getElementById('start-button');
-        if (startBtn) {
-            startBtn.addEventListener('click', () => this.startGame());
-        }
+        // モード選択ボタンの待機
+        const relaxedBtn = document.getElementById('start-relaxed-btn');
+        const challengeBtn = document.getElementById('start-challenge-btn');
+        const confirmBtn = document.getElementById('confirm-start-btn');
+
+        if (relaxedBtn) relaxedBtn.addEventListener('click', () => this.selectMode('relaxed'));
+        if (challengeBtn) challengeBtn.addEventListener('click', () => this.selectMode('challenge'));
+        if (confirmBtn) confirmBtn.addEventListener('click', () => {
+            if (this.isGameStarted) {
+                // ゲーム開始後にヘルプとして開いた場合は閉じるだけ
+                const modal = document.getElementById('mode-info-modal');
+                if (modal) modal.classList.add('hidden');
+            } else {
+                this.startGame();
+            }
+        });
 
         requestAnimationFrame((t) => this.loop(t));
+    }
+
+    /** モード選択時の処理 */
+    selectMode(mode) {
+        this.gameMode = mode;
+        const title = document.getElementById('mode-info-title');
+        const modal = document.getElementById('mode-info-modal');
+
+        const infoRelaxed = document.getElementById('info-relaxed');
+        const infoChallenge = document.getElementById('info-challenge');
+
+        if (mode === 'relaxed') {
+            title.textContent = 'のんびり育成モード';
+            if (infoRelaxed) infoRelaxed.classList.remove('hidden');
+            if (infoChallenge) infoChallenge.classList.add('hidden');
+        } else {
+            title.textContent = 'チャレンジモード';
+            if (infoRelaxed) infoRelaxed.classList.add('hidden');
+            if (infoChallenge) infoChallenge.classList.remove('hidden');
+        }
+
+        if (modal) modal.classList.remove('hidden');
     }
 
     /** アセット（画像・音声）の全読み込み */
@@ -211,9 +244,22 @@ export class Game {
                 console.log("[Audio] Playing BGM via Standard Audio (Fallback).");
             }
 
-            this.addSpeaki(undefined, undefined, 'baby');   // 赤ちゃん
-            this.addSpeaki(undefined, undefined, 'child');  // 子供
-            this.addSpeaki(undefined, undefined, 'speaki'); // 大人
+            // モーダルを閉じる
+            const modal = document.getElementById('mode-info-modal');
+            if (modal) modal.classList.add('hidden');
+
+            // モードに応じた初期化
+            if (this.gameMode === 'relaxed') {
+                document.body.classList.add('mode-relaxed');
+                this.unlocks.hungerDecayLv = 4;
+                this.unlocks.affectionDecayLv = 4;
+                this.unlocks.reloadReductionLv = 20;
+            }
+
+            // 最初のスピキを中央に1匹だけ生成
+            const centerX = this.canvas.width / 2;
+            const centerY = this.canvas.height / 2;
+            this.addSpeaki(centerX, centerY, 'speaki');
 
         } catch (e) {
             alert("Error starting game: " + e.message + "\n" + e.stack);
@@ -303,7 +349,11 @@ export class Game {
         this.canvas.addEventListener('pointerdown', (e) => this.handleMouseDown(e));
         window.addEventListener('pointermove', (e) => this.handleMouseMove(e));
         window.addEventListener('pointerup', (e) => this.handleMouseUp(e));
-        this.canvas.addEventListener('contextmenu', (e) => this.handleContextMenu(e));
+        // 右クリックでのアイテム削除を無効化するため、イベントリスナーを削除
+        // this.canvas.addEventListener('contextmenu', (e) => this.handleContextMenu(e));
+
+        // 代わりにブラウザのデフォルトメニューを抑制するだけにする（オプション）
+        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
         // タッチイベント・紛失対応
         this.canvas.addEventListener('pointercancel', (e) => this.handleMouseUp(e));
@@ -336,7 +386,32 @@ export class Game {
             }
         };
 
-        setupModal('open-tutorial-btn', 'close-tutorial-btn', 'tutorial-modal');
+        // setupModal('open-tutorial-btn', 'close-tutorial-btn', 'tutorial-modal'); // 以前の汎用チュートリアルは無効化
+
+        // 「？」ボタンで現在のモードの説明を再表示する
+        const helpBtn = document.getElementById('open-tutorial-btn');
+        if (helpBtn) {
+            helpBtn.onclick = (e) => {
+                e.stopPropagation();
+                // すでに selectMode でコンテンツの出し分けは設定されているので、モーダルを開くだけでOK
+                const modal = document.getElementById('mode-info-modal');
+                if (modal) modal.classList.remove('hidden');
+            };
+        }
+
+        // モード説明モーダルの「OK」ボタンや背景クリックでの閉じ処理を明示的に追加（既存のsetupModalのロジックを流用可だが、個別に書く方が安全）
+        const modeModal = document.getElementById('mode-info-modal');
+        const confirmBtn = document.getElementById('confirm-start-btn');
+        if (modeModal) {
+            modeModal.onclick = (e) => {
+                if (e.target === modeModal) modeModal.classList.add('hidden');
+            };
+            if (confirmBtn) {
+                // startGame内で本来呼ばれるが、ヘルプとして開いた場合は閉じるだけにする必要がある
+                // startGame自体に「すでに開始していたら閉じるだけ」のロジックを入れるか、ここで上書きするか
+            }
+        }
+
         setupModal('open-memo-btn', 'close-memo-btn', 'memo-modal');
     }
 
@@ -480,7 +555,9 @@ export class Game {
 
         // リロード時間の適用
         if (def.reloadTime) {
-            const duration = def.reloadTime * (this.unlocks.reloadModifier || 1.0);
+            // 固定秒数(1秒=1000ms)ずつ短縮。最小500ms（0.5秒）を維持。
+            const reduction = (this.unlocks.reloadReductionLv || 0) * 1000;
+            const duration = Math.max(500, def.reloadTime - reduction);
             this.itemCooldowns[id] = now + duration;
         }
 
@@ -783,9 +860,29 @@ export class Game {
     /** 幸福度ゲージの更新 */
     updateHappinessUI() {
         const fill = document.getElementById('happiness-bar-fill');
+        const pumpkinImg = document.getElementById('happiness-pumpkin');
+
+        const pctFull = (this.happiness / this.maxHappiness) * 100;
+
         if (fill) {
-            const pct = Math.min(100, (this.happiness / this.maxHappiness) * 100);
-            fill.style.width = `${pct}%`;
+            fill.style.width = `${Math.min(100, pctFull)}%`;
+        }
+
+        // かぼちゃの画像切り替え (p0-p4)
+        if (pumpkinImg) {
+            let stage = 0;
+            if (pctFull >= 100) {
+                stage = 4;
+            } else if (pctFull >= 75) {
+                stage = 3;
+            } else if (pctFull >= 50) {
+                stage = 2;
+            } else if (pctFull >= 20) {
+                stage = 1;
+            } else {
+                stage = 0;
+            }
+            pumpkinImg.src = `assets/images/p${stage}.png`;
         }
 
         if (this.happiness >= this.maxHappiness && !this.isGameCleared) {
@@ -797,10 +894,18 @@ export class Game {
     triggerGameClear() {
         this.isGameCleared = true;
         const overlay = document.getElementById('game-clear-overlay');
+        const continueBtn = document.getElementById('continue-game-btn');
+
         if (overlay) {
             overlay.classList.remove('hidden');
             this.playSound('happy', 0.8);
-            // 本家みたいな派手な演出を足したい場合はここ
+
+            if (continueBtn) {
+                continueBtn.onclick = () => {
+                    overlay.classList.add('hidden');
+                    // ゲームクリアフラグはtrueのままにして、再発動を防ぐ
+                };
+            }
         }
     }
 
@@ -1364,22 +1469,23 @@ export class Game {
 
     /** 幸福度の加算処理 */
     _updateHappiness(dt) {
-        if (this.isGameCleared) return;
+        // 幸福度の加算（タイマー進行、ゲージ更新、クリア判定）はチャレンジモードのみ
+        if (!this.isGameCleared && this.gameMode !== 'relaxed') {
+            // 「しあわせスピキ」のカウント
+            // 条件: 好感度40以上 かつ 満腹度80以上
+            const happySpeakCount = this.speakis.filter(s =>
+                s.canInteract &&
+                s.status.friendship >= 40 &&
+                s.status.hunger >= 80
+            ).length;
 
-        // 「しあわせスピキ」のカウント
-        // 条件: 好感度40以上 かつ 満腹度80以上
-        const happySpeakCount = this.speakis.filter(s =>
-            s.canInteract &&
-            s.status.friendship >= 40 &&
-            s.status.hunger >= 80
-        ).length;
+            if (happySpeakCount > 0) {
+                // 幸福度は 1秒あたり 1 * しあわせスピキ数 加算 (1.5倍にブースト)
+                const gain = (dt / 1000) * happySpeakCount * 1.5;
+                this.happiness = Math.min(this.maxHappiness, this.happiness + gain);
 
-        if (happySpeakCount > 0) {
-            // 幸福度は 1秒あたり 1 * しあわせスピキ数 加算 (1000ms = 1秒)
-            const gain = (dt / 1000) * happySpeakCount;
-            this.happiness = Math.min(this.maxHappiness, this.happiness + gain);
-
-            this.updateHappinessUI();
+                this.updateHappinessUI();
+            }
         }
 
         // 自動ごはん係の処理
@@ -1407,26 +1513,39 @@ export class Game {
 
         const unlockDefs = [
             { id: 'feeder', name: 'ごはん係 (給餌係)', price: 1, desc: 'Pさんが定期的にお腹を空かせたスピキにごはんをあげに来ます', current: this.unlocks.feeder },
-            {
-                id: 'hungerDecay',
-                name: `空腹度減少の緩和 (Lv.${this.unlocks.hungerDecayLv})`,
-                price: hungerDecayPrice,
-                desc: `減少速度を遅くします。現在: ${currentHungerSec}秒に1 → 次: ${nextHungerSec}秒に1`,
-                current: false, // 繰り返し可能にするため常にfalse
-                isUpgrade: true
-            },
-            {
-                id: 'affectionDecay',
-                name: `好感度減少の緩和 (Lv.${this.unlocks.affectionDecayLv})`,
+            { id: 'autoReceive', name: 'プレゼント自動回収', price: 1, desc: 'スピキが持ってきたお土産を自動で受け取ります', current: this.unlocks.autoReceive },
+            { id: 'unlockMocaron', name: 'モカロンの解放', price: 1, desc: '高級な食べ物「モカロン」が置けるようになります', current: this.unlocks.mocaronUnlocked }
+        ];
+
+        // チャレンジモードのみ表示する項目
+        if (this.gameMode !== 'relaxed') {
+            unlockDefs.splice(1, 0,
+                {
+                    id: 'hungerDecay',
+                    name: `空腹度減少の緩和 (Lv.${this.unlocks.hungerDecayLv})`,
+                    price: hungerDecayPrice,
+                    desc: `減少速度を遅くします。現在: ${currentHungerSec}秒に1 → 次: ${nextHungerSec}秒に1`,
+                    current: false, // 繰り返し可能にするため常にfalse
+                    isUpgrade: true
+                },
+                {
+                    id: 'affectionDecay',
+                    name: `好感度減少の緩和 (Lv.${this.unlocks.affectionDecayLv})`,
+                    price: 1,
+                    desc: `減少速度を遅くします。現在: ${2 + this.unlocks.affectionDecayLv}秒に1 → 次: ${3 + this.unlocks.affectionDecayLv}秒に1`,
+                    current: false,
+                    isUpgrade: true
+                }
+            );
+            unlockDefs.push({
+                id: 'cooldownReduction',
+                name: `リロード時間短縮 (Lv.${this.unlocks.reloadReductionLv})`,
                 price: 1,
-                desc: `減少速度を遅くします。現在: ${2 + this.unlocks.affectionDecayLv}秒に1 → 次: ${3 + this.unlocks.affectionDecayLv}秒に1`,
+                desc: `アイテム配置のリロード時間が1秒短縮されます。現在: -${this.unlocks.reloadReductionLv}秒 → 次: -${this.unlocks.reloadReductionLv + 1}秒`,
                 current: false,
                 isUpgrade: true
-            },
-            { id: 'autoReceive', name: 'プレゼント自動回収', price: 1, desc: 'スピキが持ってきたお土産を自動で受け取ります', current: this.unlocks.autoReceive },
-            { id: 'unlockMocaron', name: 'モカロンの解放', price: 1, desc: '高級な食べ物「モカロン」が置けるようになります', current: this.unlocks.mocaronUnlocked },
-            { id: 'cooldownReduction', name: 'リロード時間短縮', price: 1, desc: 'アイテム配置のリロード時間が30%短縮されます', current: this.unlocks.reloadModifier < 1.0 }
-        ];
+            });
+        }
 
         list.innerHTML = '';
         unlockDefs.forEach(def => {
@@ -1452,7 +1571,10 @@ export class Game {
         this.plastics -= price;
 
         switch (id) {
-            case 'feeder': this.unlocks.feeder = true; break;
+            case 'feeder':
+                this.unlocks.feeder = true;
+                this.callNPC('posher'); // アンロックした瞬間に呼び出す
+                break;
             case 'hungerDecay': this.unlocks.hungerDecayLv++; break;
             case 'affectionDecay': this.unlocks.affectionDecayLv++; break;
             case 'autoReceive': this.unlocks.autoReceive = true; break;
@@ -1461,7 +1583,7 @@ export class Game {
                 ITEMS.Mocaron.showInMenu = true;
                 this.initItemMenu();
                 break;
-            case 'cooldownReduction': this.unlocks.reloadModifier = 0.7; break;
+            case 'cooldownReduction': this.unlocks.reloadReductionLv++; break;
         }
 
         this.playSound('happy', 1.2);

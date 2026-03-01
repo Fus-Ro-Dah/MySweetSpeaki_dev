@@ -155,6 +155,7 @@ export class BaseCharacter {
         if (this.status.state !== STATE.DYING) {
             const isStarving = this.hasHunger && this.status.hunger <= 0;
             const isDespaired = this.status.friendship <= -49.5; // 自動回復に食われないよう少し余裕を持たせる
+
             if (isStarving || isDespaired) {
                 this.status.state = STATE.DYING;
                 this.status.deathProgress = 0;
@@ -185,7 +186,8 @@ export class BaseCharacter {
 
         // しあわせスピキ状態の視覚効果用フラグ更新
         if (this.visual.dom.container) {
-            const isHappySpeaki = this.canInteract && this.status.friendship >= 40 && this.status.hunger >= 80;
+            const isRelaxed = window.game && window.game.gameMode === 'relaxed';
+            const isHappySpeaki = !isRelaxed && this.canInteract && this.status.friendship >= 40 && this.status.hunger >= 80;
             if (isHappySpeaki) {
                 this.visual.dom.container.classList.add('is-happy');
             } else {

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1200">
-    <title>My Sweet Speaki - 癒やしのスピキ飼育スペース</title>
+    <title>My Sweet Speaki - 癒やしのｽﾋﾟｷ飼育スペース</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +24,10 @@
             <p>ここはあなただけの小さな飼育スペース<br>
                 不思議な生き物(?) ｽﾋﾟｷたちと触れ合って癒されよう
             </p>
-            <button id="start-button">ｽﾋﾟｷに会いに行く</button>
+            <div class="mode-selection">
+                <button id="start-relaxed-btn" class="mode-btn">のんびり育成モード</button>
+                <button id="start-challenge-btn" class="mode-btn">チャレンジモード</button>
+            </div>
         </div>
         <!-- 装飾的な雲 -->
         <div class="title-cloud cloud-1"></div>
@@ -38,10 +41,13 @@
             <main id="speaki-room">
                 <!-- 幸福度ゲージ UI -->
                 <div id="happiness-container">
-                    <img src="assets/images/item_pumpkin.png" alt="Happiness Pumpkin" id="happiness-pumpkin">
-                    <div id="happiness-bar-wrapper">
-                        <div id="happiness-bar-fill"></div>
+                    <div id="happiness-bar-row">
+                        <img src="assets/images/icon_sun.png" alt="Sun Icon" id="happiness-sun-icon">
+                        <div id="happiness-bar-wrapper">
+                            <div id="happiness-bar-fill"></div>
+                        </div>
                     </div>
+                    <img src="assets/images/item_pumpkin.png" alt="Happiness Pumpkin" id="happiness-pumpkin">
                 </div>
 
                 <!-- ゲームクリア画面 -->
@@ -49,6 +55,7 @@
                     <div class="clear-content">
                         <h1>Game Clear!</h1>
                         <p>幸福度がMAXになりました！ずっと一緒にいてね！</p>
+                        <button id="continue-game-btn" class="primary-btn">飼育を続ける</button>
                     </div>
                 </div>
 
@@ -90,7 +97,7 @@
                     <h2>ｽﾋﾟｷたち</h2>
                     <div id="speaki-list">
                         <!-- Dynamic Speaki List -->
-                        <p class="empty-list">スピキはいません...</p>
+                        <p class="empty-list">ｽﾋﾟｷはいません...</p>
                     </div>
                 </section>
 
@@ -116,12 +123,111 @@
                 </div>
                 <div class="modal-info-block">
                     <h4>2. アイテムのあげかた</h4>
-                    <p>メニューのアイテムをドラッグして、スピキの近くにドロップしてね。</p>
+                    <p>メニューのアイテムをドラッグして、ｽﾋﾟｷの近くにドロップしてね。</p>
                 </div>
                 <div class="modal-info-block">
                     <h4>3. 機能解放</h4>
                     <p>お土産でもらえる「プラスチック」を使って、便利な機能を増やせるよ！</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- モード説明モーダル (ゲーム開始時) -->
+    <div id="mode-info-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="mode-info-title">モードの説明</h3>
+            </div>
+            <div id="mode-info-body" class="modal-body modal-body-scrollable">
+                <!-- のんびり育成モードの説明 -->
+                <div id="info-relaxed" class="mode-info-section hidden">
+                    <div class="modal-info-block">
+                        <p><strong>【のんびり育成モードの遊び方】</strong></p>
+                        <div class="description-grid">
+                            <div class="description-item">
+                                <img src="assets/discriptions/d1.png" alt="Guide 1" class="modal-image-placeholder">
+                                <p>このいきものはｽﾋﾟｷです</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d2.png" alt="Guide 2" class="modal-image-placeholder">
+                                <p>あなたはｽﾋﾟｷを撫でたりたたいたりできます</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d3.png" alt="Guide 3" class="modal-image-placeholder">
+                                <p>それによって好感度が増えたり減ったりします</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d4.png" alt="Guide 4" class="modal-image-placeholder">
+                                <p>好感度が一定以上になるとｽﾋﾟｷはあなたにプレゼントをくれるようになります。</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d5.png" alt="Guide 5" class="modal-image-placeholder">
+                                <p>時間がたつにつれて、ｽﾋﾟｷはおなかが減っていきます</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d6.png" alt="Guide 6" class="modal-image-placeholder">
+                                <p>あなたはｽﾋﾟｷにご飯を上げることができます</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d20.png" alt="Guide 20" class="modal-image-placeholder">
+                                <p>たくさん可愛がってあげてくださいね!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- チャレンジモードの説明 -->
+                <div id="info-challenge" class="mode-info-section hidden">
+                    <div class="modal-info-block">
+                        <p><strong>【チャレンジモードの遊び方】</strong></p>
+                        <div class="description-grid">
+                            <div class="description-item">
+                                <img src="assets/discriptions/d1.png" alt="Guide 1" class="modal-image-placeholder">
+                                <p>このいきものはｽﾋﾟｷです</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d2.png" alt="Guide 2" class="modal-image-placeholder">
+                                <p>あなたはｽﾋﾟｷを撫でたりたたいたりできます</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d3.png" alt="Guide 3" class="modal-image-placeholder">
+                                <p>それによって好感度が増えたり減ったりします</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d4.png" alt="Guide 4" class="modal-image-placeholder">
+                                <p>好感度が一定以上になるとｽﾋﾟｷはあなたにプレゼントをくれるようになります。</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d5.png" alt="Guide 5" class="modal-image-placeholder">
+                                <p>時間がたつにつれて、ｽﾋﾟｷはおなかが減っていきます</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d6.png" alt="Guide 6" class="modal-image-placeholder">
+                                <p>あなたはｽﾋﾟｷにご飯を上げることができます</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d7.png" alt="Guide 7" class="modal-image-placeholder">
+                                <p>好感度と満腹度が一定以上のｽﾋﾟｷはしあわせｽﾋﾟｷとなり光り輝きます。</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d8.png" alt="Guide 8" class="modal-image-placeholder">
+                                <p>しあわせｽﾋﾟｷが居ればいるほど、この空間の幸福度が増します。</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d9.png" alt="Guide 9" class="modal-image-placeholder">
+                                <p>幸福度に応じて、かぼちゃが成長します</p>
+                            </div>
+                            <div class="description-item">
+                                <img src="assets/discriptions/d10.png" alt="Guide 10" class="modal-image-placeholder">
+                                <p>幸福度をMAXにして立派なかぼちゃをｽﾋﾟｷにプレゼントしましょう！</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="text-align: center; padding: 20px;">
+                <button id="confirm-start-btn" class="primary-btn" style="padding: 10px 40px;">OK</button>
             </div>
         </div>
     </div>
@@ -138,18 +244,7 @@
                     <h4>開発メモ: 実装したいこと</h4>
                     <div class="modal-text">
                         ・ランダムギフトの種類をもっと増やす(現状4種)<br>
-                        ・距離の近いｽﾋﾟｷどうしがおしゃべりする<br>
-                        ・給餌係と掃除係<br>
-                        ・親子関係<br>
-                        ・家出<br>
-                        ・アイテムによる感情変化<br>
-                        ・個体差(性格・サイズなど)<br>
-                        ・ｽﾋﾟｷにアクセサリーをつける（つけたものに応じて性質が変わるとか）<br>
-                        ・赤ちゃんスピキを撫でられる（叩くことはできない）<br>
-                        ・ナデナデとげんこつ時サウンド<br>
-                        ・ほっぺ引っ張り（本家みたいなちゃんとした奴は無理）<br>
-                        ・ドラッグでスピキを移動<br>
-                        ・ある程度空腹で移動速度低下<br>
+                        ・ｽﾋﾟｷのバリエーションを増やす<br>
                     </div>
                 </div>
                 <hr>
