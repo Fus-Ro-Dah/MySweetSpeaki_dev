@@ -83,40 +83,25 @@ export class Game {
     _bindButton(id, callback) {
         const btn = document.getElementById(id);
         if (!btn) return;
-        let isTouch = false;
-        btn.addEventListener('touchstart', () => { isTouch = true; }, { passive: true });
-        btn.addEventListener('touchend', (e) => {
-            if (isTouch) {
-                isTouch = false;
-                e.preventDefault();
-                e.stopPropagation();
-                callback(e);
-            }
-        });
-        btn.addEventListener('click', (e) => {
-            if (isTouch) return;
-            e.stopPropagation();
-            callback(e);
-        });
+        this._bindElement(btn, callback);
     }
 
     _bindElement(btn, callback) {
         if (!btn) return;
-        let isTouch = false;
-        btn.addEventListener('touchstart', () => { isTouch = true; }, { passive: true });
-        btn.addEventListener('touchend', (e) => {
-            if (isTouch) {
-                isTouch = false;
-                e.preventDefault();
-                e.stopPropagation();
-                callback(e);
+        let lastExecution = 0;
+        const execute = (e) => {
+            const now = Date.now();
+            if (now - lastExecution < 400) return; // 重複発火防止
+            lastExecution = now;
+
+            // touchend経由の場合は、ブラウザによる300ms後のclick自動発火を可能な限り防ぐ
+            if (e.type === 'touchend') {
+                if (e.cancelable) e.preventDefault();
             }
-        });
-        btn.addEventListener('click', (e) => {
-            if (isTouch) return;
-            e.stopPropagation();
             callback(e);
-        });
+        };
+        btn.addEventListener('touchend', execute);
+        btn.addEventListener('click', execute);
     }
 
     /** モード選択時の処理 */
