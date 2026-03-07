@@ -183,10 +183,13 @@ export class Game {
 
     /** 音声の再生（インスタンスを返す） */
     playSound(fileName, pitch = 1.0) {
-        if (!this.audioEnabled || !this.sounds[fileName]) return null;
+        if (!this.audioEnabled) return null;
 
-        const audio = this.sounds[fileName];
-        const playClone = new Audio(audio.src);
+        let audio = this.sounds[fileName];
+        let src = audio ? audio.src : `assets/sounds/${fileName}`;
+
+        // 未ロードの音源の場合は、new Audio して再生を試みる
+        const playClone = new Audio(src);
         playClone.volume = 0.5;
 
         // ピッチ（再生速度）の設定
@@ -205,7 +208,14 @@ export class Game {
                 if (pitch !== 1.0) {
                     playClone.playbackRate = pitch;
                 }
-            }).catch(e => console.log("[Audio] Playback failed:", e));
+            }).catch(e => {
+                // ファイルが存在しないなどのエラー
+                if (!audio) {
+                    console.warn(`[Audio] Playback failed for unregistered sound: ${fileName}`, e);
+                } else {
+                    console.log("[Audio] Playback failed:", e);
+                }
+            });
         }
 
         return playClone;
@@ -1039,7 +1049,7 @@ export class Game {
             s.update(dt);
 
             if (s.isPendingDeletion) {
-                // 削除前にその場に「かぼちゃ（Pumpkin）」を配置
+                // 削除前にその場に「死んだ時用のウィンプル」を配置
                 console.log(`[Game] Speaki ${s.id} died and returned to DeathWimple.`);
                 this.addItem('DeathWimple', 'item', s.pos.x, s.pos.y);
 
@@ -1564,10 +1574,10 @@ export class Game {
         const nextHungerSec = currentHungerSec + 1;
 
         const unlockDefs = [
-            { id: 'feeder', name: 'ごはん係 (給餌係)', price: 1, desc: '満腹度30以下のｽﾋﾟｷにごはんをあげる係を呼びます。', current: this.unlocks.feeder },
+            { id: 'feeder', name: 'ごはん係 (給餌係)', price: 1, desc: '満腹度30以下のｽﾋﾟｷにごはんをあげる係を呼びます', current: this.unlocks.feeder },
             { id: 'autoReceive', name: 'プレゼント自動回収', price: 1, desc: 'スピキが持ってきたプレゼントを自動で受け取ります', current: this.unlocks.autoReceive },
-            { id: 'growthStop', name: 'ｽﾋﾟｷの成長停止', price: 1, desc: '全世代のスピキの成長（内部カウンター）を一時停止します', current: this.unlocks.growthStop },
-            { id: 'unlockMocaron', name: 'モカロン解放', price: 1, desc: 'より栄養価の高い食べ物「モカロン」が置けるようになります。', current: this.unlocks.mocaronUnlocked }
+            { id: 'growthStop', name: 'ｽﾋﾟｷの成長停止', price: 1, desc: 'スピキが成長しなくなります。赤ちゃんは赤ちゃんのまま、子供は子供のままの姿を維持します', current: this.unlocks.growthStop },
+            { id: 'unlockMocaron', name: 'モカロン解放', price: 1, desc: 'より栄養価の高い食べ物「モカロン」が置けるようになります', current: this.unlocks.mocaronUnlocked }
         ];
 
         // チャレンジモードのみ表示する項目

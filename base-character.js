@@ -161,6 +161,12 @@ export class BaseCharacter {
                 this.status.state = STATE.DYING;
                 this.status.deathProgress = 0;
                 this.timers.stateStart = Date.now();
+
+                // 死に際のサウンド再生 (プラン1: ピッチを個体設定に合わせる)
+                if (window.game) {
+                    window.game.playSound('ヌンデ.mp3', this.status.voicePitch);
+                }
+
                 // 死亡時は他の音を止める
                 if (this.visual.currentVoice) {
                     this.visual.currentVoice.pause();
