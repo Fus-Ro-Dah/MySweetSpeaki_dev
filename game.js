@@ -373,11 +373,7 @@ export class Game {
         this.canvas.addEventListener('pointerdown', (e) => this.handleMouseDown(e));
         window.addEventListener('pointermove', (e) => this.handleMouseMove(e));
         window.addEventListener('pointerup', (e) => this.handleMouseUp(e));
-        // 右クリックでのアイテム削除を無効化するため、イベントリスナーを削除
-        // this.canvas.addEventListener('contextmenu', (e) => this.handleContextMenu(e));
-
-        // 代わりにブラウザのデフォルトメニューを抑制するだけにする（オプション）
-        this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        this.canvas.addEventListener('contextmenu', (e) => this.handleContextMenu(e));
 
         // タッチイベント・紛失対応
         this.canvas.addEventListener('pointercancel', (e) => this.handleMouseUp(e));
@@ -722,7 +718,6 @@ export class Game {
             const dist = Math.sqrt((it.x - x) ** 2 + (it.y - y) ** 2);
             if (dist < it.size / 2) {
                 this.placedItems.splice(i, 1);
-                this.playSound('アーウ.mp3', 0.8);
                 console.log(`Item ${it.id} removed by user.`);
                 return;
             }
