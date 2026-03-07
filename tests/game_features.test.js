@@ -91,11 +91,14 @@ describe('Game Features Toggle', () => {
 
     beforeEach(() => {
         game = new Game();
+        global.window.game = game;
         // Force unlocked states for testing toggle logic
         game.unlocks.feeder = true;
         game.unlocks.autoReceive = true;
+        game.unlocks.growthStop = true;
         game.settings.feederEnabled = true;
         game.settings.autoReceiveEnabled = true;
+        game.settings.growthStopEnabled = false;
     });
 
     it('should initialize settings correctly', () => {
@@ -133,5 +136,50 @@ describe('Game Features Toggle', () => {
         expect(game.settings.feederEnabled).toBe(true);
         // Should call callNPC('posher') which calls addSpeaki
         expect(addSpy).toHaveBeenCalled();
+    });
+
+    it('should prevent BabySpeaki growth when growthStopEnabled is true', async () => {
+        const { BabySpeaki } = await import('../baby-speaki.js');
+        const parent = {
+            appendChild: vi.fn(),
+            getBoundingClientRect: vi.fn(() => ({ left: 0, top: 0, width: 1000, height: 800 })),
+            clientWidth: 1000,
+            clientHeight: 800
+        };
+        const baby = new BabySpeaki(5, parent, 0, 0);
+
+        game.settings.growthStopEnabled = true;
+        const initialGrowth = baby.idleGrowthTime;
+
+        baby.status.state = STATE.IDLE;
+        baby.update(1000); // 1 sec
+
+        expect(baby.idleGrowthTime).toBe(initialGrowth);
+
+        game.settings.growthStopEnabled = false;
+        baby.update(1000);
+        expect(baby.idleGrowthTime).toBeGreaterThan(initialGrowth);
+    });
+
+    it('should prevent ChildSpeaki growth when growthStopEnabled is true', async () => {
+        const { ChildSpeaki } = await import('../child-speaki.js');
+        const parent = {
+            appendChild: vi.fn(),
+            getBoundingClientRect: vi.fn(() => ({ left: 0, top: 0, width: 1000, height: 800 })),
+            clientWidth: 1000,
+            clientHeight: 800
+        };
+        const child = new ChildSpeaki(6, parent, 0, 0);
+
+        game.settings.growthStopEnabled = true;
+        const initialGrowth = child.growthTime;
+
+        child.update(1000); // 1 sec
+
+        expect(child.growthTime).toBe(initialGrowth);
+
+        game.settings.growthStopEnabled = false;
+        child.update(1000);
+        expect(child.growthTime).toBeGreaterThan(initialGrowth);
     });
 });

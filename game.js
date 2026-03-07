@@ -48,13 +48,15 @@ export class Game {
             affectionDecayLv: 0, // NEW: 0から始まり、解放ごとに+1
             autoReceive: false,
             mocaronUnlocked: false,
-            reloadReductionLv: 0
+            reloadReductionLv: 0,
+            growthStop: false
         };
 
         // ON/OFF設定 (初期値はアンロック時にtrueになる)
         this.settings = {
             feederEnabled: false,
-            autoReceiveEnabled: false
+            autoReceiveEnabled: false,
+            growthStopEnabled: false
         };
         this.itemCooldowns = {}; // { itemId: endTimestamp }
         this.isGameCleared = false;
@@ -1569,6 +1571,7 @@ export class Game {
         const unlockDefs = [
             { id: 'feeder', name: 'ごはん係 (給餌係)', price: 1, desc: '満腹度30以下のｽﾋﾟｷにごはんをあげる係を呼びます。', current: this.unlocks.feeder },
             { id: 'autoReceive', name: 'プレゼント自動回収', price: 1, desc: 'スピキが持ってきたプレゼントを自動で受け取ります', current: this.unlocks.autoReceive },
+            { id: 'growthStop', name: 'ｽﾋﾟｷの成長停止', price: 1, desc: '全世代のスピキの成長（内部カウンター）を一時停止します', current: this.unlocks.growthStop },
             { id: 'unlockMocaron', name: 'モカロン解放', price: 1, desc: 'より栄養価の高い食べ物「モカロン」が置けるようになります。', current: this.unlocks.mocaronUnlocked }
         ];
 
@@ -1609,9 +1612,13 @@ export class Game {
             div.className = `unlock-item ${def.current ? 'unlocked' : 'locked'}`;
 
             let buttonHTML = '';
-            if (def.id === 'feeder' || def.id === 'autoReceive') {
+            if (def.id === 'feeder' || def.id === 'autoReceive' || def.id === 'growthStop') {
                 if (def.current) {
-                    const isEnabled = (def.id === 'feeder') ? this.settings.feederEnabled : this.settings.autoReceiveEnabled;
+                    let isEnabled = false;
+                    if (def.id === 'feeder') isEnabled = this.settings.feederEnabled;
+                    else if (def.id === 'autoReceive') isEnabled = this.settings.autoReceiveEnabled;
+                    else if (def.id === 'growthStop') isEnabled = this.settings.growthStopEnabled;
+
                     buttonHTML = `
                         <button class="toggle-btn ${isEnabled ? 'active' : 'inactive'}" 
                             onclick="window.game.toggleFeature('${def.id}')">
@@ -1660,6 +1667,8 @@ export class Game {
             }
         } else if (id === 'autoReceive') {
             this.settings.autoReceiveEnabled = !this.settings.autoReceiveEnabled;
+        } else if (id === 'growthStop') {
+            this.settings.growthStopEnabled = !this.settings.growthStopEnabled;
         }
 
         this.playSound('happy', 1.1);
@@ -1682,6 +1691,10 @@ export class Game {
             case 'autoReceive':
                 this.unlocks.autoReceive = true;
                 this.settings.autoReceiveEnabled = true; // 解放時はON
+                break;
+            case 'growthStop':
+                this.unlocks.growthStop = true;
+                this.settings.growthStopEnabled = true;
                 break;
             case 'unlockMocaron':
                 this.unlocks.mocaronUnlocked = true;
