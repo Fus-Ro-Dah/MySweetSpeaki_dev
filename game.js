@@ -1624,10 +1624,15 @@ export class Game {
                     else if (def.id === 'autoReceive') isEnabled = this.settings.autoReceiveEnabled;
                     else if (def.id === 'growthStop') isEnabled = this.settings.growthStopEnabled;
 
+                    let toggleText = isEnabled ? 'ON' : 'OFF';
+                    if (def.id === 'feeder') toggleText = isEnabled ? '手伝い中' : '今はいない';
+                    else if (def.id === 'growthStop') toggleText = isEnabled ? '成長停止中' : '今は自然に成長する';
+                    else if (def.id === 'autoReceive') toggleText = isEnabled ? '自動回収中' : '自動回収停止';
+
                     buttonHTML = `
                         <button class="toggle-btn ${isEnabled ? 'active' : 'inactive'}" 
                             onclick="window.game.toggleFeature('${def.id}')">
-                            ${isEnabled ? 'ON' : 'OFF'}
+                            ${toggleText}
                         </button>
                     `;
                 } else {
