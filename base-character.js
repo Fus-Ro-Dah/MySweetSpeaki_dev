@@ -576,7 +576,7 @@ export class BaseCharacter {
 
     /** 移動処理 */
     _processMovement() {
-        if (!this.pos.destinationSet) return;
+        if (!this.pos.destinationSet || this.interaction.isMoving) return;
 
         const dx = this.pos.targetX - this.pos.x;
         const dy = this.pos.targetY - this.pos.y;

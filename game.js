@@ -50,6 +50,12 @@ export class Game {
             mocaronUnlocked: false,
             reloadReductionLv: 0
         };
+
+        // ON/OFF設定 (初期値はアンロック時にtrueになる)
+        this.settings = {
+            feederEnabled: false,
+            autoReceiveEnabled: false
+        };
         this.itemCooldowns = {}; // { itemId: endTimestamp }
         this.isGameCleared = false;
 
@@ -969,8 +975,8 @@ export class Game {
     startGiftReceiveEvent(speaki) {
         this.giftPartner = speaki;
 
-        // 自動回収が有効な場合
-        if (this.unlocks.autoReceive) {
+        // 自動回収が解放済み かつ 設定がONの場合
+        if (this.unlocks.autoReceive && this.settings.autoReceiveEnabled) {
             this.handleReaction('auto');
             return;
         }
@@ -1537,10 +1543,10 @@ export class Game {
             }
         }
 
-        // 自動ごはん係の処理
-        if (this.unlocks.feeder) {
+        // 自動ごはん係の処理 (設定がONの場合のみ)
+        if (this.unlocks.feeder && this.settings.feederEnabled) {
             // ポーシャーがいないか、または帰宅中/帰宅直後などでないかチェック
-            const posher = this.speakis.find(s => s instanceof Posher);
+            const posher = this.speakis.find(s => s.characterType === 'posher');
             if (!posher) {
                 // お腹を空かせたスピキがいるか (満腹度30以下)
                 const hungryOne = this.speakis.find(s => s.canInteract && s.status.hunger <= 30);
@@ -1601,17 +1607,63 @@ export class Game {
             const div = document.createElement('div');
             // isUpgrade の場合は unlocked クラスをつけない（常にボタンを押せるように）
             div.className = `unlock-item ${def.current ? 'unlocked' : 'locked'}`;
+
+            let buttonHTML = '';
+            if (def.id === 'feeder' || def.id === 'autoReceive') {
+                if (def.current) {
+                    const isEnabled = (def.id === 'feeder') ? this.settings.feederEnabled : this.settings.autoReceiveEnabled;
+                    buttonHTML = `
+                        <button class="toggle-btn ${isEnabled ? 'active' : 'inactive'}" 
+                            onclick="window.game.toggleFeature('${def.id}')">
+                            ${isEnabled ? 'ON' : 'OFF'}
+                        </button>
+                    `;
+                } else {
+                    buttonHTML = `
+                        <button class="primary-btn unlock-btn" ${this.plastics < def.price ? 'disabled' : ''} 
+                            onclick="window.game.unlockFeature('${def.id}', ${def.price})">
+                            解放する
+                        </button>
+                    `;
+                }
+            } else {
+                buttonHTML = `
+                    <button class="primary-btn unlock-btn" ${(def.current || this.plastics < def.price) ? 'disabled' : ''} 
+                        onclick="window.game.unlockFeature('${def.id}', ${def.price})">
+                        ${def.current ? '解放済み' : (def.isUpgrade ? '強化する' : '解放する')}
+                    </button>
+                `;
+            }
+
             div.innerHTML = `
                 <h4>${def.name}</h4>
                 <p>${def.desc}</p>
                 <div class="price">${def.current ? '解放済み' : `消費: ${def.price} 個`}</div>
-                <button class="primary-btn unlock-btn" ${(def.current || this.plastics < def.price) ? 'disabled' : ''} 
-                    onclick="window.game.unlockFeature('${def.id}', ${def.price})">
-                    ${def.current ? '解放済み' : (def.isUpgrade ? '強化する' : '解放する')}
-                </button>
+                ${buttonHTML}
             `;
             list.appendChild(div);
         });
+    }
+
+    toggleFeature(id) {
+        if (id === 'feeder') {
+            this.settings.feederEnabled = !this.settings.feederEnabled;
+            // 指定のNPCを取得
+            const posher = this.speakis.find(s => s.characterType === 'posher');
+
+            if (!this.settings.feederEnabled) {
+                // OFFにした場合は、出動中なら退勤させる
+                if (posher) this.removeSpeaki(posher.id);
+            } else {
+                // ONにした場合は、まだいなければ即座に呼び出す
+                if (!posher) this.callNPC('posher');
+            }
+        } else if (id === 'autoReceive') {
+            this.settings.autoReceiveEnabled = !this.settings.autoReceiveEnabled;
+        }
+
+        this.playSound('happy', 1.1);
+        this.initUnlockMenu(); // 再描画
     }
 
     /** 実際のアンロック処理 */
@@ -1622,11 +1674,15 @@ export class Game {
         switch (id) {
             case 'feeder':
                 this.unlocks.feeder = true;
+                this.settings.feederEnabled = true; // 解放時はON
                 this.callNPC('posher'); // アンロックした瞬間に呼び出す
                 break;
             case 'hungerDecay': this.unlocks.hungerDecayLv++; break;
             case 'affectionDecay': this.unlocks.affectionDecayLv++; break;
-            case 'autoReceive': this.unlocks.autoReceive = true; break;
+            case 'autoReceive':
+                this.unlocks.autoReceive = true;
+                this.settings.autoReceiveEnabled = true; // 解放時はON
+                break;
             case 'unlockMocaron':
                 this.unlocks.mocaronUnlocked = true;
                 ITEMS.Mocaron.showInMenu = true;
