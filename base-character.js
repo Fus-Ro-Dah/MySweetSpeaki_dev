@@ -64,6 +64,7 @@ export class BaseCharacter {
             isInteracting: false,
             isPetting: false,
             isActuallyDragging: false,
+            isMoving: false, // 移動（ドラッグ移動）中フラグ
             targetItem: null,
             lastMouseX: 0,
             lastMouseY: 0

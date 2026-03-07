@@ -608,12 +608,23 @@ export class Game {
 
     handleMouseDown(e) {
         const { x, y } = this._getMousePos(e);
-        const target = this._findSpeakiAt(x, y);
-        if (!target) return;
+        const result = this._findSpeakiAt(x, y);
+        if (!result) return;
 
-        if (!this._isInteractable(target)) return;
+        const { speaki, hitArea } = result;
 
-        this._prepareInteraction(target, x, y);
+        if (!this._isInteractable(speaki)) return;
+
+        // 移動可能なキャラクター（スピキ、子供、赤ちゃん）かつ「胴体」がクリックされた場合
+        const movableSpecies = ['speaki', 'child', 'baby'];
+        const isMovableSpecie = movableSpecies.includes(speaki.characterType);
+        const canMoveState = [STATE.IDLE, STATE.WALKING].includes(speaki.status.state);
+
+        if (hitArea === 'body' && isMovableSpecie && canMoveState) {
+            this._startMovement(speaki, x, y);
+        } else if (hitArea === 'head') {
+            this._prepareInteraction(speaki, x, y);
+        }
     }
 
     _getMousePos(e) {
@@ -638,11 +649,35 @@ export class Game {
     _findSpeakiAt(x, y) {
         for (let i = this.speakis.length - 1; i >= 0; i--) {
             const s = this.speakis[i];
-            const dist = Math.sqrt((x - s.pos.x) ** 2 + (y - s.pos.y) ** 2);
-            const isHeadHit = (y < s.pos.y - s.status.size / 5);
-            if (dist < s.status.size / 2 && isHeadHit) return s;
+            const dx = x - s.pos.x;
+            const dy = y - s.pos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // スピキのサイズに基づいた判定
+            if (dist < s.status.size / 2) {
+                // Y座標の相対位置で「頭」か「胴体」かを判定
+                // 中心より上（size/5以上のマイナス方向）を頭とする
+                const isHeadHit = (y < s.pos.y - s.status.size / 5);
+                return {
+                    speaki: s,
+                    hitArea: isHeadHit ? 'head' : 'body'
+                };
+            }
         }
         return null;
+    }
+
+    /** ｽﾋﾟｷの移動開始（ドラッグ） */
+    _startMovement(speaki, x, y) {
+        speaki.interaction.isInteracting = true;
+        speaki.interaction.isMoving = true; // 移動中フラグ
+        speaki.timers.stateStart = Date.now();
+        speaki.interaction.lastMouseX = x;
+        speaki.interaction.lastMouseY = y;
+        this.interactTarget = speaki;
+
+        // ドラッグ開始時の演出（少し浮く等）
+        speaki.visual.targetDistortion.scale = 1.1;
     }
 
     _prepareInteraction(speaki, x, y) {
@@ -698,7 +733,13 @@ export class Game {
 
         if (dist <= 5) return;
 
-        if (speaki.status.state === STATE.USER_INTERACTING) {
+        if (speaki.interaction.isMoving) {
+            // 移動（ドラッグ）処理
+            speaki.pos.x = x;
+            speaki.pos.y = y;
+            speaki.pos.destinationSet = false;
+        } else if (speaki.status.state === STATE.USER_INTERACTING) {
+            // なでなで処理
             speaki.interaction.isPetting = true;
             speaki.status.friendship = Math.min(50, speaki.status.friendship + 0.2);
             if (speaki.visual.currentVoice) speaki.visual.currentVoice.loop = true;
@@ -783,12 +824,21 @@ export class Game {
     }
 
     _cleanupInteraction(speaki) {
+        const wasMoving = speaki.interaction.isMoving;
         speaki.interaction.isInteracting = false;
         speaki.interaction.isPetting = false;
         speaki.interaction.isActuallyDragging = false;
+        speaki.interaction.isMoving = false;
         speaki.timers.stateStart = Date.now();
         speaki.pos.destinationSet = false;
-        speaki.status.state = (speaki.status.stateStack.length > 0) ? speaki.status.stateStack.pop() : STATE.IDLE;
+
+        // 移動後、またはスタックが空の場合はIDLEにする
+        if (wasMoving) {
+            speaki.status.state = STATE.IDLE;
+        } else {
+            speaki.status.state = (speaki.status.stateStack.length > 0) ? speaki.status.stateStack.pop() : STATE.IDLE;
+        }
+
         speaki._stopCurrentVoice();
         speaki._onStateChanged(speaki.status.state); // 追加：復帰後のアニメーション/アセットを適用
         this.interactTarget = null;
