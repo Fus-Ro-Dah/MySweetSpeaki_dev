@@ -897,6 +897,19 @@ button:hover {
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
 }
 
+.char-foot-effect {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translate(-50%, 40%);
+    width: 80px;
+    height: auto;
+    pointer-events: none;
+    z-index: 5; /* スピキ本体orギフト(10, 50)より後ろ */
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
+    transition: opacity 0.3s ease;
+}
+
 /* セリフテキスト表示用 */
 .char-chat-text {
     position: absolute;

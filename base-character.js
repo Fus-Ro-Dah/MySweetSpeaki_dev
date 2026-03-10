@@ -66,6 +66,9 @@ export class BaseCharacter {
             isActuallyDragging: false,
             isMoving: false, // 移動（ドラッグ移動）中フラグ
             targetItem: null,
+            socialFootImage: null, // 交流中に足元に出す画像
+            socialOnComplete: null, // 交流終了時のコールバック
+            socialNextAction: null, // 交流中に次に取るべきアクションの予約
             lastMouseX: 0,
             lastMouseY: 0
         };
@@ -109,10 +112,15 @@ export class BaseCharacter {
         gift.className = 'char-gift-overlay hidden';
         gift.src = 'assets/images/gift.png';
 
+        // 交流用足元画像 (NEW)
+        const footEffect = document.createElement('img');
+        footEffect.className = 'char-foot-effect hidden';
+
         // 名前表示用ラベル
         const nameTag = document.createElement('div');
         nameTag.className = 'char-name-tag';
 
+        container.appendChild(footEffect); // 背面側に配置するため先に追加
         container.appendChild(img);
         container.appendChild(gift);
         container.appendChild(emoji);
@@ -123,6 +131,7 @@ export class BaseCharacter {
         this.visual.dom.container = container;
         this.visual.dom.sprite = img;
         this.visual.dom.gift = gift;
+        this.visual.dom.footEffect = footEffect;
         this.visual.dom.emoji = emoji;
         this.visual.dom.chatText = chatText;
         this.visual.dom.nameTag = nameTag;
@@ -202,14 +211,13 @@ export class BaseCharacter {
             }
         }
     }
-
     /** 状態遷移の判定 (サブクラスで拡張可能) */
     _updateStateTransition() {
         if (this.status.state === STATE.DYING) return; // 死亡中は遷移しない
         const now = Date.now();
         const dist = this.pos.destinationSet ? Math.sqrt(Math.pow(this.pos.targetX - this.pos.x, 2) + Math.pow(this.pos.targetY - this.pos.y, 2)) : 999;
-        const arrived = !this.pos.destinationSet || dist <= 10;
-
+        const arrived = this.pos.destinationSet && dist <= 10;
+        
         // 空腹時の挙動
         if (this.status.hunger <= 0) {
             // WALKING中 または 「食べ物でないアイテム」への接近中なら停止する
@@ -322,6 +330,21 @@ export class BaseCharacter {
                     if (arrived) {
                         this.status.state = STATE.GAME_REACTION;
                         this.timers.actionStart = Date.now();
+                        // 駆け寄った側が到着したタイミングで、テンプレートのオプションを適用する
+                        if (this.socialConfig && this.socialConfig.options) {
+                            const opts = this.socialConfig.options;
+                            const partner = this.socialConfig.partner;
+                            if (this.socialConfig.isInitiator && partner) {
+                                partner.interaction.socialFootImage = opts.footImage;
+                                partner.interaction.socialOnComplete = opts.onComplete;
+                                partner.interaction.socialNextAction = opts.receiverAction || 'idle';
+                                this.interaction.socialNextAction = opts.initiatorAction || 'idle';
+                                
+                                // パートナーも待機状態から実動作状態へ促す
+                                partner._onStateChanged(STATE.GAME_REACTION);
+                                partner.timers.actionStart = Date.now();
+                            }
+                        }
                         // game.jsで設定されたactionDurationを維持（なければデフォルト9秒）
                         if (!this.timers.actionDuration) this.timers.actionDuration = 9000;
                         this._onStateChanged(this.status.state);
@@ -342,7 +365,8 @@ export class BaseCharacter {
                         this.status.isMySocialTurn = false;
 
                         const partner = this.socialConfig.partner; // ここでは存在が保証されている
-                        const bothFinished = (this.status.socialTurnCount >= 3 && (!partner || partner.status.socialTurnCount >= 3));
+                        const maxTurns = (this.socialConfig && this.socialConfig.options && this.socialConfig.options.turns) || 3;
+                        const bothFinished = (this.status.socialTurnCount >= maxTurns && (!partner || partner.status.socialTurnCount >= maxTurns));
 
                         if (!bothFinished) {
                             if (partner) {
@@ -356,17 +380,32 @@ export class BaseCharacter {
                             }
                         } else {
                             // 終了処理
+                            if (this.interaction.socialOnComplete) {
+                                this.interaction.socialOnComplete(this);
+                            }
+
                             this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
                             this.status.socialTurnCount = 0;
                             this.status.isMySocialTurn = false;
+                            this.interaction.socialFootImage = null;
+                            this.interaction.socialOnComplete = null;
+                            this.interaction.socialNextAction = null;
                             this._onStateChanged(this.status.state);
 
                             if (partner) {
+                                if (partner.interaction.socialOnComplete) {
+                                    partner.interaction.socialOnComplete(partner);
+                                }
                                 partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
                                 partner.status.socialTurnCount = 0;
                                 partner.status.isMySocialTurn = false;
+                                partner.interaction.socialFootImage = null;
+                                partner.interaction.socialOnComplete = null;
+                                partner.interaction.socialNextAction = null;
+                                partner.hideEmoji();
                                 partner._onStateChanged(partner.status.state);
                             }
+                            this.hideEmoji();
                         }
                     }
                 }
@@ -465,6 +504,18 @@ export class BaseCharacter {
             dom.sprite.style.filter = '';
         }
 
+        // 足元画像 (NEW)
+        if (dom.footEffect) {
+            if (this.interaction.socialFootImage && this.status.state === STATE.GAME_REACTION) {
+                if (dom.footEffect.src !== this.interaction.socialFootImage) {
+                    dom.footEffect.src = this.interaction.socialFootImage;
+                }
+                dom.footEffect.classList.remove('hidden');
+            } else {
+                dom.footEffect.classList.add('hidden');
+            }
+        }
+
         // 位置とサイズ
         dom.container.style.width = `${this.status.size}px`;
         dom.container.style.height = `${this.status.size}px`;
@@ -511,6 +562,13 @@ export class BaseCharacter {
         if (this.status.state === STATE.ITEM_APPROACHING && this.interaction.targetItem) {
             this.pos.targetX = this.interaction.targetItem.x;
             this.pos.targetY = this.interaction.targetItem.y;
+            this.pos.destinationSet = true;
+            return;
+        }
+
+        if (this.status.state === STATE.GAME_APPROACHING) {
+            // GAME状態の移動はGameオブジェクト（外部）が目的地をセットする責任を持つ。
+            // 目的地がセットされていない場合は、勝手に散歩を始めないようにここで停止する。
             return;
         }
 
@@ -609,7 +667,6 @@ export class BaseCharacter {
         }
     }
 
-    /** 状態変更時の初期化 */
     _onStateChanged(newState) {
         // _applySelectedAsset内で_stopCurrentVoiceが呼ばれるため、ここでは明示的に呼ばない
         this.timers.stateStart = Date.now();
@@ -618,11 +675,20 @@ export class BaseCharacter {
         this._applyStateAppearance(newState);
         this.visual.motionTimer = 0;
 
+        if (newState === STATE.IDLE || newState === STATE.WALKING) {
+            this.hideEmoji();
+        }
+
         // 状態リセット
         if (newState === STATE.GAME_REACTION) {
             this.status.socialTurnCount = 0;
-            // 自分の番の時だけアセットを適用する（後攻はここでは再生しない）
-            if (this.status.isMySocialTurn) {
+            // 汎用交流テンプレート等からアクションが指定されている場合はそちらを優先
+            if (this.interaction.socialNextAction) {
+                // TODO: テンプレート駆動のターン制御
+                this.status.action = this.interaction.socialNextAction;
+                this._applySelectedAsset(newState);
+            } else if (this.status.isMySocialTurn) {
+                // 自分の番の時だけアセットを適用する（後攻はここでは再生しない）
                 this._applySelectedAsset(newState);
             } else {
                 // 自分の番でない時はIDLEポーズで待機
@@ -723,13 +789,13 @@ export class BaseCharacter {
         // 状態変更時は必ず以前の音声を停止する (Strict Stop)
         this._stopCurrentVoice();
 
-        const type = [
+        let type = [
             STATE.ITEM_ACTION,
             STATE.USER_INTERACTING,
             STATE.GAME_REACTION,
             STATE.GIFT_REACTION,
             STATE.GIFT_TIMEOUT,
-            STATE.ABILITY_ACTION // NEW: 特殊能力もパフォーマンス扱いに
+            STATE.ABILITY_ACTION
         ].includes(state) ? 'performance' : 'mood';
 
         let emotion = this.status.emotion;
@@ -743,11 +809,26 @@ export class BaseCharacter {
 
         // 交流リアクション中は常に（毎ターン）感情とアクションをランダムに決定する
         if (state === STATE.GAME_REACTION) {
-            const r2 = Math.random();
-            if (r2 < 0.2) emotion = this.status.emotion = 'sad';
-            else if (r2 < 0.8) emotion = this.status.emotion = 'happy';
-            else emotion = this.status.emotion = 'normal';
-            action = this.status.action = 'idle';
+            if (this.interaction.socialNextAction) {
+                // 予約されたアクションがある場合はそれを使用 ('happy'などを感情として扱うフォールバック)
+                const moodKeywords = ['happy', 'sad', 'angry', 'normal'];
+                if (moodKeywords.includes(this.interaction.socialNextAction)) {
+                    emotion = this.status.emotion = this.interaction.socialNextAction;
+                    action = this.status.action = 'idle';
+                    // 感情キーワードの場合は、バリエーション豊富な mood カテゴリを優先する
+                    type = 'mood';
+                } else {
+                    action = this.status.action = this.interaction.socialNextAction;
+                }
+            } else {
+                const r2 = Math.random();
+                if (r2 < 0.2) emotion = this.status.emotion = 'sad';
+                else if (r2 < 0.8) emotion = this.status.emotion = 'happy';
+                else emotion = this.status.emotion = 'normal';
+                action = this.status.action = 'idle';
+                // 通常のおしゃべりもバリエーションを出すために mood を使用
+                type = 'mood';
+            }
         }
 
         // アセット取得の内部ヘルパー
@@ -986,10 +1067,22 @@ export class BaseCharacter {
         this.visual.dom.emoji.classList.add('visible');
 
         if (this.timers.emojiTimer) clearTimeout(this.timers.emojiTimer);
-        this.timers.emojiTimer = setTimeout(() => {
-            this.visual.dom.emoji.classList.remove('visible');
+        
+        if (duration !== null) {
+            this.timers.emojiTimer = setTimeout(() => {
+                this.hideEmoji();
+            }, duration);
+        }
+    }
+
+    /** 絵文字を非表示にする */
+    hideEmoji() {
+        if (!this.visual.dom.emoji) return;
+        this.visual.dom.emoji.classList.remove('visible');
+        if (this.timers.emojiTimer) {
+            clearTimeout(this.timers.emojiTimer);
             this.timers.emojiTimer = null;
-        }, duration);
+        }
     }
 
     /** 現在ボイスが再生中かどうか */

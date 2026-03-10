@@ -36,8 +36,8 @@ export class Game {
         this.isGameStarted = false; // 二重起動防止用フラグ
 
         // 交流管理用プロパティ
-        this.lastSocialTime = Date.now();
-        this.socialInterval = 12000 + Math.random() * 8000; // 12-20秒おき
+        this.lastSocialTime = 0; // 最後に交流が「開始」した時間
+        this.lastSocialDebugTime = 0; // デバッグログ用
 
         // 新機能用ステート
         this.happiness = 0;
@@ -62,6 +62,7 @@ export class Game {
         this.isGameCleared = false;
 
         Game.instance = this;
+
 
         this.loadResources();
 
@@ -290,10 +291,11 @@ export class Game {
                 this.unlocks.reloadReductionLv = 20;
             }
 
-            // 最初のスピキを中央に1匹だけ生成
+            // 最初のスピキを2匹生成 (テスト用)
             const centerX = this.canvas.width / 2;
             const centerY = this.canvas.height / 2;
-            this.addSpeaki(centerX, centerY, 'speaki');
+            this.addSpeaki(centerX - 100, centerY, 'speaki');
+            this.addSpeaki(centerX + 100, centerY, 'speaki');
 
         } catch (e) {
             alert("Error starting game: " + e.message + "\n" + e.stack);
@@ -1095,54 +1097,139 @@ export class Game {
     }
 
     /** 中央管理による交流（ソーシャル）の更新 */
+    /** 交流アクションのテンプレート定義を取得 */
+    _getSocialActionTemplates() {
+        return [
+            {
+                id: 'GIVE_CANDY',
+                priority: 10,
+                canTrigger: (a, b) => (b.status.hunger < 40 && a.status.hunger > 60),
+                execute: (initiator, target) => this.triggerDirectedSocialAction(initiator, target, {
+                    footImage: 'assets/images/item_キャンディ.png',
+                    initiatorAction: 'idle',
+                    receiverAction: 'happy',
+                    turns: 2,
+                    onComplete: (r) => { r.status.hunger = Math.min(100, r.status.hunger + 30); }
+                })
+            },
+            {
+                id: 'CHAT',
+                priority: 1,
+                canTrigger: (a, b) => {
+                    const dist = Math.sqrt((a.pos.x - b.pos.x) ** 2 + (a.pos.y - b.pos.y) ** 2);
+                    return dist < 400 && !(a.characterType === 'baby' && b.characterType === 'baby');
+                },
+                execute: (a, b) => this.startInteraction(a, b)
+            }
+        ];
+    }
+
     _updateSocialInteractions(dt) {
         const now = Date.now();
-        if (now - this.lastSocialTime < this.socialInterval) return;
+        
+        // 1. 確率計算 (基準: 2匹のときに60秒に1回 = 1/60 Hz)
+        // 全体の期待発生頻度 f = (人数 / 120) [回/秒]
+        const eventsPerSec = this.speakis.length / 120;
+        const probPerFrame = (dt / 1000) * eventsPerSec;
 
-        // 次回の間隔を再設定
-        this.lastSocialTime = now;
-        this.socialInterval = 15000 + Math.random() * 10000;
+        // 3秒おきに現在の期待頻度をログ出力
+        if (now - this.lastSocialDebugTime > 3000) {
+            this.lastSocialDebugTime = now;
+            console.log(`[Debug] Social Prob/frame: ${(probPerFrame * 100).toFixed(4)}% (Expect 1 event every ${Math.round(1/eventsPerSec)}s for ${this.speakis.length} speakis)`);
+        }
 
-        // 候補のピックアップ
+        // 短時間に連続発生しすぎないよう、最低 2秒 のインターバルを設ける（演出の重なり防止）
+        if (now - this.lastSocialTime < 2000) return;
+
+        // ロール実行
+        if (Math.random() > probPerFrame) return;
+
+        // 2. 候補のピックアップ
         const candidates = this.speakis.filter(s =>
             s.canInteract &&
-            s.status.friendship > -31 && // 好感度-30以下（逃げ出す状態）は交流しない
+            s.status.friendship > -31 &&
             [STATE.IDLE, STATE.WALKING].includes(s.status.state) &&
             !s.interaction.isInteracting
         );
 
         if (candidates.length < 2) return;
 
-        // ランダムに2匹選ぶ
-        const idx1 = Math.floor(Math.random() * candidates.length);
-        let idx2 = Math.floor(Math.random() * candidates.length);
-        while (idx1 === idx2) {
-            idx2 = Math.floor(Math.random() * candidates.length);
+        // 3. ペアの選定（シャッフルしてランダムなペアを1組選ぶ）
+        const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+        const templates = this._getSocialActionTemplates();
+
+        for (let i = 0; i < shuffled.length; i++) {
+            const char1 = shuffled[i];
+            const partners = shuffled.filter(c => c !== char1);
+            if (partners.length === 0) break;
+
+            const char2 = partners[Math.floor(Math.random() * partners.length)];
+
+            for (const template of [...templates].sort((a, b) => b.priority - a.priority)) {
+                let initiator = null;
+                let target = null;
+
+                if (template.canTrigger(char1, char2)) {
+                    initiator = char1; target = char2;
+                } else if (template.canTrigger(char2, char1)) {
+                    initiator = char2; target = char1;
+                }
+
+                if (initiator && target) {
+                    console.log(`[Game] Social Event triggered by probability: ${template.id} between ${initiator.id} and ${target.id}`);
+                    template.execute(initiator, target);
+                    this.lastSocialTime = now; // 成功時のみインターバルをリセット
+                    return;
+                }
+            }
         }
+    }
 
-        let char1 = candidates[idx1];
-        let char2 = candidates[idx2];
+    /** ターゲット指定型（一方からの駆け寄り）交流の開始 */
+    triggerDirectedSocialAction(initiator, target, options) {
+        // 1. 状態保存と遷移
+        initiator.status.stateStack.push(initiator.status.state);
+        target.status.stateStack.push(target.status.state);
 
+        initiator.status.state = STATE.GAME_APPROACHING;
+        target.status.state = STATE.GAME_REACTION; // 待機状態 (この時点ではまだ足元画像等は出さない)
+
+        // 2. パートナー紐付け
+        initiator.socialConfig = { partner: target, isInitiator: true, options: options };
+        target.socialConfig = { partner: initiator, isInitiator: false, options: options };
+
+        // 3. ターン制御の初期化
+        initiator.status.isMySocialTurn = true;  // 駆け寄るほうが先
+        target.status.isMySocialTurn = false;    // 待つほうは後
+        initiator.status.socialTurnCount = 0;
+        target.status.socialTurnCount = 0;
+
+        // 5. 演出開始
+        initiator.showEmoji('💬', null);
+        target.showEmoji('❗', null); // 呼びかけられた感
+
+        initiator._onStateChanged(initiator.status.state);
+        target._onStateChanged(target.status.state);
+
+        // 状態変更後に目的地を確定させる (フラグがリセットされるため)
+        initiator.pos.targetX = target.pos.x + (initiator.pos.x < target.pos.x ? -120 : 120);
+        initiator.pos.targetY = target.pos.y;
+        initiator.pos.destinationSet = true;
+    }
+
+    /** 従来型の（お互いに歩み寄る）交流の開始 */
+    startInteraction(char1, char2) {
         // 常に左にいる方をchar1, 右にいる方をchar2にする (交差を防ぐ)
         if (char1.pos.x > char2.pos.x) {
             [char1, char2] = [char2, char1];
         }
 
-        // 距離制限を緩和
-        const dist = Math.sqrt((char1.pos.x - char2.pos.x) ** 2 + (char1.pos.y - char2.pos.y) ** 2);
-        if (dist > 400) return;
-
-        // 両者が赤ちゃんなら中止
-        if (char1.characterType === 'baby' && char2.characterType === 'baby') return;
-
         // 目的地（少しずらした位置）
         let target1, target2;
         if (char1.characterType === 'baby') {
-            // char1が赤ちゃんなら、char2が寄ってくる
             target1 = { x: char1.pos.x, y: char1.pos.y };
             target2 = { x: char1.pos.x + 80, y: char1.pos.y };
         } else if (char2.characterType === 'baby') {
-            // char2が赤ちゃんなら、char1が寄ってくる
             target1 = { x: char2.pos.x - 80, y: char2.pos.y };
             target2 = { x: char2.pos.x, y: char2.pos.y };
         } else {
@@ -1152,35 +1239,47 @@ export class Game {
             target2 = { x: midX + 80, y: midY };
         }
 
-        // 同時に到着するように速度を計算
-        const d1 = Math.sqrt((char1.pos.x - target1.x) ** 2 + (char1.pos.y - target1.y) ** 2);
-        const d2 = Math.sqrt((char2.pos.x - target2.x) ** 2 + (char2.pos.y - target2.y) ** 2);
-
-        const t1 = d1 / (char1.pos.speed * 1.5 || 1);
-        const t2 = d2 / (char2.pos.speed * 1.5 || 1);
-        const targetTime = Math.max(t1, t2, 0.5);
-
-        char1.pos.socialSpeed = d1 / targetTime;
-        char2.pos.socialSpeed = d2 / targetTime;
-
-        // 両者に移動命令
-        const startInteraction = (char, targetPos, partner, isFirst) => {
+        const start = (char, targetPos, partner, isFirst) => {
+            char.status.stateStack.push(char.status.state);
             char.status.state = STATE.GAME_APPROACHING;
+            char.status.isMySocialTurn = isFirst;
+            char.status.socialTurnCount = 0;
+            char.socialConfig = { partner };
+            char.showEmoji('💬', null);
+            char._onStateChanged(char.status.state);
+
+            // 状態変更後に目的地をセット (destinationSetがリセットされるため)
             char.pos.targetX = targetPos.x;
             char.pos.targetY = targetPos.y;
             char.pos.destinationSet = true;
-            char.status.isMySocialTurn = isFirst;
-            char.socialConfig = { partner }; // パートナー参照のみ保持
-            char._onStateChanged(char.status.state);
-            char.pos.destinationSet = (char.characterType !== 'baby'); // 赤ちゃんは目的地へ動かない
         };
 
-        startInteraction(char1, target1, char2, true);  // char1が先攻
-        startInteraction(char2, target2, char1, false); // char2が後攻
+        start(char1, target1, char2, true);  // char1が先攻
+        start(char2, target2, char1, false); // char2が後攻
+    }
 
-        // 交流開始の合図
-        char1.showEmoji('💬');
-        char2.showEmoji('💬');
+    /** コンソール等からのテスト用コマンド */
+    testSocial(actionId = 'GIVE_CANDY') {
+        if (this.speakis.length < 2) {
+            console.error("[Test] Not enough speakis to test social actions.");
+            return;
+        }
+        const initiator = this.speakis[0];
+        const target = this.speakis[1];
+
+        if (actionId === 'CHAT') {
+            this.startInteraction(initiator, target);
+            return;
+        }
+
+        // テンプレートから定義を探す
+        const template = this._getSocialActionTemplates().find(t => t.id === actionId);
+        if (template && template.execute) {
+            console.log(`[Test] Executing template for ${actionId}`);
+            template.execute(initiator, target);
+        } else {
+            console.error(`[Test] Unknown social action or no executor: ${actionId}`);
+        }
     }
 
     addSpeaki(x, y, type = 'speaki') {
