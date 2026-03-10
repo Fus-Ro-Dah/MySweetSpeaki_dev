@@ -1645,3 +1645,68 @@ button:hover {
     text-align: left;
     border: 1px solid #eee;
 }
+
+/* --- Stuck Detection Debug Overlay --- */
+.stuck-debug-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(139, 0, 0, 0.85); /* Dark Red */
+    backdrop-filter: blur(15px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
+
+.stuck-debug-content {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 3rem;
+    border-radius: 40px;
+    max-width: 600px;
+    text-align: center;
+    border: 2px solid #ff4500;
+    box-shadow: 0 0 50px rgba(255, 69, 0, 0.3);
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.debug-code-box {
+    background: #1e1e1e;
+    color: #00ff00;
+    padding: 1.5rem;
+    border-radius: 12px;
+    font-family: 'Courier New', Courier, monospace;
+    text-align: left;
+    margin: 1.5rem 0;
+    white-space: pre-wrap;
+    font-size: 0.9rem;
+    border: 1px solid #333;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.resume-btn {
+    padding: 1rem 2rem;
+    background: #ff4500;
+    border: none;
+    color: white;
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 5px 15px rgba(255, 69, 0, 0.3);
+}
+
+.resume-btn:hover {
+    transform: scale(1.05);
+    background: #ff6347;
+    box-shadow: 0 8px 25px rgba(255, 69, 0, 0.5);
+}
+
+.resume-btn:active {
+    transform: scale(0.95);
+}

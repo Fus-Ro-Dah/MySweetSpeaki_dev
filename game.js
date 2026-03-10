@@ -58,6 +58,7 @@ export class Game {
             autoReceiveEnabled: false,
             growthStopEnabled: false
         };
+        this.isPausedForDebug = false; // デバッグ用ポーズフラグ
         this.itemCooldowns = {}; // { itemId: endTimestamp }
         this.isGameCleared = false;
 
@@ -1039,8 +1040,10 @@ export class Game {
         // dtが極端に大きい場合（タブがバックグラウンドだった場合など）は上限を設ける
         const clampedDt = Math.min(dt, 100);
 
-        this.update(clampedDt);
-        this.draw();
+        if (!this.isPausedForDebug) {
+            this.update(clampedDt);
+            this.draw();
+        }
         requestAnimationFrame((t) => this.loop(t));
     }
 
@@ -1458,6 +1461,66 @@ export class Game {
             item.displayText = nextDef.text;
             item.textDisplayUntil = Date.now() + 15000;
         }
+    }
+
+    /** スタック報告とデバッグポーズ */
+    reportStuck(char, reason) {
+        if (this.isPausedForDebug) return; // すでに止まっている場合は無視
+        this.isPausedForDebug = true;
+
+        console.error(`[STUCK DETECTED] Char: ${char.id}, Name: ${char.name}, Reason: ${reason}`);
+
+        // デバッグ用UIの作成・属性設定
+        let overlay = document.getElementById('debug-stuck-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'debug-stuck-overlay';
+            overlay.className = 'stuck-debug-overlay';
+            document.body.appendChild(overlay);
+        }
+
+        const partner = char.socialConfig && char.socialConfig.partner ? char.socialConfig.partner : null;
+        const partnerInfo = partner ? `相手ID: ${partner.id}, 状態: ${partner.status.state}, ターン: ${partner.status.isMySocialTurn ? '自分' : '相手'}` : 'なし';
+
+        overlay.innerHTML = `
+            <div class="stuck-debug-content">
+                <h1>⚠️ スタック検知 ⚠️</h1>
+                <p>この情報を開発者に伝えてください（ここに貼り付け）：</p>
+                <div class="debug-code-box">
+個体ID: ${char.id} (${char.name})
+種別: ${char.characterType}
+現在の状態: ${char.status.state}
+スタック理由: ${reason}
+交流相手: ${partnerInfo}
+状態履歴: [${char.status.stateStack.join(', ')}]
+                </div>
+                <button class="resume-btn" onclick="window.game.forceResume()">強制復帰して再開</button>
+            </div>
+        `;
+        overlay.classList.remove('hidden');
+    }
+
+    /** スタック個体をリセットしてゲームを再開 */
+    forceResume() {
+        console.log("[Game] Force resuming from stuck...");
+        
+        // 全スピキの状態を確認し、スタックしている可能性のある個体をIDLEに戻す
+        this.speakis.forEach(s => {
+            if ([STATE.GAME_APPROACHING, STATE.GAME_REACTION, STATE.ITEM_APPROACHING].includes(s.status.state)) {
+                s.status.state = STATE.IDLE;
+                s.status.stateStack = [];
+                s.socialConfig = null;
+                s.interaction.targetItem = null;
+                s.pos.destinationSet = false;
+                s._onStateChanged(STATE.IDLE);
+            }
+        });
+
+        const overlay = document.getElementById('debug-stuck-overlay');
+        if (overlay) overlay.classList.add('hidden');
+        
+        this.isPausedForDebug = false;
+        this.lastTime = performance.now(); // 停止時間分スキップされるのを防ぐ
     }
 
     _getEmotionLabel(s) {

@@ -80,7 +80,10 @@ export class BaseCharacter {
             interactStart: 0,
             waitDuration: 1000 + Math.random() * 4000,
             lastHeartTime: 0,
-            forcedEmotionUntil: 0 // NEW: 強制感情の終了時刻
+            forcedEmotionUntil: 0, // NEW: 強制感情の終了時刻
+            lastMoveTime: Date.now(), // Stuck検知用: 最後に動いた時間
+            lastX: x,
+            lastY: y
         };
 
         if (this.parentElement) {
@@ -209,6 +212,53 @@ export class BaseCharacter {
             } else {
                 this.visual.dom.container.classList.remove('is-happy');
             }
+        }
+
+        // 6. スタック検知 (ポーズ中でないときのみ)
+        if (window.game && !window.game.isPausedForDebug) {
+            this._checkStuck(dt);
+        }
+    }
+
+    /** スタック（進行不能）の検知 */
+    _checkStuck(dt) {
+        const now = Date.now();
+        const movementStates = [STATE.WALKING, STATE.ITEM_APPROACHING, STATE.GAME_APPROACHING, STATE.GIFT_LEAVING, STATE.GIFT_RETURNING];
+        
+        // 1. 移動スタックの検知
+        if (movementStates.includes(this.status.state) && this.pos.destinationSet) {
+            const distMoved = Math.sqrt(Math.pow(this.pos.x - this.timers.lastX, 2) + Math.pow(this.pos.y - this.timers.lastY, 2));
+            if (distMoved > 0.5) {
+                this.timers.lastMoveTime = now;
+                this.timers.lastX = this.pos.x;
+                this.timers.lastY = this.pos.y;
+            } else {
+                const stuckDuration = now - this.timers.lastMoveTime;
+                if (stuckDuration > 15000) { // 15秒動かなかったら移動スタック
+                    window.game.reportStuck(this, `移動スタック: 目的地が設定されていますが、${Math.round(stuckDuration/1000)}秒間移動がありません`);
+                }
+            }
+        } else {
+            // 移動中でないときはタイマーをリセット
+            this.timers.lastMoveTime = now;
+            this.timers.lastX = this.pos.x;
+            this.timers.lastY = this.pos.y;
+        }
+
+        // 2. 状態タイムアウトの検知
+        const stateDuration = now - this.timers.stateStart;
+
+        // 交流関連 (非常に長い)
+        if ([STATE.GAME_APPROACHING, STATE.GAME_REACTION].includes(this.status.state)) {
+            if (stateDuration > 40000) {
+                const partnerId = this.socialConfig && this.socialConfig.partner ? this.socialConfig.partner.id : '不明';
+                window.game.reportStuck(this, `交流スタック: 状態「${this.status.state}」が${Math.round(stateDuration/1000)}秒継続中 (相手ID: ${partnerId})`);
+            }
+        }
+
+        // アイテム接近
+        if (this.status.state === STATE.ITEM_APPROACHING && stateDuration > 40000) {
+            window.game.reportStuck(this, `アイテムスタック: アイテムへの接近状態が${Math.round(stateDuration/1000)}秒継続中`);
         }
     }
     /** 状態遷移の判定 (サブクラスで拡張可能) */
