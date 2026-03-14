@@ -430,10 +430,9 @@ export class BaseCharacter {
                             const opts = this.socialConfig.options;
                             const partner = this.socialConfig.partner;
                             if (this.socialConfig.isInitiator && partner) {
-                                partner.interaction.socialFootImage = opts.footImage;
-                                partner.interaction.socialOnComplete = opts.onComplete;
-                                partner.interaction.socialNextAction = opts.receiverAction || 'idle';
-                                this.interaction.socialNextAction = opts.initiatorAction || 'idle';
+                                // 交流情報を両方のキャラのinteractionにセット
+                                partner.interaction.socialOptions = opts;
+                                this.interaction.socialOptions = opts;
 
                                 // パートナーも待機状態から実動作状態へ促す
                                 partner._onStateChanged(STATE.GAME_REACTION);
@@ -460,7 +459,9 @@ export class BaseCharacter {
                         this.status.isMySocialTurn = false;
 
                         const partner = this.socialConfig.partner; // ここでは存在が保証されている
-                        const maxTurns = (this.socialConfig && this.socialConfig.options && this.socialConfig.options.turns) || 3;
+                        const opts = (this.socialConfig && this.socialConfig.options) || this.interaction.socialOptions;
+                        const sequence = opts ? opts.sequence : null;
+                        const maxTurns = sequence ? sequence.length : 3;
                         const bothFinished = (this.status.socialTurnCount >= maxTurns && (!partner || partner.status.socialTurnCount >= maxTurns));
 
                         if (!bothFinished) {
@@ -475,28 +476,26 @@ export class BaseCharacter {
                             }
                         } else {
                             // 終了処理
-                            if (this.interaction.socialOnComplete) {
-                                this.interaction.socialOnComplete(this);
+                            const opts = (this.socialConfig && this.socialConfig.options) || this.interaction.socialOptions;
+                            const socialOnComplete = opts ? opts.onComplete : null;
+                            if (socialOnComplete) {
+                                socialOnComplete(this);
                             }
 
                             this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
                             this.status.socialTurnCount = 0;
                             this.status.isMySocialTurn = false;
-                            this.interaction.socialFootImage = null;
-                            this.interaction.socialOnComplete = null;
-                            this.interaction.socialNextAction = null;
+                            this.interaction.socialOptions = null;
                             this._onStateChanged(this.status.state);
 
                             if (partner) {
-                                if (partner.interaction.socialOnComplete) {
-                                    partner.interaction.socialOnComplete(partner);
+                                if (socialOnComplete) {
+                                    socialOnComplete(partner);
                                 }
                                 partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
                                 partner.status.socialTurnCount = 0;
                                 partner.status.isMySocialTurn = false;
-                                partner.interaction.socialFootImage = null;
-                                partner.interaction.socialOnComplete = null;
-                                partner.interaction.socialNextAction = null;
+                                partner.interaction.socialOptions = null;
                                 partner.hideEmoji();
                                 partner._onStateChanged(partner.status.state);
                             }
@@ -795,19 +794,29 @@ export class BaseCharacter {
         // 状態リセット
         if (newState === STATE.GAME_REACTION) {
             this.status.socialTurnCount = 0;
-            // 汎用交流テンプレート等からアクションが指定されている場合はそちらを優先
-            if (this.interaction.socialNextAction) {
-                // TODO: テンプレート駆動のターン制御
-                this.status.action = this.interaction.socialNextAction;
-                this._applySelectedAsset(newState);
-            } else if (this.status.isMySocialTurn) {
-                // 自分の番の時だけアセットを適用する（後攻はここでは再生しない）
+            // シーケンスから最初のアクションを設定
+            const opts = (this.socialConfig && this.socialConfig.options) || this.interaction.socialOptions;
+            if (opts && opts.sequence && opts.sequence[0]) {
+                const turn = opts.sequence[0];
+                const actionKey = (this.socialConfig && this.socialConfig.isInitiator) ? turn.initiator : turn.target;
+                if (actionKey === 'random') {
+                    const moods = ['happy', 'sad', 'normal'];
+                    this.status.emotion = moods[Math.floor(Math.random() * moods.length)];
+                    this.status.action = 'idle';
+                } else if (['happy', 'sad', 'normal'].includes(actionKey)) {
+                    this.status.emotion = actionKey;
+                    this.status.action = 'idle';
+                } else {
+                    this.status.action = actionKey || 'idle';
+                }
+            }
+            
+            if (this.status.isMySocialTurn) {
                 this._applySelectedAsset(newState);
             } else {
-                // 自分の番でない時はIDLEポーズで待機
                 this.status.action = 'idle';
                 this._applySelectedAsset(newState);
-                this._stopCurrentVoice(); // 余分な音声が鳴らないように念のため
+                this._stopCurrentVoice();
             }
         } else {
             this._applySelectedAsset(newState);
@@ -920,18 +929,27 @@ export class BaseCharacter {
             emotion = 'ITEM';
         }
 
-        // 交流リアクション中は常に（毎ターン）感情とアクションをランダムに決定する
+        // 交流リアクション中はシーケンスに基づいて感情とアクションを決定する
         if (state === STATE.GAME_REACTION) {
-            if (this.interaction.socialNextAction) {
-                // 予約されたアクションがある場合はそれを使用 ('happy'などを感情として扱うフォールバック)
-                const moodKeywords = ['happy', 'sad', 'angry', 'normal'];
-                if (moodKeywords.includes(this.interaction.socialNextAction)) {
-                    emotion = this.status.emotion = this.interaction.socialNextAction;
-                    action = this.status.action = 'idle';
-                    // 感情キーワードの場合は、バリエーション豊富な mood カテゴリを優先する
-                    type = 'mood';
-                } else {
-                    action = this.status.action = this.interaction.socialNextAction;
+            const opts = (this.socialConfig && this.socialConfig.options) || this.interaction.socialOptions;
+            if (opts && opts.sequence) {
+                const turn = opts.sequence[this.status.socialTurnCount];
+                if (turn) {
+                    const actionKey = (this.socialConfig && this.socialConfig.isInitiator) ? turn.initiator : turn.target;
+                    
+                    if (actionKey === 'random') {
+                        const moods = ['happy', 'sad', 'normal'];
+                        emotion = this.status.emotion = moods[Math.floor(Math.random() * moods.length)];
+                        action = this.status.action = 'idle';
+                        type = 'mood';
+                    } else if (['happy', 'sad', 'normal'].includes(actionKey)) {
+                        emotion = this.status.emotion = actionKey;
+                        action = this.status.action = 'idle';
+                        type = 'mood';
+                    } else {
+                        action = this.status.action = actionKey || 'idle';
+                        type = 'performance';
+                    }
                 }
             } else {
                 const r2 = Math.random();
@@ -939,7 +957,6 @@ export class BaseCharacter {
                 else if (r2 < 0.8) emotion = this.status.emotion = 'happy';
                 else emotion = this.status.emotion = 'normal';
                 action = this.status.action = 'idle';
-                // 通常のおしゃべりもバリエーションを出すために mood を使用
                 type = 'mood';
             }
         }

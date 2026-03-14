@@ -23,7 +23,10 @@ export class SocialSystem {
                     footImage: 'assets/images/item_キャンディ.png',
                     initiatorAction: 'idle',
                     receiverAction: 'happy',
-                    turns: 2,
+                    sequence: [
+                        { initiator: 'happy', target: 'normal' },
+                        { initiator: 'happy', target: 'happy' }
+                    ],
                     onComplete: (r) => { r.status.hunger = Math.min(100, r.status.hunger + 30); }
                 })
             },
@@ -40,17 +43,20 @@ export class SocialSystem {
                     }
                     return isCrying && isSpeaki && isHealthy;
                 },
-                execute: (initiator, target) => {
-                    console.log(`[Social] Character ${target.id} decided to help crying baby ${initiator.id}`);
-                    this.triggerDirectedSocialAction(initiator, target, {
+                execute: (baby, adult) => {
+                    console.log(`[Social] 大人 ${adult.id} が泣いている赤ちゃん ${baby.id} を助けることに決めました`);
+                    this.triggerDirectedSocialAction(baby, adult, {
                         movementType: 'TARGET_TO_INITIATOR',
-                        // footImage: 'assets/images/hand_icon.png', // 存在しないため削除
                         initiatorAction: 'happy',
-                        receiverAction: 'idle', // 大人は見守る
-                        turns: 3,
-                        onComplete: (initiator) => { 
-                            initiator.status.hunger = Math.min(100, initiator.status.hunger + 20);
-                            initiator.status.emotion = 'happy';
+                        receiverAction: 'idle',
+                        sequence: [
+                            { initiator: 'sad', target: 'happy' },
+                            { initiator: 'sad', target: 'happy' },
+                            { initiator: 'happy', target: 'happy' }
+                        ],
+                        onComplete: (b) => {
+                            b.status.hunger = Math.min(100, b.status.hunger + 20);
+                            b.status.emotion = 'happy';
                         }
                     });
                 }
@@ -62,7 +68,13 @@ export class SocialSystem {
                     const dist = Math.sqrt((a.pos.x - b.pos.x) ** 2 + (a.pos.y - b.pos.y) ** 2);
                     return dist < 400 && !(a.characterType === 'baby' && b.characterType === 'baby');
                 },
-                execute: (a, b) => this.startInteraction(a, b)
+                execute: (a, b) => this.startInteraction(a, b, {
+                    sequence: [
+                        { initiator: 'random', target: 'random' },
+                        { initiator: 'random', target: 'random' },
+                        { initiator: 'random', target: 'random' }
+                    ]
+                })
             }
         ];
     }
@@ -118,14 +130,6 @@ export class SocialSystem {
         // 1. 確率計算 (基準: 2匹のときに300秒に1回程度に引き下げ。基本はリクエストベースにする)
         const eventsPerSec = game.speakis.length / 600;
         const probPerFrame = (dt / 1000) * eventsPerSec;
-
-        // 3秒おきにデバッグログ (不要なためコメントアウト)
-        /*
-        if (now - this.lastSocialDebugTime > 3000) {
-            this.lastSocialDebugTime = now;
-            console.log(`[Debug] Social Prob/frame: ${(probPerFrame * 100).toFixed(4)}% (Expect 1 event every ${Math.round(1 / eventsPerSec)}s for ${game.speakis.length} speakis)`);
-        }
-        */
 
         // 短時間に連続発生しすぎないよう最低 2秒 のインターバル
         if (now - this.lastSocialTime < 2000) return;
@@ -186,7 +190,7 @@ export class SocialSystem {
             // ターゲット（大人など）がイニシエーター（赤ちゃんなど）に歩み寄る
             target.status.state = STATE.GAME_APPROACHING;
             initiator.status.state = STATE.GAME_REACTION;
-            
+
             // パートナー紐付け
             target.socialConfig = { partner: initiator, isInitiator: true, options: options };
             initiator.socialConfig = { partner: target, isInitiator: false, options: options };
@@ -231,7 +235,7 @@ export class SocialSystem {
     }
 
     /** 従来型の（お互いに歩み寄る）交流の開始 */
-    startInteraction(char1, char2) {
+    startInteraction(char1, char2, options = {}) {
         // 常に左にいる方をchar1, 右にいる方をchar2にする
         if (char1.pos.x > char2.pos.x) {
             [char1, char2] = [char2, char1];
@@ -256,7 +260,7 @@ export class SocialSystem {
             char.status.state = STATE.GAME_APPROACHING;
             char.status.isMySocialTurn = isFirst;
             char.status.socialTurnCount = 0;
-            char.socialConfig = { partner };
+            char.socialConfig = { partner, isInitiator: isFirst, options: options };
             char.showEmoji('💬', null);
             char._onStateChanged(char.status.state);
 
@@ -280,7 +284,13 @@ export class SocialSystem {
         const target = game.speakis[1];
 
         if (actionId === 'CHAT') {
-            this.startInteraction(initiator, target);
+            this.startInteraction(initiator, target, {
+                sequence: [
+                    { initiator: 'random', target: 'random' },
+                    { initiator: 'random', target: 'random' },
+                    { initiator: 'random', target: 'random' }
+                ]
+            });
             return;
         }
 
