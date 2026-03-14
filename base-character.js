@@ -233,6 +233,7 @@ export class BaseCharacter {
     }
 
     /** スタック（進行不能）の検知 */
+    /* テスト用 */
     _checkStuck(dt) {
         const now = Date.now();
         const movementStates = [STATE.WALKING, STATE.ITEM_APPROACHING, STATE.GAME_APPROACHING, STATE.GIFT_LEAVING, STATE.GIFT_RETURNING];
@@ -288,11 +289,8 @@ export class BaseCharacter {
         // 1. おしゃべり(CHAT)リクエストの検討
         if (Math.random() < 0.03) {
             if (this.game && this.game.social) {
-                // 赤ちゃんは積極的におしゃべりを誘わない
-                if (this.characterType === 'baby' || this.characterType === 'child') return;
-
-                // SocialSystem に「誰かとお喋りしたい」とリクエストを投げる
-                // 成功した場合は SocialSystem 側で状態が遷移させられる
+                // 子ども・赤ちゃんもしくはお喋りしたいときがあればリクエストを投げる
+                // (赤ちゃん同士はSocialSystem側で弾かれる)
                 this.game.social.requestSocialAction(this, null, 'CHAT');
             }
         }
@@ -820,7 +818,7 @@ export class BaseCharacter {
                     this.status.action = actionKey || 'idle';
                 }
             }
-            
+
             if (this.status.isMySocialTurn) {
                 this._applySelectedAsset(newState);
             } else {
@@ -946,7 +944,7 @@ export class BaseCharacter {
                 const turn = opts.sequence[this.status.socialTurnCount];
                 if (turn) {
                     const actionKey = (this.socialConfig && this.socialConfig.isOrigin) ? turn.origin : turn.target;
-                    
+
                     if (actionKey === 'random') {
                         const moods = ['happy', 'sad', 'normal'];
                         emotion = this.status.emotion = moods[Math.floor(Math.random() * moods.length)];

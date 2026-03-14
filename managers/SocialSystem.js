@@ -54,9 +54,9 @@ export class SocialSystem {
                             { origin: 'sad', target: 'happy' },
                             { origin: 'happy', target: 'happy' }
                         ],
-                        onComplete: (b) => {
-                            b.status.hunger = Math.min(100, b.status.hunger + 20);
-                            b.status.emotion = 'happy';
+                        onComplete: () => {
+                            baby.status.hunger = Math.min(100, baby.status.hunger + 20);
+                            baby.status.emotion = 'happy';
                         }
                     });
                 }
@@ -223,52 +223,56 @@ export class SocialSystem {
         start(char2, target2, char1, false);
     }
 
-    /** コンソール等からのテスト用コマンド */
-    testSocial(actionId = 'GIVE_CANDY') {
-        const game = this.game;
-        if (game.speakis.length < 2) {
-            console.error("[Test] Not enough speakis to test social actions.");
+    /** デバッグ用: 強制的に赤ちゃん/子どもを泣かせる (CRYING) */
+    forceCrying() {
+        const childOrBaby = this.game.speakis.find(s => s.characterType === 'baby' || s.characterType === 'child');
+        const adult = this.game.speakis.find(s => s.characterType === 'speaki');
+        if (!childOrBaby || !adult) {
+            console.error("[Social] テストに必要なスピキ（赤子/子どもと大人1人ずつ）がいません。");
             return;
         }
-        const initiator = game.speakis[0];
-        const target = game.speakis[1];
+        childOrBaby.status.emotion = 'sad';
+        childOrBaby.status.action = 'crying';
+        childOrBaby.showEmoji('😭', 5000);
+        adult.status.hunger = 100;
 
-        if (actionId === 'CHAT') {
-            this.startInteraction(initiator, target, {
-                sequence: [
-                    { initiator: 'random', target: 'random' },
-                    { initiator: 'random', target: 'random' },
-                    { initiator: 'random', target: 'random' }
-                ]
-            });
-            return;
-        }
-
-        const template = this._getSocialActionTemplates().find(t => t.id === actionId);
-        if (template && template.execute) {
-            console.log(`[Test] Executing template for ${actionId}`);
-            template.execute(initiator, target);
-        } else {
-            console.error(`[Test] Unknown social action or no executor: ${actionId}`);
-        }
+        const success = this.requestSocialAction(childOrBaby, adult, 'CRYING');
+        if (!success) console.warn("[Social] 開始できませんでした。既に交流中などの理由が考えられます。");
+        else console.log(`[Social] 強制的に ${childOrBaby.id} が泣き、大人が助けに行きます`);
     }
 
-    /** デバッグ用: 赤ちゃんを強制的に泣かせ、大人を呼ぶ (1:1) */
-    forceBabyCrying() {
-        const baby = this.game.speakis.find(s => s.characterType === 'baby');
-        if (!baby) {
-            console.error("[Social] No baby found to cry.");
+    /** デバッグ用: 強制的にお菓子を配らせる (GIVE_CANDY) */
+    forceGiveCandy() {
+        const adult = this.game.speakis.find(s => s.characterType === 'speaki' && !this._isInSocialState(s));
+        const childOrBaby = this.game.speakis.find(s => (s.characterType === 'baby' || s.characterType === 'child') && !this._isInSocialState(s));
+        if (!adult || !childOrBaby) {
+            console.error("[Social] テストに必要なフリー状態のスピキ（赤子/子どもと大人1人ずつ）がいません。");
             return;
         }
-        console.log(`[Social] Forcing Baby Crying 1:1 action for ${baby.id}`);
-        baby.status.emotion = 'sad';
-        baby.status.action = 'crying';
-        baby.showEmoji('😭', 5000);
+        adult.status.hunger = 100;
+        childOrBaby.status.hunger = 10;
 
-        // 近くの大人を一人見つけてリクエストを投げる
-        const success = this.requestSocialAction(baby, null, 'CRYING');
-        if (!success) {
-            console.warn("[Social] No partner found for forced crying.");
+        const success = this.requestSocialAction(adult, childOrBaby, 'GIVE_CANDY');
+        if (!success) console.warn("[Social] 開始できませんでした。");
+        else console.log(`[Social] 強制的に ${adult.id} が ${childOrBaby.id} にお菓子を配りに行きます`);
+    }
+
+    /** デバッグ用: 強制的におしゃべりさせる (CHAT) */
+    forceChat() {
+        const adults = this.game.speakis.filter(s => s.characterType === 'speaki' && !this._isInSocialState(s));
+        if (adults.length < 2) {
+            console.error("[Social] おしゃべりできるフリーの大人が2匹以上いません。");
+            return;
         }
+        const initiator = adults[0];
+        const target = adults[1];
+        
+        // CHATは距離チェック(400px以内)があるため、確実に成功するよう一時的に接近させる
+        initiator.pos.x = target.pos.x + 100;
+        initiator.pos.y = target.pos.y;
+        
+        const success = this.requestSocialAction(initiator, target, 'CHAT');
+        if (!success) console.warn("[Social] 開始できませんでした。");
+        else console.log(`[Social] 強制的に ${initiator.id} が ${target.id} とおしゃべりを開始します`);
     }
 }

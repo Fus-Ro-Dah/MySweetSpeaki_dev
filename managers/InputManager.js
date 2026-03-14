@@ -211,8 +211,8 @@ export class InputManager {
             return;
         }
 
-        // 操作制限: IDLE または WALKING 状態のときのみ操作を受け付ける
-        if (![STATE.IDLE, STATE.WALKING].includes(speaki.status.state)) {
+        // 操作制限: IDLE, WALKING, USER_INTERACTING 状態のときのみ操作を受け付ける
+        if (![STATE.IDLE, STATE.WALKING, STATE.USER_INTERACTING].includes(speaki.status.state)) {
             console.log(`[Input] Interaction skipped: ${speaki.id} is in state ${speaki.status.state}`);
             game.interactTarget = null;
             return;
@@ -370,7 +370,9 @@ export class InputManager {
 
         speaki._stopCurrentVoice();
         speaki._onStateChanged(speaki.status.state);
-        game.interactTarget = null;
+        if (game.interactTarget === speaki) {
+            game.interactTarget = null;
+        }
     }
 
     _createPettingHeart(speaki) {
@@ -396,6 +398,10 @@ export class InputManager {
 
     _resetActionTimer(speaki, delay) {
         if (speaki.timers.actionTimeout) clearTimeout(speaki.timers.actionTimeout);
-        speaki.timers.actionTimeout = setTimeout(() => this.game.resetSpeakiAppearance(speaki), delay);
+        speaki.timers.actionTimeout = setTimeout(() => {
+            if (speaki.status.state === STATE.DYING || speaki.isPendingDeletion) return;
+            this.game.resetSpeakiAppearance(speaki);
+            this._cleanupInteraction(speaki);
+        }, delay);
     }
 }
