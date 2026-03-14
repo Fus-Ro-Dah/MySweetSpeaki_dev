@@ -1,0 +1,459 @@
+import { STATE, ITEMS, JOBS } from '../config.js';
+
+/**
+ * UI管理クラス
+ * DOM操作（サイドメニュー、モーダル、ゲージ、ステータスリスト等）を一元管理する
+ */
+export class UIManager {
+    constructor(game) {
+        this.game = game;
+        this.lastUIUpdate = 0;
+    }
+
+    /** アイテムメニューを動的に生成 */
+    initItemMenu() {
+        const game = this.game;
+        const itemList = document.getElementById('item-list');
+        const jobList = document.getElementById('job-list');
+
+        if (itemList) itemList.innerHTML = '';
+        if (jobList) jobList.innerHTML = '';
+
+        if (!itemList && !jobList) return;
+
+        // アイテムの描画
+        if (itemList) {
+            Object.keys(ITEMS).forEach(id => {
+                const def = ITEMS[id];
+                if (def.showInMenu === false) return;
+
+                const div = this._createDraggableMenuItem(id, def, 'item');
+                itemList.appendChild(div);
+            });
+        }
+
+        // バイトの描画
+        if (jobList) {
+            Object.keys(JOBS).forEach(id => {
+                const def = JOBS[id];
+                if (def.showInMenu === false) return;
+
+                const div = this._createDraggableMenuItem(id, def, 'job');
+                div.addEventListener('click', () => {
+                    game.characters.callNPC(def.npcType);
+                });
+                jobList.appendChild(div);
+            });
+        }
+
+        // 初回のUI状態反映
+        this.updateJobMenuUI();
+        this.updatePlasticStockUI();
+    }
+
+    /** ドラッグ可能なアイテム要素を作成する内部ヘルパー */
+    _createDraggableMenuItem(id, def, type) {
+        const div = document.createElement('div');
+        div.className = 'draggable-item';
+        div.draggable = true;
+        if (id === 'RandomGift') {
+            div.innerHTML = `${def.name} (<img src="assets/images/gift.png" class="mini-icon"> -1)`;
+        } else {
+            div.textContent = def.name;
+        }
+        div.dataset.id = id;
+        div.dataset.type = type;
+
+        div.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', JSON.stringify({ id, type }));
+        });
+        return div;
+    }
+
+    /** ギフトUIの表示制御 */
+    updateGiftUI(mode) {
+        const ui = document.getElementById('gift-event-ui');
+        const receiveBtn = document.getElementById('gift-btn-receive');
+        const reactionGroup = document.getElementById('reaction-group');
+        const message = document.getElementById('gift-message');
+
+        switch (mode) {
+            case 'start':
+                message.textContent = 'プレゼントを持ってきてくれた！';
+                ui.classList.remove('hidden');
+                receiveBtn.classList.remove('hidden');
+                reactionGroup.classList.add('hidden');
+                break;
+            case 'receiving':
+                message.textContent = 'お礼を言おう';
+                receiveBtn.classList.add('hidden');
+                reactionGroup.classList.remove('hidden');
+                break;
+            case 'hide':
+                ui.classList.add('hidden');
+                break;
+        }
+    }
+
+    /** 幸福度ゲージの更新 */
+    updateHappinessUI() {
+        const game = this.game;
+        const fill = document.getElementById('happiness-bar-fill');
+        const pumpkinImg = document.getElementById('happiness-pumpkin');
+
+        const pctFull = (game.happiness / game.maxHappiness) * 100;
+
+        if (fill) {
+            fill.style.width = `${Math.min(100, pctFull)}%`;
+        }
+
+        // かぼちゃの画像切り替え (p0-p4)
+        if (pumpkinImg) {
+            let stage = 0;
+            if (pctFull >= 100) stage = 4;
+            else if (pctFull >= 75) stage = 3;
+            else if (pctFull >= 50) stage = 2;
+            else if (pctFull >= 20) stage = 1;
+            else stage = 0;
+            pumpkinImg.src = `assets/images/p${stage}.png`;
+        }
+
+        if (game.happiness >= game.maxHappiness && !game.isGameCleared) {
+            this.triggerGameClear();
+        }
+    }
+
+    /** ゲームクリア演出 */
+    triggerGameClear() {
+        const game = this.game;
+        game.isGameCleared = true;
+        const overlay = document.getElementById('game-clear-overlay');
+        const continueBtn = document.getElementById('continue-game-btn');
+
+        if (overlay) {
+            overlay.classList.remove('hidden');
+            game.sound.playSound('happy', 0.8);
+
+            if (continueBtn) {
+                continueBtn.onclick = () => {
+                    overlay.classList.add('hidden');
+                };
+            }
+        }
+    }
+
+    /** プラスチックの在庫表示更新 */
+    updatePlasticStockUI() {
+        const game = this.game;
+        const count = document.getElementById('gift-stock-count');
+        const modalCount = document.getElementById('modal-plastic-count');
+        if (count) count.textContent = Math.floor(game.plastics);
+        if (modalCount) modalCount.textContent = Math.floor(game.plastics);
+    }
+
+    /** ハイライト設定 */
+    setHighlight(id) {
+        const game = this.game;
+        game.highlightedCharId = (game.highlightedCharId === id) ? null : id;
+        this.updateSpeakiList(true);
+    }
+
+    /** 感情ラベルの取得 */
+    _getEmotionLabel(s) {
+        const stateMapping = {
+            [STATE.IDLE]: 'のんびり',
+            [STATE.WALKING]: 'てくてく',
+            [STATE.GIFT_LEAVING]: 'お出かけ',
+            [STATE.GIFT_SEARCHING]: 'さがしもの',
+            [STATE.GIFT_RETURNING]: 'かえってきた',
+            [STATE.GIFT_WAIT_FOR_USER_REACTION]: 'とくいげ',
+            [STATE.GIFT_REACTION]: 'とくいげ',
+            [STATE.GIFT_TIMEOUT]: 'しょげている',
+            [STATE.ITEM_APPROACHING]: '何かを見つけた',
+            [STATE.GAME_APPROACHING]: 'おしゃべり中',
+            [STATE.GAME_REACTION]: 'おしゃべり中',
+            [STATE.DYING]: 'ああ…'
+        };
+
+        return stateMapping[s.status.state] || '';
+    }
+
+    /** スピキリストの更新 */
+    updateSpeakiList(force = false) {
+        const game = this.game;
+        const listContainer = document.getElementById('speaki-list');
+        if (!listContainer) return;
+
+        // 入力中はforceがfalseなら更新をスキップ
+        if (!force && listContainer.contains(document.activeElement)) return;
+
+        // NPCはリストに表示しない
+        const displaySpeakis = game.speakis.filter(s => s.canInteract && s.characterType !== 'ashur' && s.characterType !== 'posher');
+
+        if (displaySpeakis.length === 0) {
+            listContainer.innerHTML = '<p class="empty-list">スピキはいません...</p>';
+            return;
+        }
+
+        let html = '';
+        displaySpeakis.forEach(s => {
+            const isHighlighted = (s.id === game.highlightedCharId);
+            const state = s.getStateLabel();
+            const emotionLabel = this._getEmotionLabel(s);
+
+            const friendshipPct = Math.min(100, Math.max(0, s.status.friendship + 50));
+            const hungerPct = Math.min(100, Math.max(0, s.status.hunger));
+
+            html += `
+            <div class="speaki-entry ${isHighlighted ? 'active' : ''}">
+                <div class="speaki-entry-header">
+                    <button class="highlight-toggle ${isHighlighted ? 'active' : ''}" 
+                        onclick="event.stopPropagation(); window.game.ui.setHighlight(${s.id})">
+                        ${isHighlighted ? '★' : '☆'}
+                    </button>
+                    <input class="speaki-name-input" value="${s.name}" 
+                        onchange="window.game.characters.renameSpeaki(${s.id}, this.value)">
+                    ${emotionLabel ? '<span class="speaki-state-tag">' + emotionLabel + '</span>' : ''}
+                </div>
+                
+                <div class="speaki-gauges">
+                    <div class="gauge-item mini-row">
+                        <div class="icon-wrapper">
+                            <img src="assets/images/icon_heart.png" class="gauge-icon" alt="friendship">
+                            <span class="gauge-value">${s.status.friendship.toFixed(0)}</span>
+                        </div>
+                        <div class="gauge-bar"><div class="gauge-fill friendship" style="width: ${friendshipPct}%"></div></div>
+                    </div>
+                    <div class="gauge-item mini-row">
+                        <div class="icon-wrapper">
+                            <img src="assets/images/icon_stomach.png" class="gauge-icon" alt="hunger">
+                            <span class="gauge-value">${s.status.hunger.toFixed(0)}</span>
+                        </div>
+                        <div class="gauge-bar"><div class="gauge-fill hunger" style="width: ${hungerPct}%"></div></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        });
+        listContainer.innerHTML = html;
+    }
+
+    /** バイトメニューのUI状態を更新 */
+    updateJobMenuUI() {
+        const game = this.game;
+        const jobList = document.getElementById('job-list');
+        if (!jobList) return;
+
+        const jobItems = jobList.querySelectorAll('.draggable-item');
+        jobItems.forEach(btn => {
+            const id = btn.dataset.id;
+            const def = JOBS[id];
+            if (!def) return;
+
+            const isAttending = game.speakis.some(s => s.characterType === def.npcType);
+
+            if (isAttending) {
+                btn.classList.add('active');
+                btn.textContent = `${def.name}(退勤させる)`;
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = `${def.name}(出勤させる)`;
+            }
+        });
+    }
+
+    /** アイテムリロード時間のUI更新 */
+    updateCooldownUI() {
+        const game = this.game;
+        const now = Date.now();
+        if (!document.querySelectorAll) return;
+        const items = document.querySelectorAll('.draggable-item');
+        items.forEach(el => {
+            const id = el.dataset.id;
+            const cooldownEnd = game.itemCooldowns[id];
+
+            if (cooldownEnd && now < cooldownEnd) {
+                el.classList.add('cooldown');
+                let timer = el.querySelector('.cooldown-timer');
+                if (!timer) {
+                    timer = document.createElement('span');
+                    timer.className = 'cooldown-timer';
+                    el.appendChild(timer);
+                }
+                const remaining = Math.ceil((cooldownEnd - now) / 1000);
+                timer.textContent = `${remaining}s`;
+            } else {
+                el.classList.remove('cooldown');
+                const timer = el.querySelector('.cooldown-timer');
+                if (timer) timer.remove();
+            }
+        });
+    }
+
+    /** 定期的なUI更新（約250msごと） */
+    updatePeriodic() {
+        if (!this.lastUIUpdate || Date.now() - this.lastUIUpdate > 250) {
+            this.updateSpeakiList();
+            this.lastUIUpdate = Date.now();
+        }
+        this.updateCooldownUI();
+    }
+
+    /** アンロックメニューの生成 */
+    initUnlockMenu() {
+        const game = this.game;
+        const list = document.getElementById('unlock-list');
+        if (!list) return;
+
+        const hungerDecayPrice = 1;
+        const currentHungerSec = 2 + game.unlocks.hungerDecayLv;
+        const nextHungerSec = currentHungerSec + 1;
+
+        const unlockDefs = [
+            { id: 'feeder', name: 'ごはん係 (給餌係)', price: 1, desc: '満腹度30以下のｽﾋﾟｷにごはんをあげる係を呼びます', current: game.unlocks.feeder },
+            { id: 'autoReceive', name: 'プレゼント自動回収', price: 1, desc: 'スピキが持ってきたプレゼントを自動で受け取ります', current: game.unlocks.autoReceive },
+            { id: 'growthStop', name: 'ｽﾋﾟｷの成長停止', price: 1, desc: 'スピキが成長しなくなります。赤ちゃんは赤ちゃんのまま、子供は子供のままの姿を維持します', current: game.unlocks.growthStop },
+            { id: 'unlockMocaron', name: 'モカロン解放', price: 1, desc: 'より栄養価の高い食べ物「モカロン」が置けるようになります', current: game.unlocks.mocaronUnlocked }
+        ];
+
+        // チャレンジモードのみ表示する項目
+        if (game.gameMode !== 'relaxed') {
+            unlockDefs.splice(1, 0,
+                {
+                    id: 'hungerDecay',
+                    name: `空腹度減少の緩和 (Lv.${game.unlocks.hungerDecayLv})`,
+                    price: hungerDecayPrice,
+                    desc: `減少速度を遅くします。現在: ${currentHungerSec}秒に1 → 次: ${nextHungerSec}秒に1`,
+                    current: false,
+                    isUpgrade: true
+                },
+                {
+                    id: 'affectionDecay',
+                    name: `好感度減少の緩和 (Lv.${game.unlocks.affectionDecayLv})`,
+                    price: 1,
+                    desc: `減少速度を遅くします。現在: ${2 + game.unlocks.affectionDecayLv}秒に1 → 次: ${3 + game.unlocks.affectionDecayLv}秒に1`,
+                    current: false,
+                    isUpgrade: true
+                }
+            );
+            unlockDefs.push({
+                id: 'cooldownReduction',
+                name: `リロード時間短縮 (Lv.${game.unlocks.reloadReductionLv})`,
+                price: 1,
+                desc: `ごはん系アイテム配置のリロード時間が1秒短縮されます。現在: -${game.unlocks.reloadReductionLv}秒 → 次: -${game.unlocks.reloadReductionLv + 1}秒`,
+                current: false,
+                isUpgrade: true
+            });
+        }
+
+        list.innerHTML = '';
+        unlockDefs.forEach(def => {
+            const div = document.createElement('div');
+            div.className = `unlock-item ${def.current ? 'unlocked' : 'locked'}`;
+
+            let buttonHTML = '';
+            if (def.id === 'feeder' || def.id === 'autoReceive' || def.id === 'growthStop') {
+                if (def.current) {
+                    let isEnabled = false;
+                    if (def.id === 'feeder') isEnabled = game.settings.feederEnabled;
+                    else if (def.id === 'autoReceive') isEnabled = game.settings.autoReceiveEnabled;
+                    else if (def.id === 'growthStop') isEnabled = game.settings.growthStopEnabled;
+
+                    let toggleText = isEnabled ? 'ON' : 'OFF';
+                    if (def.id === 'feeder') toggleText = isEnabled ? '手伝い中' : '今はいない';
+                    else if (def.id === 'growthStop') toggleText = isEnabled ? '成長停止中' : '今は自然に成長する';
+                    else if (def.id === 'autoReceive') toggleText = isEnabled ? '自動回収中' : '自動回収停止';
+
+                    buttonHTML = `
+                        <button class="toggle-btn ${isEnabled ? 'active' : 'inactive'}" 
+                            onclick="window.game.toggleFeature('${def.id}')">
+                            ${toggleText}
+                        </button>
+                    `;
+                } else {
+                    buttonHTML = `
+                        <button class="primary-btn unlock-btn" ${game.plastics < def.price ? 'disabled' : ''} 
+                            onclick="window.game.unlockFeature('${def.id}', ${def.price})">
+                            解放する
+                        </button>
+                    `;
+                }
+            } else {
+                buttonHTML = `
+                    <button class="primary-btn unlock-btn" ${(def.current || game.plastics < def.price) ? 'disabled' : ''} 
+                        onclick="window.game.unlockFeature('${def.id}', ${def.price})">
+                        ${def.current ? '解放済み' : (def.isUpgrade ? '強化する' : '解放する')}
+                    </button>
+                `;
+            }
+
+            div.innerHTML = `
+                <h4>${def.name}</h4>
+                <p>${def.desc}</p>
+                <div class="price">${def.current ? '解放済み' : `消費: ${def.price} 個`}</div>
+                ${buttonHTML}
+            `;
+            list.appendChild(div);
+        });
+    }
+
+    /** スタック報告とデバッグポーズ */
+    reportStuck(char, reason) {
+        const game = this.game;
+        if (game.isPausedForDebug) return;
+        game.isPausedForDebug = true;
+
+        console.error(`[STUCK DETECTED] Char: ${char.id}, Name: ${char.name}, Reason: ${reason}`);
+
+        let overlay = document.getElementById('debug-stuck-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'debug-stuck-overlay';
+            overlay.className = 'stuck-debug-overlay';
+            document.body.appendChild(overlay);
+        }
+
+        const partner = char.socialConfig && char.socialConfig.partner ? char.socialConfig.partner : null;
+        const partnerInfo = partner ? `相手ID: ${partner.id}, 状態: ${partner.status.state}, ターン: ${partner.status.isMySocialTurn ? '自分' : '相手'}` : 'なし';
+
+        overlay.innerHTML = `
+            <div class="stuck-debug-content">
+                <h1>⚠️ スタック検知 ⚠️</h1>
+                <p>この情報を開発者に伝えてください（ここに貼り付け）：</p>
+                <div class="debug-code-box">
+個体ID: ${char.id} (${char.name})
+種別: ${char.characterType}
+現在の状態: ${char.status.state}
+スタック理由: ${reason}
+交流相手: ${partnerInfo}
+状態履歴: [${char.status.stateStack.join(', ')}]
+                </div>
+                <button class="resume-btn" onclick="window.game.forceResume()">強制復帰して再開</button>
+            </div>
+        `;
+        overlay.classList.remove('hidden');
+    }
+
+    /** スタック個体をリセットしてゲームを再開 */
+    forceResume() {
+        const game = this.game;
+        console.log("[Game] Force resuming from stuck...");
+
+        game.speakis.forEach(s => {
+            if ([STATE.GAME_APPROACHING, STATE.GAME_REACTION, STATE.ITEM_APPROACHING].includes(s.status.state)) {
+                s.status.state = STATE.IDLE;
+                s.status.stateStack = [];
+                s.socialConfig = null;
+                s.interaction.targetItem = null;
+                s.pos.destinationSet = false;
+                s._onStateChanged(STATE.IDLE);
+            }
+        });
+
+        const overlay = document.getElementById('debug-stuck-overlay');
+        if (overlay) overlay.classList.add('hidden');
+
+        game.isPausedForDebug = false;
+        game.lastTime = performance.now();
+    }
+}

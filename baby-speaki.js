@@ -6,12 +6,12 @@ import { BaseCharacter } from './base-character.js';
  * 動かず、常に喋り続ける。
  */
 export class BabySpeaki extends BaseCharacter {
-    constructor(id, parentElement, x, y, options = {}) {
+    constructor(game, id, parentElement, x, y, options = {}) {
         options.characterType = 'baby';
         options.size = options.size || 60;             // さらに小さい
         options.voicePitch = options.voicePitch || 2.0; // 極めて高い声
         options.speed = 0;                             // 動かない
-        super(id, parentElement, x, y, options);
+        super(game, id, parentElement, x, y, options);
         this.idleGrowthTime = 0; // 実時間ではなくIDLE状態の累積時間で成長させる
         this.hasHunger = false;  // 赤ちゃんは空腹度が減らない
     }
@@ -20,7 +20,7 @@ export class BabySpeaki extends BaseCharacter {
     update(dt) {
         // IDLE状態、かつユーザーと直接触れ合っていない（なでられていない）間だけ成長
         // 成長停止設定がONの場合はカウントを進めない
-        const isGrowthStopped = window.game && window.game.settings && window.game.settings.growthStopEnabled;
+        const isGrowthStopped = this.game && this.game.settings && this.game.settings.growthStopEnabled;
         if (this.status.state === STATE.IDLE && !this.interaction.isInteracting && !isGrowthStopped) {
             this.idleGrowthTime += dt;
         }
@@ -31,8 +31,8 @@ export class BabySpeaki extends BaseCharacter {
     _updateStateTransition() {
         // 1. 進化チェック (累積IDLE時間が60秒経過で子供へ)
         if (this.idleGrowthTime > 60000) {
-            if (window.game && window.game.evolveBabyToChild) {
-                window.game.evolveBabyToChild(this);
+            if (this.game && this.game.evolveBabyToChild) {
+                this.game.evolveBabyToChild(this);
                 return;
             }
         }

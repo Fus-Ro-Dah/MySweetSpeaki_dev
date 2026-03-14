@@ -1,0 +1,198 @@
+import { STATE } from '../config.js';
+import { Speaki } from '../speaki.js';
+import { BabySpeaki } from '../baby-speaki.js';
+import { ChildSpeaki } from '../child-speaki.js';
+import { NPCCharacter } from '../npc-character.js';
+import { Ashur } from '../ashur.js';
+import { Posher } from '../posher.js';
+
+/**
+ * キャラクター管理クラス
+ * キャラクターの追加・削除・進化・NPC管理を担当する
+ */
+export class CharacterManager {
+    constructor(game) {
+        this.game = game;
+    }
+
+    /** キャラクターの追加 */
+    addSpeaki(x, y, type = 'speaki') {
+        const game = this.game;
+        const id = game.nextCharId++;
+
+        const defX = (game.canvas.width > 0) ? game.canvas.width * 0.4 : window.innerWidth * 0.4;
+        const defY = (game.canvas.height > 0) ? game.canvas.height * 0.5 : window.innerHeight * 0.5;
+
+        const finalX = (x !== undefined && x !== 0) ? x : defX + (Math.random() * 100 - 50);
+        const finalY = (y !== undefined && y !== 0) ? y : defY + (Math.random() * 100 - 50);
+
+        let char;
+        if (type === 'baby') {
+            char = new BabySpeaki(game, id, game.speakiRoom, finalX, finalY);
+        } else if (type === 'child') {
+            char = new ChildSpeaki(game, id, game.speakiRoom, finalX, finalY);
+        } else if (type === 'ashur') {
+            char = new Ashur(game, id, game.speakiRoom, finalX, finalY);
+        } else if (type === 'posher') {
+            char = new Posher(game, id, game.speakiRoom, finalX, finalY);
+        } else if (type === 'npc' || type.startsWith('npc_')) {
+            char = new NPCCharacter(game, id, game.speakiRoom, finalX, finalY, { characterType: type });
+        } else {
+            char = new Speaki(game, id, game.speakiRoom, finalX, finalY, { characterType: type });
+        }
+        game.speakis.push(char);
+        if (id === 0) {
+            console.log(char);
+        }
+        game.ui.updateSpeakiList();
+    }
+
+    /** キャラクター削除 */
+    removeSpeaki(id) {
+        const game = this.game;
+        const index = game.speakis.findIndex(s => s.id === id);
+        if (index !== -1) {
+            const s = game.speakis[index];
+
+            // ギフト担当解除 (ゾンビ化防止)
+            if (game.giftPartner === s) {
+                game.completeGiftEvent(null);
+                console.log(`[Game] Gift event aborted because Speaki ${id} was removed.`);
+            }
+
+            if (s.visual.dom.container) s.visual.dom.container.remove();
+            game.speakis.splice(index, 1);
+            if (game.highlightedCharId === id) game.highlightedCharId = null;
+            game.ui.updateSpeakiList(true);
+            game.ui.updateJobMenuUI();
+        }
+    }
+
+    /** 改名 */
+    renameSpeaki(id, newName) {
+        const s = this.game.speakis.find(s => s.id === id);
+        if (s) {
+            s.name = newName;
+            this.game.ui.updateSpeakiList(true);
+        }
+    }
+
+    /** NPCを呼び出す (シングルトン・トグル式) */
+    callNPC(type) {
+        const game = this.game;
+        const existingNPC = game.speakis.find(s => s.characterType === type);
+        if (existingNPC) {
+            console.log(`[Game] NPC ${type} already exists. Removing (Leaving)...`);
+            this.removeSpeaki(existingNPC.id);
+            return;
+        }
+
+        const centerX = (game.speakiRoom ? game.speakiRoom.clientWidth : 1200) / 2;
+        const topY = 100;
+
+        game.addSpeaki(centerX, topY, type);
+        console.log(`[Game] Called NPC: ${type}`);
+        game.ui.updateJobMenuUI();
+    }
+
+    /** 赤ちゃんスピキの進化（子供へ） */
+    evolveBabyToChild(baby) {
+        const game = this.game;
+        if (!baby) return;
+        console.log(`[Game] BabySpeaki ${baby.id} is evolving into Child!`);
+
+        if (baby.visual.dom.container) baby.visual.dom.container.remove();
+
+        const index = game.speakis.indexOf(baby);
+        if (index !== -1) {
+            game.speakis.splice(index, 1);
+        }
+
+        const child = new ChildSpeaki(game, baby.id, game.speakiRoom, baby.pos.x, baby.pos.y);
+        child.name = baby.name;
+        child.status.friendship = baby.status.friendship;
+        child.status.hunger = baby.status.hunger;
+        child.status.state = baby.status.state;
+
+        if (game.giftPartner === baby) {
+            game.giftPartner = child;
+        }
+
+        if (index !== -1) {
+            game.speakis.splice(index, 0, child);
+        } else {
+            game.speakis.push(child);
+        }
+
+        game.sound.playSound('happy', 1.2);
+        game.ui.updateSpeakiList(true);
+    }
+
+    /** 子供スピキの進化（大人へ） */
+    evolveChildToAdult(child) {
+        const game = this.game;
+        if (!child) return;
+        console.log(`[Game] ChildSpeaki ${child.id} is evolving into Adult!`);
+
+        if (child.visual.dom.container) child.visual.dom.container.remove();
+
+        const index = game.speakis.indexOf(child);
+        if (index !== -1) {
+            game.speakis.splice(index, 1);
+        }
+
+        const adult = new Speaki(game, child.id, game.speakiRoom, child.pos.x, child.pos.y);
+        adult.name = child.name;
+        adult.status.friendship = child.status.friendship;
+        adult.status.hunger = child.status.hunger;
+        adult.status.state = child.status.state;
+
+        if (game.giftPartner === child) {
+            game.giftPartner = adult;
+        }
+
+        if (index !== -1) {
+            game.speakis.splice(index, 0, adult);
+        } else {
+            game.speakis.push(adult);
+        }
+
+        game.sound.playSound('happy', 1.0);
+        game.ui.updateSpeakiList(true);
+    }
+
+    /** 死亡・削除予定のスピキを処理（毎フレーム） */
+    update(dt) {
+        const game = this.game;
+        for (let i = game.speakis.length - 1; i >= 0; i--) {
+            const s = game.speakis[i];
+            s.update(dt);
+
+            if (s.isPendingDeletion) {
+                console.log(`[Game] Speaki ${s.id} died and returned to DeathWimple.`);
+                game.items.addItem('DeathWimple', 'item', s.pos.x, s.pos.y);
+
+                // --- クリーンアップ ---
+                if (game.interactTarget === s) game.interactTarget = null;
+                if (game.giftPartner === s) game.completeGiftEvent(null);
+
+                if (s.socialConfig && s.socialConfig.partner) {
+                    const partner = s.socialConfig.partner;
+                    console.log(`[Game] Releasing partner ${partner.id} from social interaction.`);
+                    partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
+                    partner.status.socialTurnCount = 0;
+                    partner.status.isMySocialTurn = false;
+                    partner.socialConfig = null;
+                    partner._onStateChanged(partner.status.state);
+                }
+
+                // DOM削除
+                if (s.visual.dom.container) {
+                    s.visual.dom.container.remove();
+                }
+                // リストから削除
+                game.speakis.splice(i, 1);
+            }
+        }
+    }
+}

@@ -6,12 +6,12 @@ import { BaseCharacter } from './base-character.js';
  * BaseCharacterを継承し、小さく高い声、および自律的なアイテム配置ロジックを持つ
  */
 export class ChildSpeaki extends BaseCharacter {
-    constructor(id, parentElement, x, y, options = {}) {
+    constructor(game, id, parentElement, x, y, options = {}) {
         options.characterType = 'child';
         options.size = options.size || 80;             // 通常の半分程度のサイズ
         options.voicePitch = options.voicePitch || 1.6; // 高い声
         options.speed = options.speed || (1.0 + Math.random() * 2.0);
-        super(id, parentElement, x, y, options);
+        super(game, id, parentElement, x, y, options);
         this.growthTime = 0; // NEW: 累積時間方式に変更
     }
 
@@ -19,7 +19,7 @@ export class ChildSpeaki extends BaseCharacter {
     update(dt) {
         // IDLE状態またはWALKING状態で一定の条件下で成長（赤ちゃんよりは成長しにくい設定も可能だが一旦単純加算）
         // 成長停止設定がONの場合はカウントを進めない
-        const isGrowthStopped = window.game && window.game.settings && window.game.settings.growthStopEnabled;
+        const isGrowthStopped = this.game && this.game.settings && this.game.settings.growthStopEnabled;
         if (!isGrowthStopped) {
             this.growthTime += dt;
         }
@@ -31,8 +31,8 @@ export class ChildSpeaki extends BaseCharacter {
         if (this.status.state === STATE.DYING) return; // 死亡中は遷移しない
         // 0. 進化チェック (累積時間が60秒経過 && 満腹度75以上)
         if (this.growthTime > 60000 && this.status.hunger >= 75) {
-            if (window.game && window.game.evolveChildToAdult) {
-                window.game.evolveChildToAdult(this);
+            if (this.game && this.game.evolveChildToAdult) {
+                this.game.evolveChildToAdult(this);
                 return; // 進化したら以降の処理は不要
             }
         }
@@ -45,7 +45,19 @@ export class ChildSpeaki extends BaseCharacter {
         }
 
         const now = Date.now();
-        // IDLE状態で一定時間経過後、低確率でアイテムを配置する（遊び）
+        // 1. 赤ちゃんの泣き声イベント (空腹時に確率で発生)
+        if (this.status.hunger < 30 && this.status.state === STATE.IDLE) {
+            if (Math.random() < 0.01) { // 1%の確率で泣く
+                if (this.game && this.game.social) {
+                    this.game.social.requestSocialAction(this, null, 'CRYING');
+                    this.status.emotion = 'sad';
+                    this.status.action = 'crying';
+                    this.showEmoji('😭', 5000);
+                }
+            }
+        }
+
+        // 2. IDLE状態で一定時間経過後、低確率でアイテムを配置する（遊び）
         if (this.status.state === STATE.IDLE && now - this.timers.stateStart > 10000) {
             if (Math.random() < 0.005) { // 約 0.5% の確率
                 this._placeRandomCandy();
@@ -86,10 +98,10 @@ export class ChildSpeaki extends BaseCharacter {
 
     /** キャンディを自律的に配置する */
     _placeRandomCandy() {
-        if (!window.game) return;
+        if (!this.game) return;
 
         // 自分の足元にキャンディを置く
-        window.game.addItem('Candy', 'item', this.pos.x, this.pos.y);
+        this.game.addItem('Candy', 'item', this.pos.x, this.pos.y);
 
         // 置いた後は少し離れる
         this.status.state = STATE.WALKING;
