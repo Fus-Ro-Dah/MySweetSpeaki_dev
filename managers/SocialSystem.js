@@ -27,8 +27,8 @@ export class SocialSystem {
                         { origin: 'happy', target: 'normal' },
                         { origin: 'happy', target: 'happy' }
                     ],
-                    onComplete: (r) => { 
-                        r.status.hunger = Math.min(100, r.status.hunger + 30); 
+                    onComplete: (r) => {
+                        r.status.hunger = Math.min(100, r.status.hunger + 30);
                         r.changeMood(10); // お菓子をもらって上機嫌
                         initiator.changeMood(5); // お菓子をあげて自分も満足
                     }
@@ -76,9 +76,9 @@ export class SocialSystem {
                 },
                 execute: (a, b) => this.startInteraction(a, b, {
                     sequence: [
-                        { origin: 'random', target: 'random' },
-                        { origin: 'random', target: 'random' },
-                        { origin: 'random', target: 'random' }
+                        { origin: 'normal', target: 'normal' },
+                        { origin: 'normal', target: 'normal' },
+                        { origin: 'happy', target: 'happy' }
                     ],
                     onComplete: () => {
                         a.changeMood(2);
@@ -276,11 +276,11 @@ export class SocialSystem {
         }
         const initiator = adults[0];
         const target = adults[1];
-        
+
         // CHATは距離チェック(400px以内)があるため、確実に成功するよう一時的に接近させる
         initiator.pos.x = target.pos.x + 100;
         initiator.pos.y = target.pos.y;
-        
+
         const success = this.requestSocialAction(initiator, target, 'CHAT');
         if (!success) console.warn("[Social] 開始できませんでした。");
         else console.log(`[Social] 強制的に ${initiator.id} が ${target.id} とおしゃべりを開始します`);

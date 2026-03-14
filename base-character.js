@@ -975,6 +975,20 @@ export class BaseCharacter {
                         emotion = this.status.emotion = actionKey;
                         action = this.status.action = 'idle';
                         type = 'mood';
+                    } else if (actionKey && actionKey.includes('.')) {
+                        // ドット記法の処理: [タイプ].[感情].[アクション]
+                        const parts = actionKey.split('.');
+                        if (parts.length === 3) {
+                            type = parts[0];
+                            emotion = this.status.emotion = parts[1];
+                            action = this.status.action = parts[2];
+                        } else if (parts.length === 2) {
+                            // [タイプ].[アクション] または [感情].[アクション] 等の柔軟な解釈
+                            // ここでは [感情].[アクション] とみなし、タイプは performance 固定にする
+                            type = 'performance';
+                            emotion = this.status.emotion = parts[0];
+                            action = this.status.action = parts[1];
+                        }
                     } else {
                         action = this.status.action = actionKey || 'idle';
                         type = 'performance';
