@@ -24,8 +24,8 @@ export class SocialSystem {
                     initiatorAction: 'idle',
                     receiverAction: 'happy',
                     sequence: [
-                        { initiator: 'happy', target: 'normal' },
-                        { initiator: 'happy', target: 'happy' }
+                        { origin: 'happy', target: 'normal' },
+                        { origin: 'happy', target: 'happy' }
                     ],
                     onComplete: (r) => { r.status.hunger = Math.min(100, r.status.hunger + 30); }
                 })
@@ -50,9 +50,9 @@ export class SocialSystem {
                         initiatorAction: 'happy',
                         receiverAction: 'idle',
                         sequence: [
-                            { initiator: 'sad', target: 'happy' },
-                            { initiator: 'sad', target: 'happy' },
-                            { initiator: 'happy', target: 'happy' }
+                            { origin: 'sad', target: 'happy' },
+                            { origin: 'sad', target: 'happy' },
+                            { origin: 'happy', target: 'happy' }
                         ],
                         onComplete: (b) => {
                             b.status.hunger = Math.min(100, b.status.hunger + 20);
@@ -70,9 +70,9 @@ export class SocialSystem {
                 },
                 execute: (a, b) => this.startInteraction(a, b, {
                     sequence: [
-                        { initiator: 'random', target: 'random' },
-                        { initiator: 'random', target: 'random' },
-                        { initiator: 'random', target: 'random' }
+                        { origin: 'random', target: 'random' },
+                        { origin: 'random', target: 'random' },
+                        { origin: 'random', target: 'random' }
                     ]
                 })
             }
@@ -192,8 +192,8 @@ export class SocialSystem {
             initiator.status.state = STATE.GAME_REACTION;
 
             // パートナー紐付け
-            target.socialConfig = { partner: initiator, isInitiator: true, options: options };
-            initiator.socialConfig = { partner: target, isInitiator: false, options: options };
+            target.socialConfig = { partner: initiator, isInitiator: true, isOrigin: false, options: options };
+            initiator.socialConfig = { partner: target, isInitiator: false, isOrigin: true, options: options };
 
             // ターン制御（歩み寄る側が先行）
             target.status.isMySocialTurn = true;
@@ -204,8 +204,8 @@ export class SocialSystem {
             target.status.state = STATE.GAME_REACTION;
 
             // パートナー紐付け
-            initiator.socialConfig = { partner: target, isInitiator: true, options: options };
-            target.socialConfig = { partner: initiator, isInitiator: false, options: options };
+            initiator.socialConfig = { partner: target, isInitiator: true, isOrigin: true, options: options };
+            target.socialConfig = { partner: initiator, isInitiator: false, isOrigin: false, options: options };
 
             // ターン制御
             initiator.status.isMySocialTurn = true;
@@ -260,7 +260,7 @@ export class SocialSystem {
             char.status.state = STATE.GAME_APPROACHING;
             char.status.isMySocialTurn = isFirst;
             char.status.socialTurnCount = 0;
-            char.socialConfig = { partner, isInitiator: isFirst, options: options };
+            char.socialConfig = { partner, isInitiator: isFirst, isOrigin: isFirst, options: options };
             char.showEmoji('💬', null);
             char._onStateChanged(char.status.state);
 

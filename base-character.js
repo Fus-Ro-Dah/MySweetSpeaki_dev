@@ -798,7 +798,7 @@ export class BaseCharacter {
             const opts = (this.socialConfig && this.socialConfig.options) || this.interaction.socialOptions;
             if (opts && opts.sequence && opts.sequence[0]) {
                 const turn = opts.sequence[0];
-                const actionKey = (this.socialConfig && this.socialConfig.isInitiator) ? turn.initiator : turn.target;
+                const actionKey = (this.socialConfig && this.socialConfig.isOrigin) ? turn.origin : turn.target;
                 if (actionKey === 'random') {
                     const moods = ['happy', 'sad', 'normal'];
                     this.status.emotion = moods[Math.floor(Math.random() * moods.length)];
@@ -935,7 +935,7 @@ export class BaseCharacter {
             if (opts && opts.sequence) {
                 const turn = opts.sequence[this.status.socialTurnCount];
                 if (turn) {
-                    const actionKey = (this.socialConfig && this.socialConfig.isInitiator) ? turn.initiator : turn.target;
+                    const actionKey = (this.socialConfig && this.socialConfig.isOrigin) ? turn.origin : turn.target;
                     
                     if (actionKey === 'random') {
                         const moods = ['happy', 'sad', 'normal'];
