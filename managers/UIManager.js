@@ -132,7 +132,7 @@ export class UIManager {
 
         if (overlay) {
             overlay.classList.remove('hidden');
-            game.sound.playSound('happy', 0.8);
+            game.sound.playSound('チョワヨ.mp3', 0.8);
 
             if (continueBtn) {
                 continueBtn.onclick = () => {

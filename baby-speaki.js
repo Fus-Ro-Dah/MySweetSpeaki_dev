@@ -27,6 +27,27 @@ export class BabySpeaki extends BaseCharacter {
         super.update(dt);
     }
 
+    /** 自律的な交流リクエストの更新 */
+    _updateSocialRequest(dt) {
+        if (!this.canInteract || this.status.state === STATE.DYING) return;
+        if (this.status.state !== STATE.IDLE) return;
+        if (this.interaction.isInteracting) return;
+
+        const now = Date.now();
+        if (now - this.timers.lastSocialRequestAttempt < 15000) return;
+        this.timers.lastSocialRequestAttempt = now;
+
+        // 赤ちゃんはヒマだとたまに泣いて大人を呼ぶ
+        if (Math.random() < 0.1) {
+            if (this.game && this.game.social) {
+                this.game.social.requestSocialAction(this, null, 'CRYING');
+                this.status.emotion = 'sad';
+                this.status.action = 'crying';
+                this.showEmoji('😭', 5000);
+            }
+        }
+    }
+
     /** 状態遷移の制限と自動進化、喋りループ */
     _updateStateTransition() {
         // 1. 進化チェック (累積IDLE時間が60秒経過で子供へ)

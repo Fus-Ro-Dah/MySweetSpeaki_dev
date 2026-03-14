@@ -33,7 +33,7 @@ export class SocialSystem {
             {
                 id: 'CRYING',
                 priority: 20,
-                movementType: 'TARGET_TO_INITIATOR', // 大人が赤ちゃんに歩み寄る
+                movementType: 'TARGET_TO_ORIGIN', // 大人が赤ちゃんに歩み寄る
                 canTrigger: (a, b) => {
                     const isCrying = a.status.action === 'crying';
                     const isSpeaki = b.characterType === 'speaki';
@@ -46,7 +46,7 @@ export class SocialSystem {
                 execute: (baby, adult) => {
                     console.log(`[Social] 大人 ${adult.id} が泣いている赤ちゃん ${baby.id} を助けることに決めました`);
                     this.triggerDirectedSocialAction(baby, adult, {
-                        movementType: 'TARGET_TO_INITIATOR',
+                        movementType: 'TARGET_TO_ORIGIN',
                         initiatorAction: 'happy',
                         receiverAction: 'idle',
                         sequence: [
@@ -124,113 +124,63 @@ export class SocialSystem {
 
     /** 中央管理による更新 */
     update(dt) {
-        const game = this.game;
-        const now = Date.now();
-
-        // 1. 確率計算 (基準: 2匹のときに300秒に1回程度に引き下げ。基本はリクエストベースにする)
-        const eventsPerSec = game.speakis.length / 600;
-        const probPerFrame = (dt / 1000) * eventsPerSec;
-
-        // 短時間に連続発生しすぎないよう最低 2秒 のインターバル
-        if (now - this.lastSocialTime < 2000) return;
-
-        // ロール実行
-        if (Math.random() > probPerFrame) return;
-
-        // 候補のピックアップ
-        const candidates = game.speakis.filter(s =>
-            s.canInteract &&
-            s.status.friendship > -31 &&
-            [STATE.IDLE, STATE.WALKING].includes(s.status.state) &&
-            !s.interaction.isInteracting
-        );
-
-        if (candidates.length < 2) return;
-
-        // ペアの選定
-        const shuffled = [...candidates].sort(() => Math.random() - 0.5);
-        const templates = this._getSocialActionTemplates();
-
-        for (let i = 0; i < shuffled.length; i++) {
-            const char1 = shuffled[i];
-            const partners = shuffled.filter(c => c !== char1);
-            if (partners.length === 0) break;
-
-            const char2 = partners[Math.floor(Math.random() * partners.length)];
-
-            for (const template of [...templates].sort((a, b) => b.priority - a.priority)) {
-                let initiator = null;
-                let target = null;
-
-                if (template.canTrigger(char1, char2)) {
-                    initiator = char1; target = char2;
-                } else if (template.canTrigger(char2, char1)) {
-                    initiator = char2; target = char1;
-                }
-
-                if (initiator && target) {
-                    console.log(`[Game] Social Event triggered by probability: ${template.id} between ${initiator.id} and ${target.id}`);
-                    template.execute(initiator, target);
-                    this.lastSocialTime = now;
-                    return;
-                }
-            }
-        }
+        // 今後、全体管理で定期的にゲーム状態を監視する処理が必要であればここに追記する。
+        // （キャラクターの自律的リクエストにより交流が発火するため、乱数によるマッチングは廃止した）
     }
 
     /** ターゲット指定型（一方からの駆け寄り）交流の開始 */
-    triggerDirectedSocialAction(initiator, target, options) {
+    triggerDirectedSocialAction(origin, target, options) {
         // 状態保存と遷移
-        initiator.status.stateStack.push(initiator.status.state);
+        origin.status.stateStack.push(origin.status.state);
         target.status.stateStack.push(target.status.state);
 
-        const movementType = options.movementType || 'INITIATOR_TO_TARGET';
+        const movementType = options.movementType || 'ORIGIN_TO_TARGET';
 
-        if (movementType === 'TARGET_TO_INITIATOR') {
+        if (movementType === 'TARGET_TO_ORIGIN') {
             // ターゲット（大人など）がイニシエーター（赤ちゃんなど）に歩み寄る
             target.status.state = STATE.GAME_APPROACHING;
-            initiator.status.state = STATE.GAME_REACTION;
+            origin.status.state = STATE.GAME_REACTION;
 
             // パートナー紐付け
-            target.socialConfig = { partner: initiator, isInitiator: true, isOrigin: false, options: options };
-            initiator.socialConfig = { partner: target, isInitiator: false, isOrigin: true, options: options };
+            target.socialConfig = { partner: origin, isInitiator: true, isOrigin: false, options: options };
+            origin.socialConfig = { partner: target, isInitiator: false, isOrigin: true, options: options };
 
             // ターン制御（歩み寄る側が先行）
             target.status.isMySocialTurn = true;
-            initiator.status.isMySocialTurn = false;
+            origin.status.isMySocialTurn = false;
         } else {
             // イニシエーターがターゲットに歩み寄る（従来通り）
-            initiator.status.state = STATE.GAME_APPROACHING;
+            origin.status.state = STATE.GAME_APPROACHING;
             target.status.state = STATE.GAME_REACTION;
 
             // パートナー紐付け
-            initiator.socialConfig = { partner: target, isInitiator: true, isOrigin: true, options: options };
-            target.socialConfig = { partner: initiator, isInitiator: false, isOrigin: false, options: options };
+            origin.socialConfig = { partner: target, isInitiator: true, isOrigin: true, options: options };
+            target.socialConfig = { partner: origin, isInitiator: false, isOrigin: false, options: options };
 
             // ターン制御
-            initiator.status.isMySocialTurn = true;
+            origin.status.isMySocialTurn = true;
             target.status.isMySocialTurn = false;
         }
 
-        initiator.status.socialTurnCount = 0;
+        origin.status.socialTurnCount = 0;
         target.status.socialTurnCount = 0;
 
         // 演出開始
-        initiator.showEmoji(movementType === 'TARGET_TO_INITIATOR' ? '!' : '💬', null);
-        target.showEmoji(movementType === 'TARGET_TO_INITIATOR' ? '💬' : '!', null);
+        origin.showEmoji(movementType === 'TARGET_TO_ORIGIN' ? '!' : '💬', null);
+        target.showEmoji(movementType === 'TARGET_TO_ORIGIN' ? '💬' : '!', null);
 
-        initiator._onStateChanged(initiator.status.state);
+        origin._onStateChanged(origin.status.state);
         target._onStateChanged(target.status.state);
 
         // 状態変更後に目的地を確定させる
-        if (movementType === 'TARGET_TO_INITIATOR') {
-            target.pos.targetX = initiator.pos.x + (target.pos.x < initiator.pos.x ? -120 : 120);
-            target.pos.targetY = initiator.pos.y;
+        if (movementType === 'TARGET_TO_ORIGIN') {
+            target.pos.targetX = origin.pos.x + (target.pos.x < origin.pos.x ? -120 : 120);
+            target.pos.targetY = origin.pos.y;
             target.pos.destinationSet = true;
         } else {
-            initiator.pos.targetX = target.pos.x + (initiator.pos.x < target.pos.x ? -120 : 120);
-            initiator.pos.targetY = target.pos.y;
-            initiator.pos.destinationSet = true;
+            origin.pos.targetX = target.pos.x + (origin.pos.x < target.pos.x ? -120 : 120);
+            origin.pos.targetY = target.pos.y;
+            origin.pos.destinationSet = true;
         }
     }
 

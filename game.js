@@ -400,7 +400,7 @@ export class Game {
             this.giftPartner.status.state = STATE.GIFT_REACTION;
             this.giftPartner.timers.stateStart = Date.now();
             this.giftPartner._onStateChanged(this.giftPartner.status.state);
-            this.sound.playSound('happy');
+            this.sound.playSound('チョワヨ.mp3');
 
             const friendship = this.giftPartner.status.friendship;
             let plasticGain = 1;
@@ -454,7 +454,7 @@ export class Game {
             this.settings.growthStopEnabled = !this.settings.growthStopEnabled;
         }
 
-        this.playSound('happy', 1.1);
+        this.playSound('チョワヨ.mp3', 1.1);
         this.initUnlockMenu();
     }
 
@@ -486,7 +486,7 @@ export class Game {
             case 'cooldownReduction': this.unlocks.reloadReductionLv++; break;
         }
 
-        this.playSound('happy', 1.2);
+        this.playSound('チョワヨ.mp3', 1.2);
         this.updatePlasticStockUI();
         this.initUnlockMenu();
     }

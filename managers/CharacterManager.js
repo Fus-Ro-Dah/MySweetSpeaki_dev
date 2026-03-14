@@ -124,7 +124,7 @@ export class CharacterManager {
             game.speakis.push(child);
         }
 
-        game.sound.playSound('happy', 1.2);
+        game.sound.playSound('チョワヨ.mp3', 1.2);
         game.ui.updateSpeakiList(true);
     }
 
@@ -157,7 +157,7 @@ export class CharacterManager {
             game.speakis.push(adult);
         }
 
-        game.sound.playSound('happy', 1.0);
+        game.sound.playSound('チョワヨ.mp3', 1.0);
         game.ui.updateSpeakiList(true);
     }
 

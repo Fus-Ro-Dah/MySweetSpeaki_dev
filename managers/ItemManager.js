@@ -195,7 +195,7 @@ export class ItemManager {
         for (let i = game.placedItems.length - 1; i >= 0; i--) {
             if (game.placedItems[i].isHit(x, y)) {
                 game.placedItems.splice(i, 1);
-                game.sound.playSound('happy', 1.5); // 削除時のフィードバック音
+                game.sound.playSound('チョワヨ.mp3', 1.5); // 削除時のフィードバック音
                 return true;
             }
         }

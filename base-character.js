@@ -296,6 +296,16 @@ export class BaseCharacter {
                 this.game.social.requestSocialAction(this, null, 'CHAT');
             }
         }
+
+        // 2. お菓子をあげる(GIVE_CANDY)リクエストの検討 (大人のみ)
+        // 自分自身に余裕がある（満腹度60以上）場合、誰かにお菓子を配ろうとする
+        if (this.characterType === 'speaki' && this.status.hunger >= 60) {
+            if (Math.random() < 0.1) { // 10%の確率でお菓子を配りたいモードに入る
+                if (this.game && this.game.social) {
+                    this.game.social.requestSocialAction(this, null, 'GIVE_CANDY');
+                }
+            }
+        }
     }
 
     /** 状態遷移の判定 (サブクラスで拡張可能) */
