@@ -277,8 +277,9 @@ export class InputManager {
             speaki.visual.targetDistortion.rotateX = dy * -1;
             speaki.visual.targetDistortion.scale = 1.05;
 
-            // 好感度上昇
+            // 好感度・機嫌上昇
             speaki.status.friendship = Math.min(100, speaki.status.friendship + 0.2);
+            speaki.changeMood(0.1);
 
             // ハート生成 (一定間隔)
             if (!speaki.timers.lastPettingHeart || Date.now() - speaki.timers.lastPettingHeart > 300) {
@@ -331,8 +332,9 @@ export class InputManager {
 
     _handleSpeakiTap(speaki) {
         const game = this.game;
-        // 好感度計算
+        // 好感度・機嫌計算
         speaki.status.friendship = Math.max(-50, speaki.status.friendship - 5);
+        speaki.changeMood(-10);
         this._createHitEffect(speaki.interaction.lastMouseX, speaki.interaction.lastMouseY);
 
         if (speaki.status.friendship <= -31) {

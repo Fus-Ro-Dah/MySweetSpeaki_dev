@@ -203,6 +203,7 @@ export class UIManager {
 
             const friendshipPct = Math.min(100, Math.max(0, s.status.friendship + 50));
             const hungerPct = Math.min(100, Math.max(0, s.status.hunger));
+            const moodPct = Math.min(100, Math.max(0, s.status.mood + 50));
 
             html += `
             <div class="speaki-entry ${isHighlighted ? 'active' : ''}">
@@ -230,6 +231,13 @@ export class UIManager {
                             <span class="gauge-value">${s.status.hunger.toFixed(0)}</span>
                         </div>
                         <div class="gauge-bar"><div class="gauge-fill hunger" style="width: ${hungerPct}%"></div></div>
+                    </div>
+                    <div class="gauge-item mini-row">
+                        <div class="icon-wrapper">
+                            <img src="assets/images/icon_mood.png" class="gauge-icon" alt="mood">
+                            <span class="gauge-value">${(s.status.mood || 0).toFixed(0)}</span>
+                        </div>
+                        <div class="gauge-bar"><div class="gauge-fill mood" style="width: ${moodPct}%"></div></div>
                     </div>
                 </div>
             </div>

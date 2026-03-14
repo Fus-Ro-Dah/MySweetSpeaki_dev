@@ -45,6 +45,7 @@ export class BaseCharacter {
             isMySocialTurn: false, // 自分の喋る番かどうか
             size: options.size || 160,
             voicePitch: options.voicePitch || 1.0,
+            mood: options.mood || 0, // NEW: 機嫌 (-50 ~ 50)
             deathProgress: 0, // 死亡演出の進行度 (0.0 - 1.0)
         };
         this.isPendingDeletion = false; // 死亡演出完了後に削除するためのフラグ
@@ -229,6 +230,26 @@ export class BaseCharacter {
         // 6. スタック検知 (ポーズ中でないときのみ)
         if (this.game && !this.game.isPausedForDebug) {
             this._checkStuck(dt);
+        }
+    }
+
+    /** 機嫌の変動 (範囲制限付き) */
+    changeMood(amount) {
+        if (this.status.mood === undefined) this.status.mood = 0;
+        this.status.mood = Math.max(-50, Math.min(50, this.status.mood + amount));
+    }
+
+    /** アイエット（食べ物・玩具・家具）へ向かう */
+    approachItem(item) {
+        if (!item) return;
+        this.interaction.targetItem = item;
+        this.pos.targetX = item.x;
+        this.pos.targetY = item.y;
+        this.pos.destinationSet = true;
+
+        if (this.status.state !== STATE.ITEM_APPROACHING) {
+            this.status.state = STATE.ITEM_APPROACHING;
+            this._onStateChanged(this.status.state);
         }
     }
 

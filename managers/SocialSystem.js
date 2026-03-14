@@ -27,7 +27,11 @@ export class SocialSystem {
                         { origin: 'happy', target: 'normal' },
                         { origin: 'happy', target: 'happy' }
                     ],
-                    onComplete: (r) => { r.status.hunger = Math.min(100, r.status.hunger + 30); }
+                    onComplete: (r) => { 
+                        r.status.hunger = Math.min(100, r.status.hunger + 30); 
+                        r.changeMood(10); // お菓子をもらって上機嫌
+                        initiator.changeMood(5); // お菓子をあげて自分も満足
+                    }
                 })
             },
             {
@@ -57,6 +61,8 @@ export class SocialSystem {
                         onComplete: () => {
                             baby.status.hunger = Math.min(100, baby.status.hunger + 20);
                             baby.status.emotion = 'happy';
+                            baby.changeMood(15); // なだめてもらって安心
+                            adult.changeMood(5); // 助けてあげて満足
                         }
                     });
                 }
@@ -73,7 +79,11 @@ export class SocialSystem {
                         { origin: 'random', target: 'random' },
                         { origin: 'random', target: 'random' },
                         { origin: 'random', target: 'random' }
-                    ]
+                    ],
+                    onComplete: () => {
+                        a.changeMood(2);
+                        b.changeMood(2);
+                    }
                 })
             }
         ];
@@ -145,9 +155,9 @@ export class SocialSystem {
             target.socialConfig = { partner: origin, isInitiator: true, isOrigin: false, options: options };
             origin.socialConfig = { partner: target, isInitiator: false, isOrigin: true, options: options };
 
-            // ターン制御（歩み寄る側が先行）
-            target.status.isMySocialTurn = true;
-            origin.status.isMySocialTurn = false;
+            // ターン制御（待機している側が先行して反応できるようにする）
+            target.status.isMySocialTurn = false;
+            origin.status.isMySocialTurn = true;
         } else {
             // イニシエーターがターゲットに歩み寄る（従来通り）
             origin.status.state = STATE.GAME_APPROACHING;
@@ -157,9 +167,9 @@ export class SocialSystem {
             origin.socialConfig = { partner: target, isInitiator: true, isOrigin: true, options: options };
             target.socialConfig = { partner: origin, isInitiator: false, isOrigin: false, options: options };
 
-            // ターン制御
-            origin.status.isMySocialTurn = true;
-            target.status.isMySocialTurn = false;
+            // ターン制御（待機している側が先行して反応できるようにする）
+            origin.status.isMySocialTurn = false;
+            target.status.isMySocialTurn = true;
         }
 
         origin.status.socialTurnCount = 0;

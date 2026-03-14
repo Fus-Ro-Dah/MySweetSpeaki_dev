@@ -386,7 +386,7 @@ export class Game {
         speaki.timers.stateStart = Date.now();
         speaki._onStateChanged(speaki.status.state);
         this.ui.updateGiftUI('start');
-        this.sound.playSound('gift');
+        this.sound.playSound('チョワヨ.mp3');
     }
 
     receiveGift() {

@@ -747,6 +747,11 @@ h3 {
     /* オレンジがかった黄色 */
 }
 
+.gauge-fill.mood {
+    background: linear-gradient(90deg, #00f2fe, #4facfe);
+    /* 水色から青へのグラデーション */
+}
+
 .speaki-detail-footer {
     font-size: 0.7rem;
     color: #7f8c8d;

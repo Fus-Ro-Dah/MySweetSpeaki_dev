@@ -250,6 +250,12 @@ export class ItemManager {
             }
         }
 
+        // 機嫌の変化 (moodGain または moodLoss が定義されていれば適用)
+        if (def && (def.moodGain || def.moodLoss)) {
+            const gain = (def.moodGain || 0) + (def.moodLoss || 0);
+            character.changeMood(gain);
+        }
+
         // アクション時間を設定
         character.timers.actionDuration = 3000; // デフォルト。必要ならアセット側で上書き
         return true;

@@ -228,6 +228,7 @@ export const ITEMS = {
         showInMenu: true,               //メニューに表示するか
         isFood: false,                  //食べ物かどうか
         friendshipChange: 10,           //友好度の変化量
+        moodGain: 15,                   //機嫌の変化量
         forcedEmotion: 'happy'          //反応したｽﾋﾟｷがどんな感情になるか(この感情は10秒持続する)
     },
     //ウィンプル
@@ -238,6 +239,7 @@ export const ITEMS = {
         size: 80,
         showInMenu: true,
         isFood: false,
+        moodGain: 5,
         forcedEmotion: 'happy',
         transform: { isAdult: 'baby', duration: 10000 },
     },
@@ -262,6 +264,7 @@ export const ITEMS = {
         nutrition: 15,
         isFood: true,
         friendshipChange: 2,
+        moodGain: 10,
         forcedEmotion: 'happy',
         reloadTime: 10000,     //配置してから次に配置できるようになるまでの時間
     },
@@ -274,6 +277,7 @@ export const ITEMS = {
         nutrition: 25,
         isFood: true,
         friendshipChange: 5,
+        moodGain: 20,
         forcedEmotion: 'happy',
         reloadTime: 20000,
     },
@@ -286,6 +290,7 @@ export const ITEMS = {
         nutrition: 40,
         isFood: true,
         friendshipChange: 8,
+        moodGain: 30,
         forcedEmotion: 'happy'
     },
     //----ランダムアイテム(プラスチックの数だけおけるやつ)----//
