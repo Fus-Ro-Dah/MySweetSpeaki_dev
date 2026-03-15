@@ -199,8 +199,8 @@ export class BaseCharacter {
 
         // 好感度の自然減少 (正の値の場合)
         if (this.status.friendship > 0) {
-            // 教主像 (かぼちゃ) がフィールドにある場合は減少をスキップ
-            const isHolyStatueActive = this.game && this.game.items && this.game.items.hasItemOnField('ToyPumpkin');
+            // 教主像 (MasterStatue) がフィールドにある場合は減少をスキップ
+            const isHolyStatueActive = this.game && this.game.items && this.game.items.hasItemOnField('MasterStatue');
 
             if (!isHolyStatueActive) {
                 const affectionDecayLv = (this.game && this.game.unlocks.affectionDecayLv) || 0;
@@ -423,7 +423,7 @@ export class BaseCharacter {
                 if (now - this.timers.actionStart > duration) {
                     this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
                     this._onStateChanged(this.status.state);
-                } else if (this.status.action === 'ToyPumpkin') {
+                } else if (this.status.action === 'ToyPumpkin' || (this.status.action === 'MasterStatue' && this.status.friendship >= 25)) {
                     // かぼちゃ使用中は定期的にハートを出す
                     if (!this.timers.lastPettingHeart || now - this.timers.lastPettingHeart > 800) {
                         if (this.game && this.game.input) {
