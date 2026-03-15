@@ -53,8 +53,8 @@ export class BaseCharacter {
         // 3. 表示とアニメーション
         this.visual = {
             dom: {},
-            distortion: { skewX: 0, rotateX: 0, scale: 1.0 },
-            targetDistortion: { skewX: 0, rotateX: 0, scale: 1.0 },
+            distortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0 },
+            targetDistortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0 },
             motionType: 'none',
             motionTimer: 0,
             currentAssetKey: '',
@@ -645,12 +645,14 @@ export class BaseCharacter {
 
         const bob = Math.sin(Date.now() / 200 + this.id * 100) * (this.status.size / 30);
         const screenX = this.pos.x - this.status.size / 2;
+        //const screenY = this.pos.y - this.status.size / 2;
         const screenY = this.pos.y - this.status.size / 2 + bob;
 
         dom.container.style.transform = `translate(${screenX}px, ${screenY}px)`;
 
         const flip = this.pos.facingLeft ? 1 : -1;
-        const transform = `perspective(800px) rotateX(${this.visual.distortion.rotateX}deg) skewX(${this.visual.distortion.skewX}deg) scale(${this.visual.distortion.scale}) scaleX(${flip})`;
+        // scaleX に flip (左右反転) を掛け合わせる
+        const transform = `perspective(800px) rotateX(${this.visual.distortion.rotateX}deg) rotateY(${this.visual.distortion.rotateY}deg) skewX(${this.visual.distortion.skewX}deg) scale(${this.visual.distortion.scaleX * flip}, ${this.visual.distortion.scaleY}) translate(${this.visual.distortion.translateX}px, ${this.visual.distortion.translateY}px)`;
         dom.sprite.style.transform = transform;
 
         // セリフ表示
@@ -1164,7 +1166,8 @@ export class BaseCharacter {
         if (this.interaction.isPetting) {
             this.visual.distortion.skewX += (this.visual.targetDistortion.skewX - this.visual.distortion.skewX) * 0.15;
             this.visual.distortion.rotateX += (this.visual.targetDistortion.rotateX - this.visual.distortion.rotateX) * 0.15;
-            this.visual.distortion.scale += (this.visual.targetDistortion.scale - this.visual.distortion.scale) * 0.15;
+            this.visual.distortion.scaleX += (this.visual.targetDistortion.scaleX - this.visual.distortion.scaleX) * 0.15;
+            this.visual.distortion.scaleY += (this.visual.targetDistortion.scaleY - this.visual.distortion.scaleY) * 0.15;
             return;
         }
 
@@ -1177,22 +1180,114 @@ export class BaseCharacter {
                 break;
             case 'stretch':
                 const stretch = Math.sin(this.visual.motionTimer * 0.01) * 0.1;
-                this.visual.distortion.scale = 1.0 + stretch;
+                this.visual.distortion.scaleX = 1.0 - stretch * 0.5;
+                this.visual.distortion.scaleY = 1.0 + stretch;
                 this.visual.distortion.rotateX = stretch * -50;
                 break;
             case 'bounce':
                 const bounce = Math.abs(Math.sin(this.visual.motionTimer * 0.01)) * 0.1;
-                this.visual.distortion.scale = 1.0 + bounce;
+                this.visual.distortion.scaleX = 1.0 + bounce * 0.5;
+                this.visual.distortion.scaleY = 1.0 + bounce;
                 break;
             case 'swing':
                 const swing = Math.sin(this.visual.motionTimer * 0.005);
                 this.visual.distortion.skewX = swing * 15;
-                this.visual.distortion.scale = 1.0 + Math.abs(swing) * 0.25;
+                this.visual.distortion.scaleX = 1.0 + Math.abs(swing) * 0.1;
+                this.visual.distortion.scaleY = 1.0 + Math.abs(swing) * 0.25;
+                break;
+            case 'hop':
+                const dCycle = 600; // 0.6秒周期 (速め)
+
+                // 4回（2.4秒）跳んだらとまる swingに移行
+                if (this.visual.motionTimer >= dCycle * 4) {
+                    this.visual.motionType = 'swing';
+                    return;
+                }
+
+                const dt = (this.visual.motionTimer % dCycle) / dCycle;
+
+                if (dt < 0.15) {
+                    // 1. 溜め
+                    const p = dt / 0.15;
+                    const squash = Math.sin(p * Math.PI) * 0.2;
+                    this.visual.distortion.scaleX = 1.0 + squash * 0.3;
+                    this.visual.distortion.scaleY = 1.0 - squash;
+                    this.visual.distortion.translateY = 0;
+                } else if (dt < 0.65) {
+                    // 2. 小さな跳躍
+                    const p = (dt - 0.15) / 0.5;
+                    const height = Math.sin(p * Math.PI);
+                    this.visual.distortion.translateY = -height * 30; // 高さは30px程度
+
+                    const stretch = height * 0.15;
+                    this.visual.distortion.scaleX = 1.0 - stretch * 0.2;
+                    this.visual.distortion.scaleY = 1.0 + stretch;
+                } else if (dt < 0.85) {
+                    // 3. 着地
+                    const p = (dt - 0.65) / 0.2;
+                    const impact = Math.sin(p * Math.PI) * 0.25;
+                    this.visual.distortion.scaleX = 1.0 + impact * 0.4;
+                    this.visual.distortion.scaleY = 1.0 - impact;
+                    this.visual.distortion.translateY = 0;
+                } else {
+                    // 4. 静止
+                    this.visual.distortion.scaleX = 1.0;
+                    this.visual.distortion.scaleY = 1.0;
+                    this.visual.distortion.translateY = 0;
+                }
+                // 回転や横移動はリセット（既存の残骸を消すため）
+                this.visual.distortion.rotateY = 0;
+                this.visual.distortion.translateX = 0;
+                break;
+            case 'jump':
+                const jumpCycle = 1200; // 1.2秒周期にして余裕を持たせる
+
+                // 2回（2.4秒）跳んだら自動的にswingに移行する
+                if (this.visual.motionTimer >= jumpCycle * 2) {
+                    this.visual.motionType = 'swing';
+                    return;
+                }
+
+                const jt = (this.visual.motionTimer % jumpCycle) / jumpCycle;
+
+                if (jt < 0.15) {
+                    // 1. 溜め: 一気に踏み込む
+                    const p = jt / 0.15;
+                    const squash = Math.sin(p * Math.PI) * 0.35;
+                    this.visual.distortion.scaleX = 1.0 + squash * 0.5;
+                    this.visual.distortion.scaleY = 1.0 - squash;
+                    this.visual.distortion.translateY = 0;
+                } else if (jt < 0.65) {
+                    // 2. 跳躍: 空中フェーズ (0.5秒間)
+                    const p = (jt - 0.15) / 0.5;
+                    const height = Math.sin(p * Math.PI);
+                    this.visual.distortion.translateY = -height * 140; // 少し高く
+
+                    const stretch = height > 0.8 ? (1.0 - height) * 0.4 : height * 0.3;
+                    this.visual.distortion.scaleX = 1.0 - stretch * 0.2;
+                    this.visual.distortion.scaleY = 1.0 + stretch;
+                } else if (jt < 0.85) {
+                    // 3. 着地: ぐにゃっと一回だけ縮む
+                    const p = (jt - 0.65) / 0.2;
+                    const impact = Math.sin(p * Math.PI) * 0.45;
+                    this.visual.distortion.scaleX = 1.0 + impact * 0.6;
+                    this.visual.distortion.scaleY = 1.0 - impact;
+                    this.visual.distortion.translateY = 0;
+                } else {
+                    // 4. 静止: 次のジャンプへの間を作る (ここで2回かがむのを防ぐ)
+                    this.visual.distortion.scaleX = 1.0;
+                    this.visual.distortion.scaleY = 1.0;
+                    this.visual.distortion.translateY = 0;
+                }
                 break;
             default:
                 this.visual.distortion.skewX *= 0.85;
                 this.visual.distortion.rotateX *= 0.85;
-                this.visual.distortion.scale += (1.0 - this.visual.distortion.scale) * 0.15;
+                this.visual.distortion.rotateY *= 0.85;
+                this.visual.distortion.translateX *= 0.85;
+                this.visual.distortion.translateY *= 0.85;
+                this.visual.distortion.scaleX += (1.0 - this.visual.distortion.scaleX) * 0.15;
+                this.visual.distortion.scaleY += (1.0 - this.visual.distortion.scaleY) * 0.15;
                 break;
         }
     }

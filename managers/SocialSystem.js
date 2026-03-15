@@ -85,6 +85,94 @@ export class SocialSystem {
                         b.changeMood(2);
                     }
                 })
+            },
+            {
+                id: 'HAPPY_DANCE',
+                priority: 12,
+                canTrigger: (a, b) => {
+                    return a.characterType === 'speaki' && b.characterType === 'speaki' &&
+                        a.status.mood > 30 && b.status.mood > 30;
+                },
+                execute: (a, b) => this.startInteraction(a, b, {
+                    sequence: [
+                        { origin: 'performance.happy.jump', target: 'performance.happy.jump' },
+                        { origin: 'performance.happy.jump', target: 'performance.happy.jump' }
+                    ],
+                    onComplete: () => {
+                        a.changeMood(5);
+                        b.changeMood(5);
+                    }
+                })
+            },
+            {
+                id: 'SOOTHE',
+                priority: 15,
+                movementType: 'TARGET_TO_ORIGIN',
+                canTrigger: (a, b) => {
+                    // a: 泣いている/不機嫌な子, b: 助ける大人/余裕のある子
+                    return a.status.mood < -30 && b.status.mood >= 0;
+                },
+                execute: (sadOne, helper) => this.triggerDirectedSocialAction(sadOne, helper, {
+                    movementType: 'TARGET_TO_ORIGIN',
+                    initiatorAction: 'happy',
+                    receiverAction: 'sad',
+                    sequence: [
+                        { origin: 'sad', target: 'happy' },
+                        { origin: 'sad', target: 'happy' },
+                        { origin: 'happy', target: 'happy' }
+                    ],
+                    onComplete: () => {
+                        sadOne.changeMood(35); // 大幅回復
+                        helper.changeMood(10);
+                    }
+                })
+            },
+            {
+                id: 'PLAY_PUMPKIN',
+                priority: 14,
+                canTrigger: (a, b) => {
+                    if (a.characterType !== 'speaki' || b.characterType !== 'speaki') return false;
+                    if (a.status.mood < -20 || b.status.mood < -20) return false;
+                    
+                    // 近くに ToyPumpkin があるか
+                    const items = this.game.items.placedItems || [];
+                    const pumpkin = items.find(it => it.id === 'ToyPumpkin' && 
+                        Math.hypot(a.pos.x - it.x, a.pos.y - it.y) < 300);
+                    return !!pumpkin;
+                },
+                execute: (a, b) => this.startInteraction(a, b, {
+                    sequence: [
+                        { origin: 'performance.happy.bounce', target: 'performance.happy.bounce' },
+                        { origin: 'performance.happy.bounce', target: 'performance.happy.bounce' }
+                    ],
+                    onComplete: () => {
+                        a.changeMood(10);
+                        b.changeMood(10);
+                    }
+                })
+            },
+            {
+                id: 'BABY_CARE',
+                priority: 25,
+                movementType: 'TARGET_TO_ORIGIN',
+                canTrigger: (a, b) => {
+                    // a: 赤ちゃん, b: 大人スピキ
+                    return a.characterType === 'baby' && b.characterType === 'speaki' && b.status.hunger > 20;
+                },
+                execute: (baby, adult) => this.triggerDirectedSocialAction(baby, adult, {
+                    movementType: 'TARGET_TO_ORIGIN',
+                    initiatorAction: 'happy',
+                    receiverAction: 'idle',
+                    sequence: [
+                        { origin: 'performance.happy.eat', target: 'performance.happy.feed' },
+                        { origin: 'performance.happy.eat', target: 'performance.happy.feed' }
+                    ],
+                    onComplete: () => {
+                        baby.status.hunger = Math.min(100, baby.status.hunger + 15);
+                        baby.changeMood(20);
+                        adult.changeMood(5);
+                    }
+                })
             }
         ];
     }
@@ -284,5 +372,65 @@ export class SocialSystem {
         const success = this.requestSocialAction(initiator, target, 'CHAT');
         if (!success) console.warn("[Social] 開始できませんでした。");
         else console.log(`[Social] 強制的に ${initiator.id} が ${target.id} とおしゃべりを開始します`);
+    }
+
+    /** デバッグ用: ハッピーダンス (HAPPY_DANCE) */
+    forceHappyDance() {
+        const candidates = this.game.speakis.filter(s => s.characterType === 'speaki' && !this._isInSocialState(s));
+        if (candidates.length < 2) return console.error("[Social] フリーのスピキが2匹必要です");
+        
+        candidates[0].status.mood = 50;
+        candidates[1].status.mood = 50;
+        
+        const success = this.requestSocialAction(candidates[0], candidates[1], 'HAPPY_DANCE');
+        if (success) console.log("[Social] HAPPY_DANCE 開始");
+    }
+
+    /** デバッグ用: なだめる (SOOTHE) */
+    forceSoothe() {
+        const sadOne = this.game.speakis.find(s => !this._isInSocialState(s));
+        const helper = this.game.speakis.find(s => s !== sadOne && !this._isInSocialState(s));
+        if (!sadOne || !helper) return console.error("[Social] フリーのスピキが2匹必要です");
+
+        sadOne.status.mood = -50;
+        helper.status.mood = 50;
+
+        const success = this.requestSocialAction(sadOne, helper, 'SOOTHE');
+        if (success) console.log("[Social] SOOTHE 開始");
+    }
+
+    /** デバッグ用: かぼちゃ遊び (PLAY_PUMPKIN) */
+    forcePlayPumpkin() {
+        const candidates = this.game.speakis.filter(s => s.characterType === 'speaki' && !this._isInSocialState(s));
+        if (candidates.length < 2) return console.error("[Social] フリーのスピキが2匹必要です");
+
+        // 近くに ToyPumpkin を置く（なければ作る）
+        let pumpkin = (this.game.items.placedItems || []).find(it => it.id === 'ToyPumpkin');
+        if (!pumpkin) {
+            console.log("[Social] Pumpkinがなかったので中央に配置します");
+            this.game.items.placeItem('ToyPumpkin', 600, 400);
+            pumpkin = this.game.items.placedItems.find(it => it.id === 'ToyPumpkin');
+        }
+
+        candidates[0].pos.x = pumpkin.x - 50;
+        candidates[0].pos.y = pumpkin.y;
+        candidates[1].pos.x = pumpkin.x + 50;
+        candidates[1].pos.y = pumpkin.y;
+        candidates[0].status.mood = 0;
+        candidates[1].status.mood = 0;
+
+        const success = this.requestSocialAction(candidates[0], candidates[1], 'PLAY_PUMPKIN');
+        if (success) console.log("[Social] PLAY_PUMPKIN 開始");
+    }
+
+    /** デバッグ用: 赤ちゃんのお世話 (BABY_CARE) */
+    forceBabyCare() {
+        const baby = this.game.speakis.find(s => s.characterType === 'baby' && !this._isInSocialState(s));
+        const adult = this.game.speakis.find(s => s.characterType === 'speaki' && !this._isInSocialState(s));
+        if (!baby || !adult) return console.error("[Social] フリーの赤ちゃんと大人が必要です");
+
+        adult.status.hunger = 100;
+        const success = this.requestSocialAction(baby, adult, 'BABY_CARE');
+        if (success) console.log("[Social] BABY_CARE 開始");
     }
 }

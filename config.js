@@ -45,8 +45,10 @@ export const ASSETS = {
         mood: {
             normal: {
                 idle: [
-                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
-                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'none' },
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'hop' },
+                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'hop' },
+                    /*            { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+                               { imagefile: 'speaki_normal_idle_2.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'none' }, */
                 ],
                 walking: [
                     { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
@@ -100,6 +102,9 @@ export const ASSETS = {
                 Poteto: [{ imagefile: 'speaki_item_poteto.png', soundfile: '本場スピキ撫で.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
                 generic: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }]
             },
+            action: {
+
+            },
             happy: {
                 idle: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
                 giftreaction: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: '本場スピキくすぐり.mp3', text: '(ｽﾋﾟｷはとっても満足げだ)', movePattern: 'swing' }]
@@ -146,6 +151,11 @@ export const ASSETS = {
                 BrokenHobagi: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: '慟哭.mp3', text: '慟哭', movePattern: 'bounce' }],
                 Poteto: [{ imagefile: 'speaki_item_poteto.png', soundfile: '本場スピキ撫で.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
                 generic: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }]
+            },
+            happy: {
+                dance: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾋﾟｷﾋﾟｷ!', movePattern: 'dance' }],
+                jump: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾋﾟｷﾋﾟｷ!', movePattern: 'jump' }],
+                feed: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'スピキ.mp3', text: 'あーん!', movePattern: 'swing' }]
             }
         }
     },
@@ -178,6 +188,11 @@ export const ASSETS = {
         performance: {
             ITEM: {
                 generic: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶぅ', movePattern: 'bounce' }]
+            },
+            happy: {
+                eat: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'ピキ.mp3', text: 'もぐもぐ!', movePattern: 'bounce' }],
+                dance: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶぅ!', movePattern: 'dance' }],
+                jump: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶぅ!', movePattern: 'jump' }]
             },
             normal: {
                 idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ばぶぅ', movePattern: 'bounce' }],
