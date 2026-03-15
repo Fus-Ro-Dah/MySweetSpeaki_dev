@@ -239,19 +239,6 @@ export class BaseCharacter {
         this.status.mood = Math.max(-50, Math.min(50, this.status.mood + amount));
     }
 
-    /** アイエット（食べ物・玩具・家具）へ向かう */
-    approachItem(item) {
-        if (!item) return;
-        this.interaction.targetItem = item;
-        this.pos.targetX = item.x;
-        this.pos.targetY = item.y;
-        this.pos.destinationSet = true;
-
-        if (this.status.state !== STATE.ITEM_APPROACHING) {
-            this.status.state = STATE.ITEM_APPROACHING;
-            this._onStateChanged(this.status.state);
-        }
-    }
 
     /** スタック（進行不能）の検知 */
     /* テスト用 */
@@ -718,7 +705,7 @@ export class BaseCharacter {
         const game = this.game;
 
         // 1. 食べ物の探索 (空腹時: 近くにあれば100%の確率で向かう)
-        if (this.status.hunger <= 0) {
+        if (this.status.hunger < 30) {
             const food = this._getNearbyFood();
 
             if (food) {
@@ -735,7 +722,25 @@ export class BaseCharacter {
             return;
         }
 
-        // 2. アイテムへの興味 (20% の確率で近くのアイテムに寄る)
+        // 2. 教主像への引力 (好感度が高いスピキ・子供が対象)
+        // 好感度20以上の個体が、一定確率(好感度に比例)で教主像の近くを目的地にする
+        if ((this.characterType === 'speaki' || this.characterType === 'child') && 
+            this.status.friendship >= 20) {
+            
+            const statue = game.placedItems.find(it => it.id === 'MasterStatue');
+            if (statue) {
+                // 機率は好感度 20(4%) 〜 50(10%) 程度
+                const pullChance = this.status.friendship / 500;
+                if (Math.random() < pullChance) {
+                    // 像の周りにランダムにバラけるようにオフセットを付けて接近
+                    const randomOffset = 50 + Math.random() * 100;
+                    this.approachItem(statue, randomOffset);
+                    return;
+                }
+            }
+        }
+
+        // 3. アイテムへの興味 (20% の確率で近くのアイテムに寄る)
         if (game && game.placedItems.length > 0 && Math.random() < 0.2) {
             const itemsInRange = game.placedItems.filter(it => {
                 const dist = Math.sqrt((it.x - this.pos.x) ** 2 + (it.y - this.pos.y) ** 2);

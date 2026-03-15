@@ -278,7 +278,7 @@ export class InputManager {
             speaki.visual.targetDistortion.scale = 1.05;
 
             // 好感度・機嫌上昇
-            speaki.status.friendship = Math.min(100, speaki.status.friendship + 0.2);
+            speaki.status.friendship = Math.min(50, speaki.status.friendship + 0.2);
             speaki.changeMood(0.1);
 
             // ハート生成 (一定間隔)

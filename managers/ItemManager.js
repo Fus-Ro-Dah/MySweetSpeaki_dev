@@ -54,6 +54,14 @@ export class ItemManager {
         }
 
         if (!def) return;
+        
+        // 教主像の唯一性チェック: すでに存在する場合は古い方を削除
+        if (id === 'MasterStatue') {
+            const existingStatue = game.placedItems.find(it => it.id === 'MasterStatue');
+            if (existingStatue) {
+                this.removeItem(existingStatue);
+            }
+        }
 
         // 配置処理
         const item = new Item(id, x, y, {
@@ -90,10 +98,10 @@ export class ItemManager {
 
             if (id === 'MasterStatue') {
                 // 教主像の場合：好感度に応じて確率と範囲を広げる
-                // 好感度 0以下 = 反応しない / 100 = 全域(2000px)から100%反応
+                // 好感度 0以下 = 反応しない / 50 = 全域(2000px)から100%反応
                 if (speaki.status.friendship <= 0) return;
-                reactionRange = 500 + (speaki.status.friendship * 15); 
-                reactionChance = speaki.status.friendship / 100;
+                reactionRange = 500 + (speaki.status.friendship * 30); 
+                reactionChance = speaki.status.friendship / 50;
             }
 
             if (distToItem > reactionRange) return;
@@ -196,10 +204,21 @@ export class ItemManager {
         const game = this.game;
         for (let i = game.placedItems.length - 1; i >= 0; i--) {
             if (game.placedItems[i].isHit(x, y)) {
-                game.placedItems.splice(i, 1);
-                game.sound.playSound('チョワヨ.mp3', 1.5); // 削除時のフィードバック音
+                this.removeItem(game.placedItems[i]);
                 return true;
             }
+        }
+        return false;
+    }
+
+    /** 指定アイテムを削除 */
+    removeItem(item) {
+        const game = this.game;
+        const index = game.placedItems.indexOf(item);
+        if (index !== -1) {
+            game.placedItems.splice(index, 1);
+            game.sound.playSound('チョワヨ.mp3', 1.5);
+            return true;
         }
         return false;
     }
@@ -225,7 +244,7 @@ export class ItemManager {
 
         // 好感度変化 (手動配置の初回のみ)
         if (item.isInitialGift && def && def.friendshipChange !== undefined) {
-            character.status.friendship = Math.max(-100, Math.min(100, character.status.friendship + def.friendshipChange));
+            character.status.friendship = Math.max(-50, Math.min(50, character.status.friendship + def.friendshipChange));
             item.isInitialGift = false;
         }
 
