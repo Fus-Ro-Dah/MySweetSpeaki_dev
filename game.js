@@ -315,7 +315,24 @@ export class Game {
             const centerY = this.canvas.height / 2;
             this.characters.addSpeaki(centerX - 100, centerY, 'speaki');
             this.characters.addSpeaki(centerX + 100, centerY, 'speaki');
+            this.characters.addSpeaki(centerX - 100, centerY, 'speaki');
+            this.characters.addSpeaki(centerX + 100, centerY, 'speaki');
+            this.characters.addSpeaki(centerX - 100, centerY, 'speaki');
+            this.characters.addSpeaki(centerX + 100, centerY, 'speaki');
+            this.characters.addSpeaki(centerX + 100, centerY, 'child');
+            this.characters.addSpeaki(centerX + 100, centerY, 'child');
+            this.characters.addSpeaki(centerX + 100, centerY, 'child');
+            this.characters.addSpeaki(centerX + 100, centerY, 'child');
+            this.characters.addSpeaki(centerX + 100, centerY, 'child');
+            this.characters.addSpeaki(centerX + 100, centerY, 'child');
+            this.characters.addSpeaki(centerX + 100, centerY, 'child');
             this.characters.addSpeaki(centerX, centerY + 100, 'baby');
+            this.characters.addSpeaki(centerX, centerY + 110, 'baby');
+            this.characters.addSpeaki(centerX, centerY + 120, 'baby');
+            this.characters.addSpeaki(centerX, centerY + 130, 'baby');
+            this.characters.addSpeaki(centerX, centerY + 140, 'baby');
+            this.characters.addSpeaki(centerX, centerY + 150, 'baby');
+            this.characters.addSpeaki(centerX, centerY + 160, 'baby');
 
         } catch (e) {
             alert("Error starting game: " + e.message + "\n" + e.stack);

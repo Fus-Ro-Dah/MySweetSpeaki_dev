@@ -54,7 +54,7 @@ export class ItemManager {
         }
 
         if (!def) return;
-        
+
         // 教主像の唯一性チェック: すでに存在する場合は古い方を削除
         if (id === 'MasterStatue') {
             const existingStatue = game.placedItems.find(it => it.id === 'MasterStatue');
@@ -92,7 +92,7 @@ export class ItemManager {
             if (!speaki.hasEmotion) return;
 
             const distToItem = Math.sqrt((speaki.pos.x - x) ** 2 + (speaki.pos.y - y) ** 2);
-            
+
             let reactionRange = 500;
             let reactionChance = 1.0;
 
@@ -100,7 +100,7 @@ export class ItemManager {
                 // 教主像の場合：好感度に応じて確率と範囲を広げる
                 // 好感度 0以下 = 反応しない / 50 = 全域(2000px)から100%反応
                 if (speaki.status.friendship <= 0) return;
-                reactionRange = 500 + (speaki.status.friendship * 30); 
+                reactionRange = 500 + (speaki.status.friendship * 30);
                 reactionChance = speaki.status.friendship / 50;
             }
 
@@ -155,7 +155,7 @@ export class ItemManager {
             } else if (result.action === 'transform') {
                 // 変換処理
                 this._processItemTransform(item, -1, result.transform); // 内部で配列から消すためtransform時はfalseを返す
-                return false; 
+                return false;
             }
 
             return true; // 削除・変換以外は維持
@@ -217,7 +217,6 @@ export class ItemManager {
         const index = game.placedItems.indexOf(item);
         if (index !== -1) {
             game.placedItems.splice(index, 1);
-            game.sound.playSound('チョワヨ.mp3', 1.5);
             return true;
         }
         return false;

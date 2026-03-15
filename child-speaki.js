@@ -66,15 +66,11 @@ export class ChildSpeaki extends BaseCharacter {
         if (now - this.timers.lastChildSocialAttempt < 15000) return;
         this.timers.lastChildSocialAttempt = now;
 
-        // 子どもの泣き声イベント (空腹時に確率で発生)
-        if (this.status.hunger < 30) {
-            if (Math.random() < 0.1) { // 10%の確率で泣く
-                if (this.game && this.game.social) {
-                    this.game.social.requestSocialAction(this, null, 'CRYING');
-                    this.status.emotion = 'sad';
-                    this.status.action = 'crying';
-                    this.showEmoji('😭', 5000);
-                }
+        // 一定確率（約5〜10%）で周囲の誰かと交流しようとする
+        if (Math.random() < 0.5) {
+            if (this.game && this.game.social) {
+                // アクションを指定せずにリクエスト（自動選択）
+                this.game.social.requestSocialAction(this, null);
             }
         }
     }

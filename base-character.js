@@ -239,6 +239,12 @@ export class BaseCharacter {
         this.status.mood = Math.max(-50, Math.min(50, this.status.mood + amount));
     }
 
+    /** 好感度の変動 (範囲制限付き) */
+    changeFriendship(amount) {
+        if (this.status.friendship === undefined) this.status.friendship = 0;
+        this.status.friendship = Math.max(-50, Math.min(80, this.status.friendship + amount));
+    }
+
 
     /** スタック（進行不能）の検知 */
     /* テスト用 */
@@ -296,7 +302,7 @@ export class BaseCharacter {
 
         // 交流リクエストの検討
         // 一定確率（約5〜10%）で周囲の誰かと交流しようとする
-        if (Math.random() < 0.08) {
+        if (Math.random() < 0.5) {
             if (this.game && this.game.social) {
                 // アクションを指定せずにリクエスト（自動選択）
                 this.game.social.requestSocialAction(this, null);
@@ -724,9 +730,9 @@ export class BaseCharacter {
 
         // 2. 教主像への引力 (好感度が高いスピキ・子供が対象)
         // 好感度20以上の個体が、一定確率(好感度に比例)で教主像の近くを目的地にする
-        if ((this.characterType === 'speaki' || this.characterType === 'child') && 
+        if ((this.characterType === 'speaki' || this.characterType === 'child') &&
             this.status.friendship >= 20) {
-            
+
             const statue = game.placedItems.find(it => it.id === 'MasterStatue');
             if (statue) {
                 // 機率は好感度 20(4%) 〜 50(10%) 程度

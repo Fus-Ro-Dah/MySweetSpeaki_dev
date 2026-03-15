@@ -18,7 +18,8 @@ export class SocialSystem {
             {
                 id: 'GIVE_CANDY',
                 priority: 10,
-                canTrigger: (a, b) => (b.status.hunger < 40 && a.status.hunger > 60),
+                movementType: 'TARGET_TO_ORIGIN',
+                canTrigger: (a, b) => (a.characterType !== 'baby' && b.status.hunger < 40 && a.status.hunger > 60),
                 execute: (initiator, target) => this.triggerDirectedSocialAction(initiator, target, {
                     footImage: 'assets/images/item_キャンディ.png',
                     initiatorAction: 'idle',
@@ -30,7 +31,6 @@ export class SocialSystem {
                     onComplete: (r) => {
                         r.status.hunger = Math.min(100, r.status.hunger + 30);
                         r.changeMood(10); // お菓子をもらって上機嫌
-                        initiator.changeMood(5); // お菓子をあげて自分も満足
                     }
                 })
             },
@@ -39,16 +39,13 @@ export class SocialSystem {
                 priority: 20,
                 movementType: 'TARGET_TO_ORIGIN', // 大人が赤ちゃんに歩み寄る
                 canTrigger: (a, b) => {
-                    const isCrying = a.status.action === 'crying';
-                    const isSpeaki = b.characterType === 'speaki';
-                    const isHealthy = b.status.hunger > 40;
-                    if (isCrying && (!isSpeaki || !isHealthy)) {
-                        console.log(`[Social] CRYING candidate ${b.id} rejected: isSpeaki=${isSpeaki}, hunger=${b.status.hunger}`);
-                    }
-                    return isCrying && isSpeaki && isHealthy;
+                    // a: リクエストした側, b: 相手方
+                    // 赤ちゃんから始まり、相手が健康な大人の場合のみCRYINGを成立させる
+                    const isInitiatorBaby = a.characterType === 'baby' && a.status.friendship <= -10;//好感度が低い赤ちゃん
+                    const isTargetCapable = (b.characterType === 'speaki' || b.characterType === 'child') && b.status.hunger > 30 && b.status.friendship >= 0;
+                    return isInitiatorBaby && isTargetCapable;
                 },
                 execute: (baby, adult) => {
-                    console.log(`[Social] 大人 ${adult.id} が泣いている赤ちゃん ${baby.id} を助けることに決めました`);
                     this.triggerDirectedSocialAction(baby, adult, {
                         movementType: 'TARGET_TO_ORIGIN',
                         initiatorAction: 'happy',
@@ -61,8 +58,7 @@ export class SocialSystem {
                         onComplete: () => {
                             baby.status.hunger = Math.min(100, baby.status.hunger + 20);
                             baby.status.emotion = 'happy';
-                            baby.changeMood(15); // なだめてもらって安心
-                            adult.changeMood(5); // 助けてあげて満足
+                            baby.changeFriendship(10); // なだめてもらって安心
                         }
                     });
                 }
@@ -109,8 +105,11 @@ export class SocialSystem {
                 priority: 15,
                 movementType: 'TARGET_TO_ORIGIN',
                 canTrigger: (a, b) => {
-                    // a: 泣いている/不機嫌な子, b: 助ける大人/余裕のある子
-                    return a.status.mood < -30 && b.status.mood >= 0;
+                    // a: 助けを求める（不機嫌な）側, b: 助ける側
+                    const isSadOne = a.status.mood < -30 && a.characterType === 'child';
+                    const isHelper = b.characterType === 'speaki' && b.status.mood >= 0 && b.status.friendship >= 10 && b.status.hunger > 0;
+
+                    return isSadOne && isHelper;
                 },
                 execute: (sadOne, helper) => this.triggerDirectedSocialAction(sadOne, helper, {
                     movementType: 'TARGET_TO_ORIGIN',
@@ -122,8 +121,7 @@ export class SocialSystem {
                         { origin: 'happy', target: 'happy' }
                     ],
                     onComplete: () => {
-                        sadOne.changeMood(35); // 大幅回復
-                        helper.changeMood(10);
+                        sadOne.changeMood(15);
                     }
                 })
             },
@@ -153,7 +151,7 @@ export class SocialSystem {
             },
             {
                 id: 'BABY_CARE',
-                priority: 25,
+                priority: 15,
                 movementType: 'TARGET_TO_ORIGIN',
                 canTrigger: (a, b) => {
                     // a: 赤ちゃん, b: 大人スピキ
@@ -169,8 +167,7 @@ export class SocialSystem {
                     ],
                     onComplete: () => {
                         baby.status.hunger = Math.min(100, baby.status.hunger + 15);
-                        baby.changeMood(20);
-                        adult.changeMood(5);
+                        baby.changeMood(5);
                     }
                 })
             }
@@ -201,35 +198,45 @@ export class SocialSystem {
         if (Date.now() - this.lastSocialTime < 2000) return false;
 
         const templates = this._getSocialActionTemplates();
-        let selectedTemplate = null;
+        let bestMatch = null;
 
         if (actionId) {
             // 指定されたアクションを探す
-            selectedTemplate = templates.find(t => t.id === actionId);
-            if (!selectedTemplate) return false;
-            
-            // 実行条件チェック
-            if (!selectedTemplate.canTrigger(initiator, target) && !selectedTemplate.canTrigger(target, initiator)) {
-                return false;
+            const t = templates.find(t => t.id === actionId);
+            if (!t) return false;
+
+            // 実行条件チェック（initiator から target への明確な意思として判定）
+            if (t.canTrigger(initiator, target)) {
+                bestMatch = { template: t, initiator: initiator, target: target };
+            } else {
+                return false; // 逆転での発動は許可しない（想定外の挙動を防ぐため）
             }
         } else {
-            // 【新機能】現在実行可能なアクションの中から最も優先度が高いものを選ぶ
-            const possibleTemplates = templates.filter(t => 
-                t.canTrigger(initiator, target) || t.canTrigger(target, initiator)
-            );
+            // 現在実行可能なアクションの中から最も優先度が高いものを選ぶ
+            const candidates = [];
+            for (const t of templates) {
+                // initiator（声をかけた側）から target（声をかけられた側）への判定のみ行う
+                if (t.canTrigger(initiator, target)) {
+                    candidates.push({ template: t, initiator: initiator, target: target });
+                }
+            }
 
-            if (possibleTemplates.length === 0) return false;
+            if (candidates.length === 0) return false;
 
             // 優先度(priority)が高い順にソートして、一番上を採用
-            possibleTemplates.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-            selectedTemplate = possibleTemplates[0];
+            candidates.sort((a, b) => (b.template.priority || 0) - (a.template.priority || 0));
+            bestMatch = candidates[0];
         }
 
-        // 実行
-        console.log(`[Social] Action selected: ${selectedTemplate.id} (Priority: ${selectedTemplate.priority}) from ${initiator.id} to ${target.id}`);
-        selectedTemplate.execute(initiator, target);
-        this.lastSocialTime = Date.now();
-        return true;
+        // 実行：決定した配役をそのまま渡す
+        if (bestMatch) {
+            console.log(`[Social] Action selected: ${bestMatch.template.id} (Priority: ${bestMatch.template.priority}) from Initiator:${bestMatch.initiator.id} to Target:${bestMatch.target.id}`);
+            bestMatch.template.execute(bestMatch.initiator, bestMatch.target);
+            this.lastSocialTime = Date.now();
+            return true;
+        }
+
+        return false;
     }
 
     /** キャラクターが交流状態にあるかチェック */

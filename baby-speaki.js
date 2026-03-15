@@ -23,6 +23,7 @@ export class BabySpeaki extends BaseCharacter {
         const isGrowthStopped = this.game && this.game.settings && this.game.settings.growthStopEnabled;
         if (this.status.state === STATE.IDLE && !this.interaction.isInteracting && !isGrowthStopped) {
             this.idleGrowthTime += dt;
+            this._updateSocialRequest(dt);
         }
         super.update(dt);
     }
@@ -37,13 +38,11 @@ export class BabySpeaki extends BaseCharacter {
         if (now - this.timers.lastSocialRequestAttempt < 15000) return;
         this.timers.lastSocialRequestAttempt = now;
 
-        // 赤ちゃんはヒマだとたまに泣いて大人を呼ぶ
-        if (Math.random() < 0.1) {
+        // 赤ちゃんはヒマだとたまに大人を呼ぶ
+        if (Math.random() < 1) {
             if (this.game && this.game.social) {
-                this.game.social.requestSocialAction(this, null, 'CRYING');
-                this.status.emotion = 'sad';
-                this.status.action = 'crying';
-                this.showEmoji('😭', 5000);
+                // 特定のアクションを指定せず、システムに最適なものを選択させる
+                this.game.social.requestSocialAction(this, null);
             }
         }
     }
