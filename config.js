@@ -45,10 +45,8 @@ export const ASSETS = {
         mood: {
             normal: {
                 idle: [
-                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'dance' },
-                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'dance' },
-                    /*            { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
-                               { imagefile: 'speaki_normal_idle_2.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'none' }, */
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'none' },
                 ],
                 walking: [
                     { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
@@ -103,7 +101,18 @@ export const ASSETS = {
                 generic: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }]
             },
             action: {
-
+                dance: [
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'dance' },
+                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3', text: 'ｽﾝﾊﾞｺｯﾁﾁｮﾜﾖｰ!', movePattern: 'dance' },
+                ],
+                hop: [
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'hop' },
+                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3', text: 'ｽﾝﾊﾞｺｯﾁﾁｮﾜﾖｰ!', movePattern: 'hop' },
+                ],
+                jump: [
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'jump' },
+                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3', text: 'ｽﾝﾊﾞｺｯﾁﾁｮﾜﾖｰ!', movePattern: 'jump' },
+                ]
             },
             happy: {
                 idle: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
@@ -243,7 +252,7 @@ export const ITEMS = {
         showInMenu: true,               //メニューに表示するか
         isFood: false,                  //食べ物かどうか
         friendshipChange: 10,           //友好度の変化量
-        moodGain: 15,                   //機嫌の変化量
+        moodGain: 10,                   //機嫌の変化量
         forcedEmotion: 'happy'          //反応したｽﾋﾟｷがどんな感情になるか(この感情は10秒持続する)
     },
     //教主像
@@ -256,6 +265,7 @@ export const ITEMS = {
         isFood: false,
         friendshipChange: 0,
         moodGain: 0,
+        forcedEmotion: 'happy'
     },
     //ウィンプル
     Wimple: {
@@ -277,6 +287,7 @@ export const ITEMS = {
         size: 80,
         showInMenu: false,
         isFood: false,
+        moodGain: -10,
         forcedEmotion: 'sad',
         transform: { isAdult: 'baby', duration: 10000 },
     },
@@ -290,7 +301,7 @@ export const ITEMS = {
         nutrition: 15,
         isFood: true,
         friendshipChange: 2,
-        moodGain: 10,
+        moodGain: 5,
         forcedEmotion: 'happy',
         reloadTime: 10000,     //配置してから次に配置できるようになるまでの時間
     },
@@ -303,7 +314,7 @@ export const ITEMS = {
         nutrition: 25,
         isFood: true,
         friendshipChange: 5,
-        moodGain: 20,
+        moodGain: 5,
         forcedEmotion: 'happy',
         reloadTime: 20000,
     },
@@ -316,7 +327,7 @@ export const ITEMS = {
         nutrition: 40,
         isFood: true,
         friendshipChange: 8,
-        moodGain: 30,
+        moodGain: 5,
         forcedEmotion: 'happy'
     },
     //----ランダムアイテム(プラスチックの数だけおけるやつ)----//
@@ -368,6 +379,7 @@ export const ITEMS = {
         size: 100,
         isSpecialGift: true,
         isFood: false,
+        moodGain: -10,
         forcedEmotion: 'sad',
         showInMenu: false,
     },

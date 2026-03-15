@@ -88,15 +88,15 @@ export class SocialSystem {
             },
             {
                 id: 'HAPPY_DANCE',
-                priority: 12,
+                priority: 15,
                 canTrigger: (a, b) => {
                     return a.characterType === 'speaki' && b.characterType === 'speaki' &&
-                        a.status.mood > 30 && b.status.mood > 30;
+                        a.status.mood > 20 && b.status.mood > 20;
                 },
                 execute: (a, b) => this.startInteraction(a, b, {
                     sequence: [
-                        { origin: 'performance.happy.jump', target: 'performance.happy.jump' },
-                        { origin: 'performance.happy.jump', target: 'performance.happy.jump' }
+                        { origin: 'performance.action.dance', target: 'performance.action.hop' },
+                        { origin: 'performance.action.hop', target: 'performance.action.dance' }
                     ],
                     onComplete: () => {
                         a.changeMood(5);
@@ -129,21 +129,21 @@ export class SocialSystem {
             },
             {
                 id: 'PLAY_PUMPKIN',
-                priority: 14,
+                priority: 18,
                 canTrigger: (a, b) => {
                     if (a.characterType !== 'speaki' || b.characterType !== 'speaki') return false;
                     if (a.status.mood < -20 || b.status.mood < -20) return false;
-                    
+
                     // 近くに ToyPumpkin があるか
-                    const items = this.game.items.placedItems || [];
-                    const pumpkin = items.find(it => it.id === 'ToyPumpkin' && 
-                        Math.hypot(a.pos.x - it.x, a.pos.y - it.y) < 300);
+                    const items = this.game.placedItems || [];
+                    const pumpkin = items.find(it => it.id === 'ToyPumpkin' &&
+                        Math.hypot(a.pos.x - it.x, a.pos.y - it.y) < 500);
                     return !!pumpkin;
                 },
                 execute: (a, b) => this.startInteraction(a, b, {
                     sequence: [
-                        { origin: 'performance.happy.bounce', target: 'performance.happy.bounce' },
-                        { origin: 'performance.happy.bounce', target: 'performance.happy.bounce' }
+                        { origin: 'performance.action.hop', target: 'performance.action.jump' },
+                        { origin: 'performance.action.dance', target: 'performance.action.hop' }
                     ],
                     onComplete: () => {
                         a.changeMood(10);
@@ -164,8 +164,8 @@ export class SocialSystem {
                     initiatorAction: 'happy',
                     receiverAction: 'idle',
                     sequence: [
-                        { origin: 'performance.happy.eat', target: 'performance.happy.feed' },
-                        { origin: 'performance.happy.eat', target: 'performance.happy.feed' }
+                        { origin: 'performance.action.eat', target: 'performance.action.feed' },
+                        { origin: 'performance.action.eat', target: 'performance.action.feed' }
                     ],
                     onComplete: () => {
                         baby.status.hunger = Math.min(100, baby.status.hunger + 15);
@@ -178,7 +178,7 @@ export class SocialSystem {
     }
 
     /** キャラクターからのリクエストを受け付ける（ハイブリッド型の中核） */
-    requestSocialAction(initiator, target, actionId) {
+    requestSocialAction(initiator, target, actionId = null) {
         // 1. ターゲットが指定されていない場合、近隣から探す (自律検索)
         if (!target) {
             const candidates = this.game.speakis.filter(s =>
@@ -199,18 +199,34 @@ export class SocialSystem {
         // 頻度チェック (全体系)
         if (Date.now() - this.lastSocialTime < 2000) return false;
 
-        // テンプレートからアクションを探す
-        const template = this._getSocialActionTemplates().find(t => t.id === actionId);
-        if (!template) return false;
+        const templates = this._getSocialActionTemplates();
+        let selectedTemplate = null;
 
-        // 実行条件チェック
-        if (!template.canTrigger(initiator, target) && !template.canTrigger(target, initiator)) {
-            return false;
+        if (actionId) {
+            // 指定されたアクションを探す
+            selectedTemplate = templates.find(t => t.id === actionId);
+            if (!selectedTemplate) return false;
+            
+            // 実行条件チェック
+            if (!selectedTemplate.canTrigger(initiator, target) && !selectedTemplate.canTrigger(target, initiator)) {
+                return false;
+            }
+        } else {
+            // 【新機能】現在実行可能なアクションの中から最も優先度が高いものを選ぶ
+            const possibleTemplates = templates.filter(t => 
+                t.canTrigger(initiator, target) || t.canTrigger(target, initiator)
+            );
+
+            if (possibleTemplates.length === 0) return false;
+
+            // 優先度(priority)が高い順にソートして、一番上を採用
+            possibleTemplates.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+            selectedTemplate = possibleTemplates[0];
         }
 
         // 実行
-        console.log(`[Social] Action requested: ${actionId} from ${initiator.id} to ${target.id}`);
-        template.execute(initiator, target);
+        console.log(`[Social] Action selected: ${selectedTemplate.id} (Priority: ${selectedTemplate.priority}) from ${initiator.id} to ${target.id}`);
+        selectedTemplate.execute(initiator, target);
         this.lastSocialTime = Date.now();
         return true;
     }
@@ -378,10 +394,10 @@ export class SocialSystem {
     forceHappyDance() {
         const candidates = this.game.speakis.filter(s => s.characterType === 'speaki' && !this._isInSocialState(s));
         if (candidates.length < 2) return console.error("[Social] フリーのスピキが2匹必要です");
-        
+
         candidates[0].status.mood = 50;
         candidates[1].status.mood = 50;
-        
+
         const success = this.requestSocialAction(candidates[0], candidates[1], 'HAPPY_DANCE');
         if (success) console.log("[Social] HAPPY_DANCE 開始");
     }
@@ -405,11 +421,11 @@ export class SocialSystem {
         if (candidates.length < 2) return console.error("[Social] フリーのスピキが2匹必要です");
 
         // 近くに ToyPumpkin を置く（なければ作る）
-        let pumpkin = (this.game.items.placedItems || []).find(it => it.id === 'ToyPumpkin');
+        let pumpkin = (this.game.placedItems || []).find(it => it.id === 'ToyPumpkin');
         if (!pumpkin) {
-            console.log("[Social] Pumpkinがなかったので中央に配置します");
-            this.game.items.placeItem('ToyPumpkin', 600, 400);
-            pumpkin = this.game.items.placedItems.find(it => it.id === 'ToyPumpkin');
+            console.log("[Social] ToyPumpkinがなかったので中央に配置します");
+            this.game.items.addItem('ToyPumpkin', 'toy', 600, 400);
+            pumpkin = this.game.placedItems.find(it => it.id === 'ToyPumpkin');
         }
 
         candidates[0].pos.x = pumpkin.x - 50;

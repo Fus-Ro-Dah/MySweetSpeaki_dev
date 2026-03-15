@@ -307,22 +307,12 @@ export class BaseCharacter {
         if (now - this.timers.lastSocialRequestAttempt < 10000) return;
         this.timers.lastSocialRequestAttempt = now;
 
-        // 1. おしゃべり(CHAT)リクエストの検討
-        if (Math.random() < 0.03) {
+        // 交流リクエストの検討
+        // 一定確率（約5〜10%）で周囲の誰かと交流しようとする
+        if (Math.random() < 0.08) {
             if (this.game && this.game.social) {
-                // 子ども・赤ちゃんもしくはお喋りしたいときがあればリクエストを投げる
-                // (赤ちゃん同士はSocialSystem側で弾かれる)
-                this.game.social.requestSocialAction(this, null, 'CHAT');
-            }
-        }
-
-        // 2. お菓子をあげる(GIVE_CANDY)リクエストの検討 (大人のみ)
-        // 自分自身に余裕がある（満腹度60以上）場合、誰かにお菓子を配ろうとする
-        if (this.characterType === 'speaki' && this.status.hunger >= 60) {
-            if (Math.random() < 0.1) { // 10%の確率でお菓子を配りたいモードに入る
-                if (this.game && this.game.social) {
-                    this.game.social.requestSocialAction(this, null, 'GIVE_CANDY');
-                }
+                // アクションを指定せずにリクエスト（自動選択）
+                this.game.social.requestSocialAction(this, null);
             }
         }
     }
@@ -656,7 +646,7 @@ export class BaseCharacter {
         // 画像そのものの回転や拡縮はスプライト（元の画像要素）に対して行う
         const transform = `perspective(800px) rotateX(${distortion.rotateX}deg) rotateY(${distortion.rotateY}deg) skewX(${distortion.skewX}deg) scale(${distortion.scaleX * flip}, ${distortion.scaleY})`;
         dom.sprite.style.transform = transform;
-        
+
         // 虹色効果（hue-rotate）の適用
         dom.sprite.style.filter = distortion.hueRotate ? `hue-rotate(${distortion.hueRotate}deg)` : 'none';
 
@@ -1221,7 +1211,7 @@ export class BaseCharacter {
                 this.visual.distortion.translateY = 0;
                 this.visual.distortion.scaleX = 1.0;
                 this.visual.distortion.scaleY = 1.0;
-                
+
                 // 4. 虹色に輝く（0.5秒で1周する猛スピード）
                 this.visual.distortion.hueRotate = (this.visual.motionTimer % 500) / 500 * 360;
                 break;
