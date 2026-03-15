@@ -21,6 +21,7 @@ export class SocialSystem {
                 movementType: 'TARGET_TO_ORIGIN',
                 canTrigger: (a, b) => (a.characterType !== 'baby' && b.status.hunger < 40 && a.status.hunger > 60),
                 execute: (initiator, target) => this.triggerDirectedSocialAction(initiator, target, {
+                    id: 'GIVE_CANDY',
                     footImage: 'assets/images/item_キャンディ.png',
                     initiatorAction: 'idle',
                     receiverAction: 'happy',
@@ -47,6 +48,7 @@ export class SocialSystem {
                 },
                 execute: (baby, adult) => {
                     this.triggerDirectedSocialAction(baby, adult, {
+                        id: 'CRYING',
                         movementType: 'TARGET_TO_ORIGIN',
                         initiatorAction: 'happy',
                         receiverAction: 'idle',
@@ -71,6 +73,7 @@ export class SocialSystem {
                     return dist < 400 && !(a.characterType === 'baby' && b.characterType === 'baby');
                 },
                 execute: (a, b) => this.startInteraction(a, b, {
+                    id: 'CHAT',
                     sequence: [
                         { origin: 'normal', target: 'normal' },
                         { origin: 'normal', target: 'normal' },
@@ -90,6 +93,7 @@ export class SocialSystem {
                         a.status.mood > 20 && b.status.mood > 20;
                 },
                 execute: (a, b) => this.startInteraction(a, b, {
+                    id: 'HAPPY_DANCE',
                     sequence: [
                         { origin: 'performance.action.dance', target: 'performance.action.hop' },
                         { origin: 'performance.action.hop', target: 'performance.action.dance' }
@@ -112,6 +116,7 @@ export class SocialSystem {
                     return isSadOne && isHelper;
                 },
                 execute: (sadOne, helper) => this.triggerDirectedSocialAction(sadOne, helper, {
+                    id: 'SOOTHE',
                     movementType: 'TARGET_TO_ORIGIN',
                     initiatorAction: 'happy',
                     receiverAction: 'sad',
@@ -139,6 +144,7 @@ export class SocialSystem {
                     return !!item;
                 },
                 execute: (a, b) => this.startInteraction(a, b, {
+                    id: 'PLAY_PUMPKIN',
                     sequence: [
                         { origin: 'performance.action.hop', target: 'performance.action.jump' },
                         { origin: 'performance.action.dance', target: 'performance.action.hop' }
@@ -158,6 +164,7 @@ export class SocialSystem {
                     return a.characterType === 'baby' && b.characterType === 'speaki' && b.status.hunger > 20;
                 },
                 execute: (baby, adult) => this.triggerDirectedSocialAction(baby, adult, {
+                    id: 'BABY_CARE',
                     movementType: 'TARGET_TO_ORIGIN',
                     initiatorAction: 'happy',
                     receiverAction: 'idle',

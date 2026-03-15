@@ -427,7 +427,7 @@ export class BaseCharacter {
             case STATE.GAME_REACTION:
                 // 安全策: パートナーがいない、または削除されている場合はIDLEに戻す
                 const socialPartner = this.socialConfig ? this.socialConfig.partner : null;
-                const isPartnerValid = socialPartner && socialPartner.visual && socialPartner.visual.dom && socialPartner.visual.dom.container;
+                const isPartnerValid = socialPartner && this.game && this.game.speakis.includes(socialPartner) && !socialPartner.isPendingDeletion;
                 const isPartnerInSocialState = socialPartner && [STATE.GAME_APPROACHING, STATE.GAME_REACTION].includes(socialPartner.status.state);
 
                 if (!isPartnerValid || !isPartnerInSocialState) {

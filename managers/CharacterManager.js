@@ -61,6 +61,19 @@ export class CharacterManager {
             }
 
             if (s.visual.dom.container) s.visual.dom.container.remove();
+            
+            // 交流相手の解放
+            if (s.socialConfig && s.socialConfig.partner) {
+                const partner = s.socialConfig.partner;
+                console.log(`[CharacterManager] Releasing partner ${partner.id} from social interaction due to removal of ${id}.`);
+                partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
+                partner.status.socialTurnCount = 0;
+                partner.status.isMySocialTurn = false;
+                partner.socialConfig = null;
+                partner.hideEmoji();
+                partner._onStateChanged(partner.status.state);
+            }
+
             game.speakis.splice(index, 1);
             if (game.highlightedCharId === id) game.highlightedCharId = null;
             game.ui.updateSpeakiList(true);
@@ -120,9 +133,14 @@ export class CharacterManager {
         // 交流情報の引き継ぎ (参照の渡し直し)
         if (baby.socialConfig) {
             child.socialConfig = baby.socialConfig;
-            const partner = baby.socialConfig.partner;
-            if (partner && partner.socialConfig) {
-                partner.socialConfig.partner = child; // 相方に対して新しい自分を教える
+            const partnerId = baby.socialConfig.partner ? baby.socialConfig.partner.id : null;
+            if (partnerId !== null) {
+                // 相方も進化している可能性があるため、IDで最新のオブジェクトを探し出す
+                const realPartner = game.speakis.find(s => s.id === partnerId);
+                if (realPartner && realPartner.socialConfig) {
+                    realPartner.socialConfig.partner = child; // 相方に対して新しい自分を教える
+                    child.socialConfig.partner = realPartner; // 自分も最新の相方を参照する
+                }
             }
         }
         child.interaction.socialOptions = baby.interaction.socialOptions;
@@ -166,9 +184,14 @@ export class CharacterManager {
         // 交流情報の引き継ぎ (参照の渡し直し)
         if (child.socialConfig) {
             adult.socialConfig = child.socialConfig;
-            const partner = child.socialConfig.partner;
-            if (partner && partner.socialConfig) {
-                partner.socialConfig.partner = adult; // 相方に対して新しい自分を教える
+            const partnerId = child.socialConfig.partner ? child.socialConfig.partner.id : null;
+            if (partnerId !== null) {
+                // 相方も進化している可能性があるため、IDで最新のオブジェクトを探し出す
+                const realPartner = game.speakis.find(s => s.id === partnerId);
+                if (realPartner && realPartner.socialConfig) {
+                    realPartner.socialConfig.partner = adult; // 相方に対して新しい自分を教える
+                    adult.socialConfig.partner = realPartner; // 自分も最新の相方を参照する
+                }
             }
         }
         adult.interaction.socialOptions = child.interaction.socialOptions;
