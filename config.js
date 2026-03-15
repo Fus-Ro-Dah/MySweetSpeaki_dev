@@ -45,8 +45,8 @@ export const ASSETS = {
         mood: {
             normal: {
                 idle: [
-                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'hop' },
-                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'hop' },
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'dance' },
+                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'dance' },
                     /*            { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
                                { imagefile: 'speaki_normal_idle_2.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'none' }, */
                 ],
@@ -245,6 +245,17 @@ export const ITEMS = {
         friendshipChange: 10,           //友好度の変化量
         moodGain: 15,                   //機嫌の変化量
         forcedEmotion: 'happy'          //反応したｽﾋﾟｷがどんな感情になるか(この感情は10秒持続する)
+    },
+    //教主像
+    MasterStatue: {
+        name: '教主像',
+        imagefile: 'item_master.png',
+        text: '',
+        size: 180,
+        showInMenu: true,
+        isFood: false,
+        friendshipChange: 0,
+        moodGain: 0,
     },
     //ウィンプル
     Wimple: {

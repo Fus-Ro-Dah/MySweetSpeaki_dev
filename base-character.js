@@ -53,8 +53,8 @@ export class BaseCharacter {
         // 3. 表示とアニメーション
         this.visual = {
             dom: {},
-            distortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0 },
-            targetDistortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0 },
+            distortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0, hueRotate: 0 },
+            targetDistortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0, hueRotate: 0 },
             motionType: 'none',
             motionTimer: 0,
             currentAssetKey: '',
@@ -644,16 +644,21 @@ export class BaseCharacter {
         dom.container.style.height = `${this.status.size}px`;
 
         const bob = Math.sin(Date.now() / 200 + this.id * 100) * (this.status.size / 30);
-        const screenX = this.pos.x - this.status.size / 2;
-        //const screenY = this.pos.y - this.status.size / 2;
-        const screenY = this.pos.y - this.status.size / 2 + bob;
+        const distortion = this.visual.distortion;
+
+        // 移動（スライド）はコンテナ（要素全体）で行うことで、回転軸のブレを完全に防ぐ
+        const screenX = this.pos.x - this.status.size / 2 + distortion.translateX;
+        const screenY = this.pos.y - this.status.size / 2 + bob + distortion.translateY;
 
         dom.container.style.transform = `translate(${screenX}px, ${screenY}px)`;
 
         const flip = this.pos.facingLeft ? 1 : -1;
-        // scaleX に flip (左右反転) を掛け合わせる
-        const transform = `perspective(800px) rotateX(${this.visual.distortion.rotateX}deg) rotateY(${this.visual.distortion.rotateY}deg) skewX(${this.visual.distortion.skewX}deg) scale(${this.visual.distortion.scaleX * flip}, ${this.visual.distortion.scaleY}) translate(${this.visual.distortion.translateX}px, ${this.visual.distortion.translateY}px)`;
+        // 画像そのものの回転や拡縮はスプライト（元の画像要素）に対して行う
+        const transform = `perspective(800px) rotateX(${distortion.rotateX}deg) rotateY(${distortion.rotateY}deg) skewX(${distortion.skewX}deg) scale(${distortion.scaleX * flip}, ${distortion.scaleY})`;
         dom.sprite.style.transform = transform;
+        
+        // 虹色効果（hue-rotate）の適用
+        dom.sprite.style.filter = distortion.hueRotate ? `hue-rotate(${distortion.hueRotate}deg)` : 'none';
 
         // セリフ表示
         let displayText = (this.visual.currentAsset && this.visual.currentAsset.text) || '';
@@ -1195,6 +1200,31 @@ export class BaseCharacter {
                 this.visual.distortion.scaleX = 1.0 + Math.abs(swing) * 0.1;
                 this.visual.distortion.scaleY = 1.0 + Math.abs(swing) * 0.25;
                 break;
+            case 'dance':
+                const dncCycle = 2000; // 2秒周期
+
+                // 1サイクル（2秒）で終了してswingに移行
+                if (this.visual.motionTimer >= dncCycle) {
+                    this.visual.motionType = 'swing';
+                    return;
+                }
+
+                const dncT = (this.visual.motionTimer % dncCycle) / dncCycle;
+
+                // 1. 大きく左右に動く (translateX)
+                this.visual.distortion.translateX = Math.sin(dncT * Math.PI * 2) * 100;
+
+                // 2. 左右に回転（スピン）
+                this.visual.distortion.rotateY = dncT * 360 * 4; // 1サイクルで4回転
+
+                // 3. スケールと上下移動は固定（上下移動なし）
+                this.visual.distortion.translateY = 0;
+                this.visual.distortion.scaleX = 1.0;
+                this.visual.distortion.scaleY = 1.0;
+                
+                // 4. 虹色に輝く（0.5秒で1周する猛スピード）
+                this.visual.distortion.hueRotate = (this.visual.motionTimer % 500) / 500 * 360;
+                break;
             case 'hop':
                 const dCycle = 600; // 0.6秒周期 (速め)
 
@@ -1286,6 +1316,7 @@ export class BaseCharacter {
                 this.visual.distortion.rotateY *= 0.85;
                 this.visual.distortion.translateX *= 0.85;
                 this.visual.distortion.translateY *= 0.85;
+                this.visual.distortion.hueRotate = 0; // 虹色をリセット
                 this.visual.distortion.scaleX += (1.0 - this.visual.distortion.scaleX) * 0.15;
                 this.visual.distortion.scaleY += (1.0 - this.visual.distortion.scaleY) * 0.15;
                 break;
