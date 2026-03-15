@@ -411,7 +411,11 @@ export class UIManager {
         if (game.isPausedForDebug) return;
         game.isPausedForDebug = true;
 
-        console.error(`[STUCK DETECTED] Char: ${char.id}, Name: ${char.name}, Reason: ${reason}`);
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ` +
+            `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}.${String(now.getMilliseconds()).padStart(3, '0')}`;
+
+        console.error(`[STUCK DETECTED] ${timestamp}\nChar: ${char.id}, Name: ${char.name}, Reason: ${reason}`);
 
         let overlay = document.getElementById('debug-stuck-overlay');
         if (!overlay) {
@@ -421,24 +425,59 @@ export class UIManager {
             document.body.appendChild(overlay);
         }
 
-        const partner = char.socialConfig && char.socialConfig.partner ? char.socialConfig.partner : null;
-        const partnerInfo = partner ? `相手ID: ${partner.id}, 状態: ${partner.status.state}, ターン: ${partner.status.isMySocialTurn ? '自分' : '相手'}` : 'なし';
+        // --- 交流情報の詳細解析 ---
+        const config = char.socialConfig;
+        const partner = config && config.partner ? config.partner : null;
+        const options = (config && config.options) || (char.interaction && char.interaction.socialOptions);
+        const actionId = options ? options.id : '不明';
+        const sequence = options ? options.sequence : [];
+        
+        let partnerInfo = 'なし';
+        if (partner) {
+            const isPartnerAlive = game.speakis.includes(partner);
+            partnerInfo = `ID: ${partner.id} (${partner.characterType}), ` +
+                `状態: ${partner.status.state}, ` +
+                `ターン: ${partner.status.isMySocialTurn ? '自分' : '相手'}, ` +
+                `生存: ${isPartnerAlive ? 'YES' : 'NO(ゴースト)'}`;
+        }
+
+        const socialDetail = `演目: ${actionId}, Turn: ${char.status.socialTurnCount} / Max: ${sequence ? sequence.length : '?'}, ` +
+            `MyTurnFlag: ${char.status.isMySocialTurn}`;
+
+        // --- 統計情報の収集 ---
+        const stats = { adult: 0, child: 0, baby: 0, npc: 0 };
+        let fullList = "";
+        game.speakis.forEach(s => {
+            if (s.characterType === 'baby') stats.baby++;
+            else if (s.characterType === 'child') stats.child++;
+            else if (['posher', 'ashur', 'npc'].some(t => s.characterType.startsWith(t))) stats.npc++;
+            else stats.adult++;
+
+            fullList += `#${s.id}: ${s.characterType.padEnd(6)} | ${s.status.state.padEnd(15)} | ${s.name}\n`;
+        });
+        const statsStr = `大人:${stats.adult}, 子供:${stats.child}, 赤子:${stats.baby}, NPC:${stats.npc}`;
 
         overlay.innerHTML = `
             <div class="stuck-debug-content">
-                <h1>⚠️ スタック検知 ⚠️</h1>
-                <p>この情報を開発者に伝えてください（ここに貼り付け）：</p>
+                <h1>⚠️ スタック検知 (捜査資料) ⚠️</h1>
+                <p>発生時刻: ${timestamp}</p>
                 <div class="debug-code-box">
-個体ID: ${char.id} (${char.name})
-種別: ${char.characterType}
-状態: ${char.status.state}
+■対象個体
+ID: ${char.id} (${char.name}) [${char.characterType}]
+状態: ${char.status.state} (履歴: [${char.status.stateStack.join(', ')}])
 理由: ${reason}
-座標: [${char.pos.x.toFixed(1)}, ${char.pos.y.toFixed(1)}]
-目標: [${char.pos.targetX.toFixed(1)}, ${char.pos.targetY.toFixed(1)}]
-速度: ${char.pos.speed.toFixed(3)} (移動指示フラグ: ${char.pos.destinationSet})
-交流相手: ${partnerInfo}
-状態履歴: [${char.status.stateStack.join(', ')}]
-ステータス: 好感度:${char.status.friendship.toFixed(1)}, 空腹:${char.status.hunger.toFixed(1)}, 機嫌:${char.status.mood.toFixed(1)}
+座標: [${char.pos.x.toFixed(1)}, ${char.pos.y.toFixed(1)}] -> 目標: [${char.pos.targetX.toFixed(1)}, ${char.pos.targetY.toFixed(1)}]
+速度: ${char.pos.speed.toFixed(3)} (移動指示: ${char.pos.destinationSet})
+
+■交流状況
+${socialDetail}
+相手: ${partnerInfo}
+
+■場全体の状況 (${statsStr})
+${fullList}
+
+■ステータス
+好感度:${char.status.friendship.toFixed(1)}, 空腹:${char.status.hunger.toFixed(1)}, 機嫌:${char.status.mood.toFixed(1)}
                 </div>
                 <button class="resume-btn" onclick="window.game.forceResume()">強制復帰して再開</button>
             </div>

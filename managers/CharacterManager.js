@@ -113,6 +113,19 @@ export class CharacterManager {
         child.status.friendship = baby.status.friendship;
         child.status.hunger = baby.status.hunger;
         child.status.state = baby.status.state;
+        child.status.stateStack = baby.status.stateStack || [];
+        child.status.socialTurnCount = baby.status.socialTurnCount || 0;
+        child.status.isMySocialTurn = baby.status.isMySocialTurn || false;
+
+        // 交流情報の引き継ぎ (参照の渡し直し)
+        if (baby.socialConfig) {
+            child.socialConfig = baby.socialConfig;
+            const partner = baby.socialConfig.partner;
+            if (partner && partner.socialConfig) {
+                partner.socialConfig.partner = child; // 相方に対して新しい自分を教える
+            }
+        }
+        child.interaction.socialOptions = baby.interaction.socialOptions;
 
         if (game.giftPartner === baby) {
             game.giftPartner = child;
@@ -146,6 +159,19 @@ export class CharacterManager {
         adult.status.friendship = child.status.friendship;
         adult.status.hunger = child.status.hunger;
         adult.status.state = child.status.state;
+        adult.status.stateStack = child.status.stateStack || [];
+        adult.status.socialTurnCount = child.status.socialTurnCount || 0;
+        adult.status.isMySocialTurn = child.status.isMySocialTurn || false;
+
+        // 交流情報の引き継ぎ (参照の渡し直し)
+        if (child.socialConfig) {
+            adult.socialConfig = child.socialConfig;
+            const partner = child.socialConfig.partner;
+            if (partner && partner.socialConfig) {
+                partner.socialConfig.partner = adult; // 相方に対して新しい自分を教える
+            }
+        }
+        adult.interaction.socialOptions = child.interaction.socialOptions;
 
         if (game.giftPartner === child) {
             game.giftPartner = adult;
