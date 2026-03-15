@@ -440,7 +440,18 @@ export class BaseCharacter {
                 }
 
                 if (this.status.state === STATE.GAME_APPROACHING) {
-                    if (arrived) {
+                    // 【リカバリ】目的地フラグが折れているがパートナーが近くにいる場合、強引に到着させる
+                    // （交流開始時の外部通知によるフラグ消失対策）
+                    let forceArrived = false;
+                    if (!this.pos.destinationSet && socialPartner) {
+                        const d = Math.sqrt((this.pos.x - socialPartner.pos.x) ** 2 + (this.pos.y - socialPartner.pos.y) ** 2);
+                        if (d < 200) {
+                            console.log(`[BaseCharacter] Recovering stuck for ${this.id}: partner nearby, forcing arrival.`);
+                            forceArrived = true;
+                        }
+                    }
+
+                    if (arrived || forceArrived) {
                         this.status.state = STATE.GAME_REACTION;
                         this.timers.actionStart = Date.now();
                         // 駆け寄った側が到着したタイミングで、テンプレートのオプションを適用する
