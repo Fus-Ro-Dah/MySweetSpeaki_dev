@@ -18,10 +18,10 @@ export class BabySpeaki extends BaseCharacter {
 
     /** フレーム更新: IDLE時のみ成長タイマーを進める */
     update(dt) {
-        // IDLE状態、かつユーザーと直接触れ合っていない（なでられていない）間だけ成長
+        // ユーザーと直接触れ合っていない（なでられていない）間だけ成長（ステートに関わらずタイマーは進める）
         // 成長停止設定がONの場合はカウントを進めない
         const isGrowthStopped = this.game && this.game.settings && this.game.settings.growthStopEnabled;
-        if (this.status.state === STATE.IDLE && !this.interaction.isInteracting && !isGrowthStopped) {
+        if (!this.interaction.isInteracting && !isGrowthStopped) {
             this.idleGrowthTime += dt;
             this._updateSocialRequest(dt);
         }
@@ -50,7 +50,8 @@ export class BabySpeaki extends BaseCharacter {
     /** 状態遷移の制限と自動進化、喋りループ */
     _updateStateTransition() {
         // 1. 進化チェック (累積IDLE時間が60秒経過で子供へ)
-        if (this.idleGrowthTime > 60000) {
+        // 進化は安全なステート（IDLE）の時のみ認める
+        if (this.status.state === STATE.IDLE && this.idleGrowthTime > 60000) {
             if (this.game && this.game.evolveBabyToChild) {
                 this.game.evolveBabyToChild(this);
                 return;
