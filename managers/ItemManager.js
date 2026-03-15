@@ -88,8 +88,8 @@ export class ItemManager {
             let reactionRange = 500;
             let reactionChance = 1.0;
 
-            if (id === 'ToyPumpkin') {
-                // かぼちゃ（教主像）の場合：好感度に応じて確率と範囲を広げる
+            if (id === 'MasterStatue') {
+                // 教主像の場合：好感度に応じて確率と範囲を広げる
                 // 好感度 0以下 = 反応しない / 100 = 全域(2000px)から100%反応
                 if (speaki.status.friendship <= 0) return;
                 reactionRange = 500 + (speaki.status.friendship * 15); 
@@ -104,6 +104,8 @@ export class ItemManager {
             if (speaki.status.hunger >= 90 && def.isFood) return;
 
             const nonInterruptibleStates = [
+                STATE.GIFT_SEARCHING,
+                STATE.GIFT_LEAVING,
                 STATE.GIFT_RETURNING,
                 STATE.GIFT_WAIT_FOR_USER_REACTION,
                 STATE.GIFT_REACTION,

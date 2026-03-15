@@ -134,11 +134,11 @@ export class SocialSystem {
                     if (a.characterType !== 'speaki' || b.characterType !== 'speaki') return false;
                     if (a.status.mood < -20 || b.status.mood < -20) return false;
 
-                    // 近くに ToyPumpkin があるか
+                    // 近くに ToyPumpkin または MasterStatue があるか
                     const items = this.game.placedItems || [];
-                    const pumpkin = items.find(it => it.id === 'ToyPumpkin' &&
+                    const item = items.find(it => (it.id === 'ToyPumpkin' || it.id === 'MasterStatue') &&
                         Math.hypot(a.pos.x - it.x, a.pos.y - it.y) < 500);
-                    return !!pumpkin;
+                    return !!item;
                 },
                 execute: (a, b) => this.startInteraction(a, b, {
                     sequence: [
@@ -186,6 +186,7 @@ export class SocialSystem {
                 s.canInteract &&
                 !this._isInSocialState(s) &&
                 !s.interaction.isInteracting &&
+                ![STATE.GIFT_LEAVING, STATE.GIFT_SEARCHING, STATE.GIFT_RETURNING].includes(s.status.state) &&
                 Math.sqrt((initiator.pos.x - s.pos.x) ** 2 + (initiator.pos.y - s.pos.y) ** 2) < 800 // 範囲を少し広げる
             );
             if (candidates.length === 0) return false;
