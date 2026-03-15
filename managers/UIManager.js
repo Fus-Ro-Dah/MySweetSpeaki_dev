@@ -431,10 +431,14 @@ export class UIManager {
                 <div class="debug-code-box">
 個体ID: ${char.id} (${char.name})
 種別: ${char.characterType}
-現在の状態: ${char.status.state}
-スタック理由: ${reason}
+状態: ${char.status.state}
+理由: ${reason}
+座標: [${char.pos.x.toFixed(1)}, ${char.pos.y.toFixed(1)}]
+目標: [${char.pos.targetX.toFixed(1)}, ${char.pos.targetY.toFixed(1)}]
+速度: ${char.pos.speed.toFixed(3)} (移動指示フラグ: ${char.pos.destinationSet})
 交流相手: ${partnerInfo}
 状態履歴: [${char.status.stateStack.join(', ')}]
+ステータス: 好感度:${char.status.friendship.toFixed(1)}, 空腹:${char.status.hunger.toFixed(1)}, 機嫌:${char.status.mood.toFixed(1)}
                 </div>
                 <button class="resume-btn" onclick="window.game.forceResume()">強制復帰して再開</button>
             </div>

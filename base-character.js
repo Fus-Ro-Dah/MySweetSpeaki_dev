@@ -27,7 +27,7 @@ export class BaseCharacter {
             targetX: x,
             targetY: y,
             angle: 0,
-            speed: options.speed || (1.5 + Math.random() * 2.5),
+            speed: options.speed !== undefined ? options.speed : (1.5 + Math.random() * 2.5),
             facingLeft: true,
             destinationSet: false
         };
@@ -261,8 +261,10 @@ export class BaseCharacter {
                 this.timers.lastY = this.pos.y;
             } else {
                 const stuckDuration = now - this.timers.lastMoveTime;
-                if (stuckDuration > 15000) { // 15秒動かなかったら移動スタック
-                    this.game.reportStuck(this, `移動スタック: 目的地が設定されていますが、${Math.round(stuckDuration / 1000)}秒間移動がありません`);
+                if (stuckDuration > 60000) { // 60秒動かなかったら移動スタック
+                    const dist = this.pos.destinationSet ? Math.sqrt(Math.pow(this.pos.targetX - this.pos.x, 2) + Math.pow(this.pos.targetY - this.pos.y, 2)) : -1;
+                    const details = `(現在:[${this.pos.x.toFixed(1)},${this.pos.y.toFixed(1)}], 目標:[${this.pos.targetX.toFixed(1)},${this.pos.targetY.toFixed(1)}], 距離:${dist.toFixed(1)}, 速度:${this.pos.speed.toFixed(2)})`;
+                    this.game.reportStuck(this, `移動スタック: 目的地が設定されていますが、${Math.round(stuckDuration / 1000)}秒間移動がありません ${details}`);
                 }
             }
         } else {
@@ -277,15 +279,19 @@ export class BaseCharacter {
 
         // 交流関連 (非常に長い)
         if ([STATE.GAME_APPROACHING, STATE.GAME_REACTION].includes(this.status.state)) {
-            if (stateDuration > 40000) {
+            if (stateDuration > 60000) {
                 const partnerId = this.socialConfig && this.socialConfig.partner ? this.socialConfig.partner.id : '不明';
-                this.game.reportStuck(this, `交流スタック: 状態「${this.status.state}」が${Math.round(stateDuration / 1000)}秒継続中 (相手ID: ${partnerId})`);
+                const dist = this.pos.destinationSet ? Math.sqrt(Math.pow(this.pos.targetX - this.pos.x, 2) + Math.pow(this.pos.targetY - this.pos.y, 2)) : -1;
+                const details = `(現在:[${this.pos.x.toFixed(1)},${this.pos.y.toFixed(1)}], 目標:[${this.pos.targetX.toFixed(1)},${this.pos.targetY.toFixed(1)}], 距離:${dist.toFixed(1)}, 速度:${this.pos.speed.toFixed(2)}, isTurn:${this.status.isMySocialTurn})`;
+                this.game.reportStuck(this, `交流スタック: 状態「${this.status.state}」が${Math.round(stateDuration / 1000)}秒継続中 (相手ID: ${partnerId}) ${details}`);
             }
         }
 
         // アイテム接近
-        if (this.status.state === STATE.ITEM_APPROACHING && stateDuration > 40000) {
-            this.game.reportStuck(this, `アイテムスタック: アイテムへの接近状態が${Math.round(stateDuration / 1000)}秒継続中`);
+        if (this.status.state === STATE.ITEM_APPROACHING && stateDuration > 60000) {
+            const dist = this.pos.destinationSet ? Math.sqrt(Math.pow(this.pos.targetX - this.pos.x, 2) + Math.pow(this.pos.targetY - this.pos.y, 2)) : -1;
+            const details = `(現在:[${this.pos.x.toFixed(1)},${this.pos.y.toFixed(1)}], 目標:[${this.pos.targetX.toFixed(1)},${this.pos.targetY.toFixed(1)}], 距離:${dist.toFixed(1)})`;
+            this.game.reportStuck(this, `アイテムスタック: アイテムへの接近状態が${Math.round(stateDuration / 1000)}秒継続中 ${details}`);
         }
     }
 
@@ -796,7 +802,7 @@ export class BaseCharacter {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist <= 5) {
-            this._handleArrival();
+            // 移動を停止するのみ。到着後の状態遷移（_handleArrival含む）は _updateStateTransition が行う。
             return;
         }
 
