@@ -31,7 +31,6 @@ export class Game {
         this.maxHappiness = 5000;
         this.isGameCleared = false;
         this.isGameStarted = false;
-        this.isPausedForDebug = false;
         this.itemCooldowns = {};
         this.lastTime = performance.now();
 
@@ -172,15 +171,6 @@ export class Game {
         }
     }
 
-    /** スタック報告の委譲 */
-    reportStuck(char, reason) {
-        this.ui.reportStuck(char, reason);
-    }
-
-    /** 強制復帰の委譲 */
-    forceResume() {
-        this.ui.forceResume();
-    }
 
     /** バイトメニューUI更新の委譲 */
     updateJobMenuUI() {
@@ -358,10 +348,8 @@ export class Game {
 
         const clampedDt = Math.min(dt, 100);
 
-        if (!this.isPausedForDebug) {
-            this.update(clampedDt);
-            this.draw();
-        }
+        this.update(clampedDt);
+        this.draw();
         requestAnimationFrame((t) => this.loop(t));
     }
 

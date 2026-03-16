@@ -247,10 +247,11 @@ export class BaseCharacter {
 
 
     /** スタック（進行不能）の検知 */
-    /* テスト用 */
+    /* スタック（進行不能）の検知と自動復旧 */
     _checkStuck(dt) {
         const now = Date.now();
         const movementStates = [STATE.WALKING, STATE.ITEM_APPROACHING, STATE.GAME_APPROACHING, STATE.GIFT_LEAVING, STATE.GIFT_RETURNING];
+        const STUCK_THRESHOLD = 40000; // 40秒で自動復帰
 
         // 1. 移動スタックの検知
         if (movementStates.includes(this.status.state) && this.pos.destinationSet) {
@@ -261,14 +262,11 @@ export class BaseCharacter {
                 this.timers.lastY = this.pos.y;
             } else {
                 const stuckDuration = now - this.timers.lastMoveTime;
-                if (stuckDuration > 60000) { // 60秒動かなかったら移動スタック
-                    const dist = this.pos.destinationSet ? Math.sqrt(Math.pow(this.pos.targetX - this.pos.x, 2) + Math.pow(this.pos.targetY - this.pos.y, 2)) : -1;
-                    const details = `(現在:[${this.pos.x.toFixed(1)},${this.pos.y.toFixed(1)}], 目標:[${this.pos.targetX.toFixed(1)},${this.pos.targetY.toFixed(1)}], 距離:${dist.toFixed(1)}, 速度:${this.pos.speed.toFixed(2)})`;
-                    this.game.reportStuck(this, `移動スタック: 目的地が設定されていますが、${Math.round(stuckDuration / 1000)}秒間移動がありません ${details}`);
+                if (stuckDuration > STUCK_THRESHOLD) {
+                    this._attemptAutoRecovery(`移動スタック (${Math.round(stuckDuration / 1000)}秒間移動なし)`);
                 }
             }
         } else {
-            // 移動中でないときはタイマーをリセット
             this.timers.lastMoveTime = now;
             this.timers.lastX = this.pos.x;
             this.timers.lastY = this.pos.y;
@@ -276,23 +274,43 @@ export class BaseCharacter {
 
         // 2. 状態タイムアウトの検知
         const stateDuration = now - this.timers.stateStart;
-
-        // 交流関連 (非常に長い)
-        if ([STATE.GAME_APPROACHING, STATE.GAME_REACTION].includes(this.status.state)) {
-            if (stateDuration > 60000) {
-                const partnerId = this.socialConfig && this.socialConfig.partner ? this.socialConfig.partner.id : '不明';
-                const dist = this.pos.destinationSet ? Math.sqrt(Math.pow(this.pos.targetX - this.pos.x, 2) + Math.pow(this.pos.targetY - this.pos.y, 2)) : -1;
-                const details = `(現在:[${this.pos.x.toFixed(1)},${this.pos.y.toFixed(1)}], 目標:[${this.pos.targetX.toFixed(1)},${this.pos.targetY.toFixed(1)}], 距離:${dist.toFixed(1)}, 速度:${this.pos.speed.toFixed(2)}, isTurn:${this.status.isMySocialTurn})`;
-                this.game.reportStuck(this, `交流スタック: 状態「${this.status.state}」が${Math.round(stateDuration / 1000)}秒継続中 (相手ID: ${partnerId}) ${details}`);
+        if ([STATE.GAME_APPROACHING, STATE.GAME_REACTION, STATE.ITEM_APPROACHING].includes(this.status.state)) {
+            if (stateDuration > STUCK_THRESHOLD) {
+                this._attemptAutoRecovery(`状態スタック (${this.status.state} が ${Math.round(stateDuration / 1000)}秒継続)`);
             }
         }
+    }
 
-        // アイテム接近
-        if (this.status.state === STATE.ITEM_APPROACHING && stateDuration > 60000) {
-            const dist = this.pos.destinationSet ? Math.sqrt(Math.pow(this.pos.targetX - this.pos.x, 2) + Math.pow(this.pos.targetY - this.pos.y, 2)) : -1;
-            const details = `(現在:[${this.pos.x.toFixed(1)},${this.pos.y.toFixed(1)}], 目標:[${this.pos.targetX.toFixed(1)},${this.pos.targetY.toFixed(1)}], 距離:${dist.toFixed(1)})`;
-            this.game.reportStuck(this, `アイテムスタック: アイテムへの接近状態が${Math.round(stateDuration / 1000)}秒継続中 ${details}`);
+    /** 進行不能状態からの自動復旧 */
+    _attemptAutoRecovery(reason) {
+        console.warn(`[AutoRecovery] ${this.name} (ID:${this.id}) を自動復旧します。理由: ${reason}`);
+
+        // 交流相手がいる場合は相手も解放する
+        if (this.socialConfig && this.socialConfig.partner) {
+            const partner = this.socialConfig.partner;
+            console.log(`[AutoRecovery] 相方 ${partner.name} (ID:${partner.id}) も解放します。`);
+            partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
+            partner.status.socialTurnCount = 0;
+            partner.status.isMySocialTurn = false;
+            partner.socialConfig = null;
+            partner.hideEmoji();
+            partner._onStateChanged(partner.status.state);
         }
+
+        // 自身の状態をリセット
+        this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
+        this.status.stateStack = [];
+        this.status.socialTurnCount = 0;
+        this.status.isMySocialTurn = false;
+        this.socialConfig = null;
+        this.interaction.targetItem = null;
+        this.pos.destinationSet = false;
+        
+        // ログ出力をトリガーにするため、タイマーをリセットして連続発火を防ぐ
+        this.timers.stateStart = Date.now();
+        this.timers.lastMoveTime = Date.now();
+
+        this._onStateChanged(this.status.state);
     }
 
     /** 自律的な交流リクエストの更新 */
