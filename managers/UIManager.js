@@ -1,4 +1,4 @@
-import { STATE, ITEMS, JOBS } from '../config.js';
+import { STATE, ITEMS, JOBS, UNLOCK_DATA } from '../config.js';
 
 /**
  * UI管理クラス
@@ -25,7 +25,10 @@ export class UIManager {
         if (itemList) {
             Object.keys(ITEMS).forEach(id => {
                 const def = ITEMS[id];
-                if (def.showInMenu === false) return;
+                // メニュー表示フラグのチェック
+                // 特殊アイテムの場合は解放済みかどうかもチェックする
+                const isUnlocked = def.isLockedItem ? (game.unlocks.itemUnlocks[id] === true) : true;
+                if (def.showInMenu === false && !isUnlocked) return;
 
                 const div = this._createDraggableMenuItem(id, def, 'item');
                 itemList.appendChild(div);
@@ -313,42 +316,56 @@ export class UIManager {
         const list = document.getElementById('unlock-list');
         if (!list) return;
 
-        const hungerDecayPrice = 1;
+        const hungerDecayPrice = UNLOCK_DATA.hungerDecay.price;
         const currentHungerSec = 2 + game.unlocks.hungerDecayLv;
         const nextHungerSec = currentHungerSec + 1;
 
         const unlockDefs = [
-            { id: 'feeder', name: 'ごはん係 (給餌係)', price: 1, desc: '満腹度30以下のｽﾋﾟｷにごはんをあげる係を呼びます', current: game.unlocks.feeder },
-            { id: 'autoReceive', name: 'プレゼント自動回収', price: 1, desc: 'スピキが持ってきたプレゼントを自動で受け取ります', current: game.unlocks.autoReceive },
-            { id: 'growthStop', name: 'ｽﾋﾟｷの成長停止', price: 1, desc: 'スピキが成長しなくなります。赤ちゃんは赤ちゃんのまま、子供は子供のままの姿を維持します', current: game.unlocks.growthStop },
-            { id: 'unlockMocaron', name: 'モカロン解放', price: 1, desc: 'より栄養価の高い食べ物「モカロン」が置けるようになります', current: game.unlocks.mocaronUnlocked }
+            { id: 'feeder', ...UNLOCK_DATA.feeder, current: game.unlocks.feeder },
+            { id: 'autoReceive', ...UNLOCK_DATA.autoReceive, current: game.unlocks.autoReceive },
+            { id: 'growthStop', ...UNLOCK_DATA.growthStop, current: game.unlocks.growthStop }
         ];
+
+        // 特殊アイテムの個別解放
+        Object.keys(ITEMS).forEach(itemId => {
+            const def = ITEMS[itemId];
+            if (def.isLockedItem) {
+                const isUnlocked = game.unlocks.itemUnlocks[itemId] === true;
+                unlockDefs.push({
+                    id: `item_${itemId}`,
+                    name: `${def.name}の解放`,
+                    price: def.unlockPrice || 3,
+                    desc: def.unlockDesc || `「${def.name}」をメニューからいつでも配置できるようになります。プラスチックを消費しません。`,
+                    current: isUnlocked
+                });
+            }
+        });
 
         // チャレンジモードのみ表示する項目
         if (game.gameMode !== 'relaxed') {
             unlockDefs.splice(1, 0,
                 {
                     id: 'hungerDecay',
-                    name: `空腹度減少の緩和 (Lv.${game.unlocks.hungerDecayLv})`,
+                    name: `${UNLOCK_DATA.hungerDecay.name} (Lv.${game.unlocks.hungerDecayLv})`,
                     price: hungerDecayPrice,
-                    desc: `減少速度を遅くします。現在: ${currentHungerSec}秒に1 → 次: ${nextHungerSec}秒に1`,
+                    desc: `${UNLOCK_DATA.hungerDecay.desc}現在: ${currentHungerSec}秒に1 → 次: ${nextHungerSec}秒に1`,
                     current: false,
                     isUpgrade: true
                 },
                 {
                     id: 'affectionDecay',
-                    name: `好感度減少の緩和 (Lv.${game.unlocks.affectionDecayLv})`,
-                    price: 1,
-                    desc: `減少速度を遅くします。現在: ${2 + game.unlocks.affectionDecayLv}秒に1 → 次: ${3 + game.unlocks.affectionDecayLv}秒に1`,
+                    name: `${UNLOCK_DATA.affectionDecay.name} (Lv.${game.unlocks.affectionDecayLv})`,
+                    price: UNLOCK_DATA.affectionDecay.price,
+                    desc: `${UNLOCK_DATA.affectionDecay.desc}現在: ${2 + game.unlocks.affectionDecayLv}秒に1 → 次: ${3 + game.unlocks.affectionDecayLv}秒に1`,
                     current: false,
                     isUpgrade: true
                 }
             );
             unlockDefs.push({
                 id: 'cooldownReduction',
-                name: `リロード時間短縮 (Lv.${game.unlocks.reloadReductionLv})`,
-                price: 1,
-                desc: `ごはん系アイテム配置のリロード時間が1秒短縮されます。現在: -${game.unlocks.reloadReductionLv}秒 → 次: -${game.unlocks.reloadReductionLv + 1}秒`,
+                name: `${UNLOCK_DATA.cooldownReduction.name} (Lv.${game.unlocks.reloadReductionLv})`,
+                price: UNLOCK_DATA.cooldownReduction.price,
+                desc: `${UNLOCK_DATA.cooldownReduction.desc}現在: -${game.unlocks.reloadReductionLv}秒 → 次: -${game.unlocks.reloadReductionLv + 1}秒`,
                 current: false,
                 isUpgrade: true
             });
@@ -397,7 +414,7 @@ export class UIManager {
 
             div.innerHTML = `
                 <h4>${def.name}</h4>
-                <p>${def.desc}</p>
+                <p>${(def.desc || '').replace(/\n/g, '<br>')}</p>
                 <div class="price">${def.current ? '解放済み' : `消費: ${def.price} 個`}</div>
                 ${buttonHTML}
             `;

@@ -26,7 +26,7 @@ export class Game {
         this.interactTarget = null;
         this.lastGiftTime = Date.now() - 20000;
         this.giftPartner = null;
-        this.plastics = 0;
+        this.plastics = 100;
         this.happiness = 0;
         this.maxHappiness = 5000;
         this.isGameCleared = false;
@@ -41,7 +41,8 @@ export class Game {
             autoReceive: false,
             mocaronUnlocked: false,
             reloadReductionLv: 0,
-            growthStop: false
+            growthStop: false,
+            itemUnlocks: {} // 特殊アイテムの個別解放状況
         };
 
         this.settings = {
@@ -483,12 +484,15 @@ export class Game {
                 this.unlocks.growthStop = true;
                 this.settings.growthStopEnabled = true;
                 break;
-            case 'unlockMocaron':
-                this.unlocks.mocaronUnlocked = true;
-                ITEMS.Mocaron.showInMenu = true;
-                this.initItemMenu();
-                break;
             case 'cooldownReduction': this.unlocks.reloadReductionLv++; break;
+            default:
+                // アイテム解放 (item_ID の形式)
+                if (id.startsWith('item_')) {
+                    const itemId = id.replace('item_', '');
+                    this.unlocks.itemUnlocks[itemId] = true;
+                    this.initItemMenu();
+                }
+                break;
         }
 
         this.playSound('チョワヨ.mp3', 1.2);

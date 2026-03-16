@@ -1054,6 +1054,53 @@ button:hover {
     }
 }
 
+/* フィールド上のステータスバー表示 */
+.char-status-bars {
+    position: absolute;
+    bottom: -15px; /* 足元より少し下 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    pointer-events: none;
+    z-index: 70;
+    opacity: 0.7; /* 邪魔にならないよう少し透けさせる */
+    transition: opacity 0.3s;
+}
+
+.char-sprite-container:hover .char-status-bars {
+    opacity: 1.0;
+}
+
+.char-status-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.char-status-fill {
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* 各バーの色設定 */
+.char-status-fill.hunger {
+    background: linear-gradient(90deg, #ff8c00, #ffd700);
+}
+
+.char-status-fill.friendship {
+    background: linear-gradient(90deg, #ff69b4, #ffc0cb);
+}
+
+.char-status-fill.mood {
+    background: linear-gradient(90deg, #4facfe, #00f2fe);
+}
+
 /* なでなでパーティクル (❤️) のスタイル */
 .petting-heart {
     position: absolute;

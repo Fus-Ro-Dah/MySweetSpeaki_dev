@@ -241,6 +241,14 @@ export const ASSETS = {
 
 /**
  * アイテム定義 (ITEMS)
+ * 
+ * [特殊な設定項目]
+ * - isLockedItem: true にすると機能解放メニューの対象になります。
+ * - unlockDesc: 解放メニューに表示する説明文。 \n で改行、HTMLタグ(<a>等)も使用可能です。
+ * - unlockPrice: 解放に必要なプラスチック数。
+ * 
+ * 例:
+ * unlockDesc: `1行目の説明\n2行目の説明\n<a href="..." target="_blank">リンク</a>`
  */
 export const ITEMS = {
     //かぼちゃ
@@ -255,18 +263,7 @@ export const ITEMS = {
         moodGain: 10,                   //機嫌の変化量
         forcedEmotion: 'happy'          //反応したｽﾋﾟｷがどんな感情になるか(この感情は10秒持続する)
     },
-    //教主像
-    MasterStatue: {
-        name: '教主像',
-        imagefile: 'item_master.png',
-        text: '',
-        size: 180,
-        showInMenu: true,
-        isFood: false,
-        friendshipChange: 0,
-        moodGain: 0,
-        forcedEmotion: 'happy'
-    },
+
     //ウィンプル
     Wimple: {
         name: 'ウィンプル',
@@ -310,13 +307,16 @@ export const ITEMS = {
         imagefile: 'item_モカロン.png',
         size: 100,
         text: '',
-        showInMenu: false, // 初期は未解放なのでfalseにする
+        isLockedItem: true, // 個別解放対象にする
+        showInMenu: false, // 初期は非表示
         nutrition: 25,
         isFood: true,
         friendshipChange: 5,
         moodGain: 5,
         forcedEmotion: 'happy',
         reloadTime: 20000,
+        unlockDesc: 'キャンディより栄養価が高い\nｽﾋﾟｷたちも喜ぶ\nでもレベルは上がらない',
+        unlockPrice: 1
     },
     Poteto: {
         name: 'さつまいも',
@@ -346,43 +346,107 @@ export const ITEMS = {
         soundfile: 'コミーだってやるときはやるにゃん.mp3',
         size: 100,
         text: '',
-        isSpecialGift: true,  //ランダムアイテムであることを示すもの
+        isLockedItem: true,  //ランダムアイテムであることを示すもの
         showInMenu: false,
+        reloadTime: 0,
+        unlockDesc: 'コミーがすきなやつ\nでもｽﾋﾟｷは食べない',
+        unlockPrice: 1
     },
     //ランダムアイテム
     Shionmelone: {
-        name: 'シオン・ザ・メロンブレッド',
+        name: 'シオン・ザ・DB',
         imagefile: 'item_シオン・ザ・メロンブレッド.png',
         soundfile: 'シオン口上視線が泳いでいるぞ.mp3',
         size: 150,
-        text: '元ネタ: https://youtu.be/Py06vYKp4EY?si=V2BOhdAMiVH_Rvh1',
-        isSpecialGift: true,
+        text: '我が崩壊するゥ!',
+        isLockedItem: true,
         isFood: false,
         forcedEmotion: 'happy',
         showInMenu: false,
+        reloadTime: 0,
+        unlockDesc: 'ダークベーカリーからの刺客\n <a href="https://youtu.be/Py06vYKp4EY?si=V2BOhdAMiVH_Rvh1" target="_blank">【GB素材】シオン・ザ・ダークブレッド(使用例付き) by 私はエビィ様</a>',
+        unlockPrice: 1
     },
     //ランダムアイテム
     LeviDriver: {
-        name: 'レヴィ・ドライバー',
+        name: '工具',
         imagefile: 'item_レヴィドライバー.png',
         soundfile: 'レヴィドライバー.mp3',
         size: 100,
-        text: '元ネタ: https://youtu.be/WsQKUin6sb0?si=lltZElvtIdY4qbA6',
-        isSpecialGift: true,
+        text: 'ｱ"ｱ"ｱ"ｱ"ｱ"ｱ"ｱ"ｱ"ｱ"ｱ"ｱ"ｱ"!',
+        isLockedItem: true,
         isFood: false,
         showInMenu: false,
+        reloadTime: 0,
+        unlockDesc: 'たぶんマ○タ製\n<a href="https://youtu.be/WsQKUin6sb0?si=lltZElvtIdY4qbA6" target="_blank">電動レヴィドライバーの音声 by 私はエビィ様</a>',
+        unlockPrice: 1
+    },
+    //教主像
+    MasterStatue: {
+        name: '教主像',
+        imagefile: 'item_master.png',
+        text: '',
+        size: 180,
+        isLockedItem: true,
+        showInMenu: false,
+        isFood: false,
+        friendshipChange: 0,
+        moodGain: 0,
+        forcedEmotion: 'happy',
+        unlockDesc: 'ｽﾋﾟｷにとってのあなたの象徴\nあなたのことが好きなｽﾋﾟｷは 自然とこれに触れたがる\n配置されていると ｽﾋﾟｷたちの好感度が減らなくなる',
+        unlockPrice: 5
     },
     //ランダムアイテム
     BrokenHobagi: {
         name: 'かぼちゃ粥',
         imagefile: 'item_かぼちゃ粥.png',
         size: 100,
-        isSpecialGift: true,
+        isLockedItem: true,
         isFood: false,
-        moodGain: -10,
+        moodGain: -30,
         forcedEmotion: 'sad',
         showInMenu: false,
+        reloadTime: 0,
+        unlockDesc: 'かつて友達だったもの',
+        unlockPrice: 1
     },
+};
+
+/**
+ * 機能解放データ (UNLOCK_DATA)
+ */
+export const UNLOCK_DATA = {
+    feeder: {
+        name: 'ごはん係 (給餌係)',
+        price: 1,
+        desc: '満腹度30以下のｽﾋﾟｷにごはんをあげる係を呼びます'
+    },
+    autoReceive: {
+        name: 'プレゼント自動回収',
+        price: 1,
+        desc: 'スピキが持ってきたプレゼントを自動で受け取ります'
+    },
+    growthStop: {
+        name: 'ｽﾋﾟｷの成長停止',
+        price: 1,
+        desc: 'スピキが成長しなくなります。赤ちゃんは赤ちゃんのまま、子供は子供のままの姿を維持します'
+    },
+    // チャレンジモード用強化項目
+    hungerDecay: {
+        name: '空腹度減少の緩和',
+        price: 1,
+        desc: '減少速度を遅くします。'
+    },
+    affectionDecay: {
+        name: '好感度減少の緩和',
+        price: 1,
+        desc: '減少速度を遅くします。'
+    },
+    cooldownReduction: {
+        name: 'リロード時間短縮',
+        price: 1,
+        desc: 'ごはん系アイテム配置のリロード時間が短縮されます。'
+    }
 };
 
 /**

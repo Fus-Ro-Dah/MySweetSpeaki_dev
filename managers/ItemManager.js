@@ -38,7 +38,7 @@ export class ItemManager {
                 game.sound.playSound('アーウ.mp3', 0.5);
                 return;
             }
-            const pool = Object.entries(ITEMS).filter(([key, d]) => d.isSpecialGift);
+            const pool = Object.entries(ITEMS).filter(([key, d]) => d.isLockedItem);
             if (pool.length > 0) {
                 const [randomId, randomDef] = pool[Math.floor(Math.random() * pool.length)];
                 id = randomId;

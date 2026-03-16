@@ -128,12 +128,34 @@ export class BaseCharacter {
         const nameTag = document.createElement('div');
         nameTag.className = 'char-name-tag';
 
+        // ステータスバー表示用 (NEW)
+        const barsContainer = document.createElement('div');
+        barsContainer.className = 'char-status-bars';
+
+        const createBar = (type) => {
+            const bar = document.createElement('div');
+            bar.className = 'char-status-bar';
+            const fill = document.createElement('div');
+            fill.className = `char-status-fill ${type}`;
+            bar.appendChild(fill);
+            return { bar, fill };
+        };
+
+        const hungerBar = createBar('hunger');
+        const friendshipBar = createBar('friendship');
+        const moodBar = createBar('mood');
+
+        barsContainer.appendChild(friendshipBar.bar);
+        barsContainer.appendChild(hungerBar.bar);
+        barsContainer.appendChild(moodBar.bar);
+
         container.appendChild(footEffect); // 背面側に配置するため先に追加
         container.appendChild(img);
         container.appendChild(gift);
         container.appendChild(emoji);
         container.appendChild(chatText);
         container.appendChild(nameTag);
+        container.appendChild(barsContainer);
         this.parentElement.appendChild(container);
 
         this.visual.dom.container = container;
@@ -143,6 +165,12 @@ export class BaseCharacter {
         this.visual.dom.emoji = emoji;
         this.visual.dom.chatText = chatText;
         this.visual.dom.nameTag = nameTag;
+        this.visual.dom.statusBars = {
+            container: barsContainer,
+            hunger: hungerBar.fill,
+            friendship: friendshipBar.fill,
+            mood: moodBar.fill
+        };
     }
 
     /** フレームごとの更新処理 */
@@ -246,7 +274,7 @@ export class BaseCharacter {
     /** 好感度の変動 (範囲制限付き) */
     changeFriendship(amount) {
         if (this.status.friendship === undefined) this.status.friendship = 0;
-        this.status.friendship = Math.max(-50, Math.min(80, this.status.friendship + amount));
+        this.status.friendship = Math.max(-50, Math.min(50, this.status.friendship + amount));
     }
 
 
@@ -309,7 +337,7 @@ export class BaseCharacter {
         this.socialConfig = null;
         this.interaction.targetItem = null;
         this.pos.destinationSet = false;
-        
+
         // ログ出力をトリガーにするため、タイマーをリセットして連続発火を防ぐ
         this.timers.stateStart = Date.now();
         this.timers.lastMoveTime = Date.now();
@@ -689,6 +717,31 @@ export class BaseCharacter {
         // 名前表示
         if (dom.nameTag) {
             dom.nameTag.textContent = this.name;
+        }
+
+        // ステータスバーの更新 (NEW)
+        if (dom.statusBars) {
+            const { hunger, friendship, mood } = this.status;
+
+            // 満腹度は 0-100 そのまま
+            dom.statusBars.hunger.style.width = `${Math.max(0, Math.min(100, hunger))}%`;
+
+            // 友好度は -50〜50 を 0-100% に変換
+            // (v - (-50)) / (50 - (-50)) * 100 = (v + 50) / 100 * 100 = v + 50
+            const fPercent = friendship + 50;
+            dom.statusBars.friendship.style.width = `${Math.max(0, Math.min(100, fPercent))}%`;
+
+            // 機嫌は -50〜50 を 0-100% に変換
+            // (v - (-50)) / (50 - (-50)) * 100 = (v + 50) / 100 * 100 = v + 50
+            const mPercent = mood + 50;
+            dom.statusBars.mood.style.width = `${Math.max(0, Math.min(100, mPercent))}%`;
+
+            // 死亡進行中またはNPCなら隠す
+            if (this.status.deathProgress > 0 || !this.canInteract) {
+                dom.statusBars.container.style.display = 'none';
+            } else {
+                dom.statusBars.container.style.display = 'flex';
+            }
         }
     }
 
