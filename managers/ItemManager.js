@@ -138,27 +138,25 @@ export class ItemManager {
     /** アイテムの更新処理 (寿命等の管理) */
     update(dt) {
         this.game.placedItems = this.game.placedItems.filter(item => {
-            // キャラクターに運ばれているアイテムはキャラクターの位置に同期
-            if (item.carriedBy) {
-                const char = item.carriedBy;
-                // キャラクターの中心から少し上（頭上）に配置
-                item.x = char.pos.x;
-                item.y = char.pos.y - (char.status.size * 0.4);
-                return true;
-            }
-
             // アイテム自身の更新ロジックを呼び出す
             const result = item.update(dt);
 
             if (result.action === 'delete') {
                 return false; // フィルターで削除
             } else if (result.action === 'transform') {
-                // 変換処理
-                this._processItemTransform(item, -1, result.transform); // 内部で配列から消すためtransform時はfalseを返す
-                return false;
+                // 変換処理 (もう splice は使わない)
+                this._processItemTransform(item, result.transform);
+                return false; // 変換元のアイテムはリストから消す
             }
 
-            return true; // 削除・変換以外は維持
+            // キャラクターに運ばれているアイテムはキャラクターの位置に同期 (タイマー更新の後に行う)
+            if (item.carriedBy) {
+                const char = item.carriedBy;
+                item.x = char.pos.x;
+                item.y = char.pos.y - (char.status.size * 0.4);
+            }
+
+            return true; // 削除・変化以外は維持
         });
     }
 
@@ -170,12 +168,13 @@ export class ItemManager {
         return this.game.placedItems.some(it => it.id === id);
     }
 
-    _processItemTransform(item, index, transform) {
+    _processItemTransform(item, transform) {
         const game = this.game;
         if (transform.isAdult) {
             const type = typeof transform.isAdult === 'string' ? transform.isAdult : 'speaki';
+            console.log(`[ItemManager] Reincarnating item ${item.id} into Speaki type: ${type}`);
             game.characters.addSpeaki(item.x, item.y, type);
-            game.placedItems.splice(index, 1);
+            // ここで splice はしない (filterの戻り値で制御される)
             return;
         }
         if (transform.nextId) {

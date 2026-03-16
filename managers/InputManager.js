@@ -69,6 +69,35 @@ export class InputManager {
         }
 
         setupModal('open-memo-btn', 'close-memo-btn', 'memo-modal');
+
+        this.setupDebugCommands();
+    }
+
+    /** デバッグ用のショートカットコマンド設定 */
+    setupDebugCommands() {
+        const game = this.game;
+
+        // グローバル関数としても露出（コンソールから実行可能にするため）
+        window.setAllHungerTo2 = () => {
+            let count = 0;
+            game.speakis.forEach(s => {
+                if (s.hasHunger && s.status.state !== STATE.DYING) {
+                    s.status.hunger = 2;
+                    count++;
+                }
+            });
+            console.log(`[Debug] Set hunger to 2 for ${count} speakis.`);
+            game.ui.updateSpeakiList(true); // UIを即座に更新
+        };
+
+        // キーボードショートカット '2'
+        window.addEventListener('keydown', (e) => {
+            if (e.key === '2') {
+                // 入力フォーム等にフォーカスがある場合は無視
+                if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+                window.setAllHungerTo2();
+            }
+        });
     }
 
     /** ドラッグ＆ドロップの設定 */

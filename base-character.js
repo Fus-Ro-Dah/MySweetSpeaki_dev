@@ -175,20 +175,24 @@ export class BaseCharacter {
             const isDespaired = this.status.friendship <= -49.5; // 自動回復に食われないよう少し余裕を持たせる
 
             if (isStarving || isDespaired) {
-                this.status.state = STATE.DYING;
-                this.status.deathProgress = 0;
-                this.timers.stateStart = Date.now();
+                // IDLE か WALKING の時のみ死亡プロセスへ移行する
+                // これにより、交流中やアクション中に突然消滅するのを防ぐ
+                if (this.status.state === STATE.IDLE || this.status.state === STATE.WALKING) {
+                    this.status.state = STATE.DYING;
+                    this.status.deathProgress = 0;
+                    this.timers.stateStart = Date.now();
 
-                // 死に際のサウンド再生 (プラン1: ピッチを個体設定に合わせる)
-                if (this.game) {
-                    this.game.playSound('ヌンデ.mp3', this.status.voicePitch);
-                }
+                    // 死に際のサウンド再生 (プラン1: ピッチを個体設定に合わせる)
+                    if (this.game) {
+                        this.game.playSound('ヌンデ.mp3', this.status.voicePitch);
+                    }
 
-                // 死亡時は他の音を止める
-                if (this.visual.currentVoice) {
-                    this.visual.currentVoice.pause();
+                    // 死亡時は他の音を止める
+                    if (this.visual.currentVoice) {
+                        this.visual.currentVoice.pause();
+                    }
+                    console.log(`[BaseCharacter] ${this.name} is dying. (Starving: ${isStarving}, Despaired: ${isDespaired})`);
                 }
-                console.log(`[BaseCharacter] ${this.name} is dying. (Starving: ${isStarving}, Despaired: ${isDespaired})`);
             }
         }
 
@@ -634,15 +638,15 @@ export class BaseCharacter {
             }
         }
 
-        // 死亡演出の反映 (真っ黒にする)
+        // 死亡演出およびフィルターの適用
+        // 死亡進行度に合わせてコンテナ全体（名札なども含む）を暗く、白黒にする
         if (this.status.deathProgress > 0) {
             const p = this.status.deathProgress;
-            // 進行度に合わせて明るさを下げ、グレースケールを上げる
-            const brightness = 1.0 - p;
-            const grayscale = p;
-            dom.sprite.style.filter = `brightness(${brightness}) grayscale(${grayscale})`;
+            const brightness = Math.max(0, 1.0 - p * 1.2); // 少し早めに真っ暗にする
+            const grayscale = Math.min(1.0, p * 1.5);
+            dom.container.style.filter = `brightness(${brightness}) grayscale(${grayscale})`;
         } else {
-            dom.sprite.style.filter = '';
+            dom.container.style.filter = '';
         }
 
         // 足元画像 (NEW)
@@ -675,7 +679,7 @@ export class BaseCharacter {
         const transform = `perspective(800px) rotateX(${distortion.rotateX}deg) rotateY(${distortion.rotateY}deg) skewX(${distortion.skewX}deg) scale(${distortion.scaleX * flip}, ${distortion.scaleY})`;
         dom.sprite.style.transform = transform;
 
-        // 虹色効果（hue-rotate）の適用
+        // 虹色効果（hue-rotate）の適用 (スプライト単体に適用)
         dom.sprite.style.filter = distortion.hueRotate ? `hue-rotate(${distortion.hueRotate}deg)` : 'none';
 
         // セリフ表示
