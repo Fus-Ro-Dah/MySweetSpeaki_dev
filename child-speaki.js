@@ -47,12 +47,12 @@ export class ChildSpeaki extends BaseCharacter {
         }
 
         // 2. IDLE状態で一定時間経過後、低確率でアイテムを配置する（遊び）
-        const now = Date.now();
+        /* const now = Date.now();
         if (this.status.state === STATE.IDLE && now - this.timers.stateStart > 10000) {
             if (Math.random() < 0.005) { // 約 0.5% の確率
                 this._placeRandomCandy();
             }
-        }
+        } */
     }
 
     /** 自律的な交流リクエストの更新 */
@@ -69,7 +69,8 @@ export class ChildSpeaki extends BaseCharacter {
         this.timers.lastChildSocialAttempt = now;
 
         // 一定確率（約5〜10%）で周囲の誰かと交流しようとする
-        if (Math.random() < 0.5) {
+        const chance = this._getSocialProbability(0.15);
+        if (Math.random() < chance) {
             if (this.game && this.game.social) {
                 // アクションを指定せずにリクエスト（自動選択）
                 this.game.social.requestSocialAction(this, null);

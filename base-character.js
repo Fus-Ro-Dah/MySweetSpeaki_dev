@@ -357,13 +357,24 @@ export class BaseCharacter {
         this.timers.lastSocialRequestAttempt = now;
 
         // 交流リクエストの検討
-        // 一定確率（約5〜10%）で周囲の誰かと交流しようとする
-        if (Math.random() < 0.5) {
+        // 場の人数に応じて確率を動的に計算 (基本 10% + 1匹につき 1%)
+        const chance = this._getSocialProbability(0.1);
+
+        if (Math.random() < chance) {
             if (this.game && this.game.social) {
                 // アクションを指定せずにリクエスト（自動選択）
                 this.game.social.requestSocialAction(this, null);
             }
         }
+    }
+
+    /** 交流プロパティの計算 (ベース確率 + 1匹につき1%増加) */
+    _getSocialProbability(baseChance) {
+        if (!this.game || !this.game.speakis) return baseChance;
+        const count = this.game.speakis.length;
+        // 人数によるボーナス (1匹ごとに 1%)
+        const bonus = count * 0.01;
+        return baseChance + bonus;
     }
 
     /** 状態遷移の判定 (サブクラスで拡張可能) */

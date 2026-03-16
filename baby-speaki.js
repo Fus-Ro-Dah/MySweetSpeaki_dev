@@ -39,7 +39,8 @@ export class BabySpeaki extends BaseCharacter {
         this.timers.lastSocialRequestAttempt = now;
 
         // 赤ちゃんはヒマだとたまに大人を呼ぶ
-        if (Math.random() < 1) {
+        const chance = this._getSocialProbability(0.15);
+        if (Math.random() < chance) {
             if (this.game && this.game.social) {
                 // 特定のアクションを指定せず、システムに最適なものを選択させる
                 this.game.social.requestSocialAction(this, null);
