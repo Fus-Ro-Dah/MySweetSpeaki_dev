@@ -704,7 +704,8 @@ export class BaseCharacter {
         dom.container.style.width = `${this.status.size}px`;
         dom.container.style.height = `${this.status.size}px`;
 
-        const bob = Math.sin(Date.now() / 200 + this.id * 100) * (this.status.size / 30);
+        // 凍結中はふわふわ（bob）も停止させる
+        const bob = (this.visual.motionType === 'frozen') ? 0 : Math.sin(Date.now() / 200 + this.id * 100) * (this.status.size / 30);
         const distortion = this.visual.distortion;
 
         // 移動（スライド）はコンテナ（要素全体）で行うことで、回転軸のブレを完全に防ぐ
@@ -718,8 +719,9 @@ export class BaseCharacter {
         const transform = `perspective(800px) rotateX(${distortion.rotateX}deg) rotateY(${distortion.rotateY}deg) skewX(${distortion.skewX}deg) scale(${distortion.scaleX * flip}, ${distortion.scaleY})`;
         dom.sprite.style.transform = transform;
 
-        // 虹色効果（hue-rotate）の適用 (スプライト単体に適用)
-        dom.sprite.style.filter = distortion.hueRotate ? `hue-rotate(${distortion.hueRotate}deg)` : 'none';
+        // フィルター効果の適用 (frozen用や虹色効果用)
+        let filter = distortion.filter || (distortion.hueRotate ? `hue-rotate(${distortion.hueRotate}deg)` : 'none');
+        dom.sprite.style.filter = filter;
 
         // セリフ表示
         let displayText = (this.visual.currentAsset && this.visual.currentAsset.text) || '';
@@ -1284,6 +1286,80 @@ export class BaseCharacter {
         // (_applySelectedAsset で毎ターン抽選されるため、ここでは上書きしない)
 
         switch (this.visual.motionType) {
+            case 'twitch':
+                // 収縮幅を不規則にする (複数の周波数を組み合わせて干渉させる)
+                const twBase = Math.sin(this.visual.motionTimer * 0.05); // 高速な基本振動
+                const twMod = Math.sin(this.visual.motionTimer * 0.017); // 振幅をゆらす低速波
+                const twNoise = Math.sin(this.visual.motionTimer * 0.037) * 0.3; // 不規則なノイズ成分
+
+                const twitch = twBase * (0.05 + Math.abs(twMod) * 0.15) + twNoise * 0.05;
+                this.visual.distortion.scaleX = 1.0 + twitch;
+                this.visual.distortion.scaleY = 1.0 + twitch; // XとYを同方向に変化させる（拡大縮小）
+                break;
+            case 'pulse':
+                // 1秒サイクル: 0.25sでつぶれ、0.25sで戻り、0.5sは静止
+                const pulseDuration = 1000;
+                const pTime = (this.visual.motionTimer % pulseDuration) / pulseDuration;
+                let pAmt = 0;
+
+                if (pTime < 0.25) {
+                    // 0.0 - 0.25: つぶれる (0.2まで)
+                    const p = pTime / 0.25;
+                    pAmt = p * 0.2;
+                } else if (pTime < 0.5) {
+                    // 0.25 - 0.5: 戻る (0.2から0まで)
+                    const p = (pTime - 0.25) / 0.25;
+                    pAmt = (1.0 - p) * 0.2;
+                } else {
+                    // 0.5 - 1.0: 静止
+                    pAmt = 0;
+                }
+
+                this.visual.distortion.scaleX = 1.0 + pAmt;
+                this.visual.distortion.scaleY = 1.0 - pAmt;
+                break;
+            case 'vibrate':
+                // 微振動 (不規則な平行移動)
+                this.visual.distortion.translateX = (Math.random() - 0.5) * 6;
+                this.visual.distortion.translateY = (Math.random() - 0.5) * 6;
+                this.visual.distortion.scaleX = 1.0 + (Math.random() - 0.5) * 0.05;
+                this.visual.distortion.scaleY = 1.0 + (Math.random() - 0.5) * 0.05;
+                break;
+            case 'lean':
+                // 勢いよく斜めに伸びて静止
+                const leanDuration = 100;
+                const leanProgress = Math.min(1.0, this.visual.motionTimer / leanDuration);
+                // イージング (easeOutQuart)
+                const leanEased = 1 - Math.pow(1 - leanProgress, 4);
+
+                const leanMaxSkew = 25;
+                const leanMaxScaleY = 1.3;
+
+                // キャラクターの向いている方向とは反対方向に斜めに伸びる
+                this.visual.distortion.skewX = (this.pos.facingLeft ? -1 : 1) * leanEased * leanMaxSkew;
+                this.visual.distortion.scaleY = 1.0 + leanEased * (leanMaxScaleY - 1.0);
+                break;
+            case 'frantic':
+                // 錯乱している感じ (高速ランダムと回転・スケールの激しい変化)
+                this.visual.distortion.translateX = (Math.random() - 0.5) * 40;
+                this.visual.distortion.translateY = (Math.random() - 0.5) * 40;
+                this.visual.distortion.rotateZ = (Math.random() - 0.5) * 30;
+                this.visual.distortion.scaleX = 0.5 + Math.random() * 1.0;
+                this.visual.distortion.scaleY = 0.5 + Math.random() * 1.0;
+                break;
+            case 'frozen':
+                // 凍ったモーション (動かず、水色になる)
+                // 動きをリセット
+                this.visual.distortion.translateX = 0;
+                this.visual.distortion.translateY = 0;
+                this.visual.distortion.rotateZ = 0;
+                this.visual.distortion.scaleX = 1.0;
+                this.visual.distortion.scaleY = 1.0;
+                this.visual.distortion.skewX = 0;
+                // 色を水色に (hue-rotateで180度〜200度付近が青・水色系)
+                // CSSのfilter文字列を直接操作する手段がないため、filterプロパティに適用するための変数を設定
+                this.visual.distortion.filter = 'hue-rotate(160deg) brightness(1.2) saturate(0.8)';
+                break;
             case 'shake':
                 this.visual.distortion.skewX = Math.sin(this.visual.motionTimer * 0.05) * 10;
                 break;
@@ -1304,6 +1380,12 @@ export class BaseCharacter {
                 this.visual.distortion.scaleX = 1.0 + Math.abs(swing) * 0.1;
                 this.visual.distortion.scaleY = 1.0 + Math.abs(swing) * 0.25;
                 break;
+            case 'fast_swing':
+                const fswing = Math.sin(this.visual.motionTimer * 0.01);
+                this.visual.distortion.skewX = fswing * 15;
+                this.visual.distortion.scaleX = 1.0 + Math.abs(fswing) * 0.1;
+                this.visual.distortion.scaleY = 1.0 + Math.abs(fswing) * 0.25;
+                break;
             case 'dance':
                 const dncCycle = 2000; // 2秒周期
 
@@ -1319,7 +1401,8 @@ export class BaseCharacter {
                 this.visual.distortion.translateX = Math.sin(dncT * Math.PI * 2) * 100;
 
                 // 2. 左右に回転（スピン）
-                this.visual.distortion.rotateY = dncT * 360 * 4; // 1サイクルで4回転
+                // 前半で2回転(720deg)、後半で逆回転して0に戻る
+                this.visual.distortion.rotateY = (1.0 - Math.abs(dncT - 0.5) * 2) * 720;
 
                 // 3. スケールと上下移動は固定（上下移動なし）
                 this.visual.distortion.translateY = 0;
@@ -1421,6 +1504,7 @@ export class BaseCharacter {
                 this.visual.distortion.translateX *= 0.85;
                 this.visual.distortion.translateY *= 0.85;
                 this.visual.distortion.hueRotate = 0; // 虹色をリセット
+                this.visual.distortion.filter = ''; // フィルターをリセット
                 this.visual.distortion.scaleX += (1.0 - this.visual.distortion.scaleX) * 0.15;
                 this.visual.distortion.scaleY += (1.0 - this.visual.distortion.scaleY) * 0.15;
                 break;
