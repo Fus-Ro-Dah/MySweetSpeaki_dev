@@ -90,6 +90,7 @@ export class BaseCharacter {
             lastY: y,
             lastSocialRequestAttempt: Date.now() + Math.random() * 5000 // 交流リクエスト用の制御 (初回分散)
         };
+        this._domCache = {}; // PERFORMANCE: DOM更新最小化のためのキャッシュ
 
         if (this.parentElement) {
             this.createDOM();
@@ -661,100 +662,131 @@ export class BaseCharacter {
         const dom = this.visual.dom;
         if (!dom.container) return;
 
+        const cache = this._domCache;
+
         // ハイライトの反映
-        if (this.game && this.game.highlightedCharId === this.id) {
-            dom.container.classList.add('highlighted');
-        } else {
-            dom.container.classList.remove('highlighted');
+        const isHighlighted = (this.game && this.game.highlightedCharId === this.id);
+        if (cache.highlighted !== isHighlighted) {
+            if (isHighlighted) dom.container.classList.add('highlighted');
+            else dom.container.classList.remove('highlighted');
+            cache.highlighted = isHighlighted;
         }
 
         // 画像の切り替え
         if (this.visual.currentAsset && this.visual.currentAsset.imagefile && this.game) {
-            const game = this.game;
-            const img = game.images[this.visual.currentAsset.imagefile];
-            if (img && dom.sprite.src !== img.src) {
-                dom.sprite.src = img.src;
+            const assetKey = this.visual.currentAsset.imagefile;
+            if (cache.imagefile !== assetKey) {
+                const img = this.game.images[assetKey];
+                if (img) {
+                    dom.sprite.src = img.src;
+                    cache.imagefile = assetKey;
+                }
             }
         }
 
         // 死亡演出およびフィルターの適用
-        // 死亡進行度に合わせてコンテナ全体（名札なども含む）を暗く、白黒にする
         if (this.status.deathProgress > 0) {
             const p = this.status.deathProgress;
-            const brightness = Math.max(0, 1.0 - p * 1.2); // 少し早めに真っ暗にする
-            const grayscale = Math.min(1.0, p * 1.5);
-            dom.container.style.filter = `brightness(${brightness}) grayscale(${grayscale})`;
-        } else {
+            if (cache.deathProgress !== p) {
+                const brightness = Math.max(0, 1.0 - p * 1.2); 
+                const grayscale = Math.min(1.0, p * 1.5);
+                dom.container.style.filter = `brightness(${brightness}) grayscale(${grayscale})`;
+                cache.deathProgress = p;
+            }
+        } else if (cache.deathProgress !== 0) {
             dom.container.style.filter = '';
+            cache.deathProgress = 0;
         }
 
-        // 足元画像 (NEW)
+        // 足元画像
         if (dom.footEffect) {
-            if (this.interaction.socialFootImage && this.status.state === STATE.GAME_REACTION) {
-                if (dom.footEffect.src !== this.interaction.socialFootImage) {
-                    dom.footEffect.src = this.interaction.socialFootImage;
+            const footImg = (this.status.state === STATE.GAME_REACTION) ? this.interaction.socialFootImage : null;
+            if (cache.footImg !== footImg) {
+                if (footImg) {
+                    dom.footEffect.src = footImg;
+                    dom.footEffect.classList.remove('hidden');
+                } else {
+                    dom.footEffect.classList.add('hidden');
                 }
-                dom.footEffect.classList.remove('hidden');
-            } else {
-                dom.footEffect.classList.add('hidden');
+                cache.footImg = footImg;
             }
         }
 
         // 位置とサイズ
-        dom.container.style.width = `${this.status.size}px`;
-        dom.container.style.height = `${this.status.size}px`;
-
-        // 凍結中はふわふわ（bob）も停止させる
-        const bob = (this.visual.motionType === 'frozen') ? 0 : Math.sin(Date.now() / 200 + this.id * 100) * (this.status.size / 30);
         const distortion = this.visual.distortion;
-
-        // 移動（スライド）はコンテナ（要素全体）で行うことで、回転軸のブレを完全に防ぐ
-        const screenX = this.pos.x - this.status.size / 2 + distortion.translateX;
-        const screenY = this.pos.y - this.status.size / 2 + bob + distortion.translateY;
-
-        dom.container.style.transform = `translate(${screenX}px, ${screenY}px)`;
-
+        const bob = (this.visual.motionType === 'frozen') ? 0 : Math.sin(Date.now() / 200 + this.id * 100) * (this.status.size / 30);
         const flip = this.pos.facingLeft ? 1 : -1;
-        // 画像そのものの回転や拡縮はスプライト（元の画像要素）に対して行う
-        const transform = `perspective(800px) rotateX(${distortion.rotateX}deg) rotateY(${distortion.rotateY}deg) skewX(${distortion.skewX}deg) scale(${distortion.scaleX * flip}, ${distortion.scaleY})`;
-        dom.sprite.style.transform = transform;
 
-        // フィルター効果の適用 (frozen用や虹色効果用)
-        let filter = distortion.filter || (distortion.hueRotate ? `hue-rotate(${distortion.hueRotate}deg)` : 'none');
-        dom.sprite.style.filter = filter;
-        dom.sprite.style.opacity = distortion.opacity !== undefined ? distortion.opacity : 1.0;
-
-        // セリフ表示
-        let displayText = (this.visual.currentAsset && this.visual.currentAsset.text) || '';
-        dom.chatText.textContent = displayText;
-
-        // 名前表示
-        if (dom.nameTag) {
-            dom.nameTag.textContent = this.name;
+        const containerTransform = `translate(${this.pos.x - this.status.size / 2 + distortion.translateX}px, ${this.pos.y - this.status.size / 2 + bob + distortion.translateY}px)`;
+        if (cache.containerTransform !== containerTransform) {
+            dom.container.style.transform = containerTransform;
+            cache.containerTransform = containerTransform;
         }
 
-        // ステータスバーの更新 (NEW)
+        if (cache.containerSize !== this.status.size) {
+            dom.container.style.width = `${this.status.size}px`;
+            dom.container.style.height = `${this.status.size}px`;
+            cache.containerSize = this.status.size;
+        }
+
+        const spriteTransform = `perspective(800px) rotateX(${distortion.rotateX}deg) rotateY(${distortion.rotateY}deg) skewX(${distortion.skewX}deg) scale(${distortion.scaleX * flip}, ${distortion.scaleY})`;
+        if (cache.spriteTransform !== spriteTransform) {
+            dom.sprite.style.transform = spriteTransform;
+            cache.spriteTransform = spriteTransform;
+        }
+
+        const filter = distortion.filter || (distortion.hueRotate ? `hue-rotate(${distortion.hueRotate}deg)` : 'none');
+        if (cache.filter !== filter) {
+            dom.sprite.style.filter = filter;
+            cache.filter = filter;
+        }
+
+        const opacity = distortion.opacity !== undefined ? distortion.opacity : 1.0;
+        if (cache.opacity !== opacity) {
+            dom.sprite.style.opacity = opacity;
+            cache.opacity = opacity;
+        }
+
+        // セリフ表示
+        const displayText = (this.visual.currentAsset && this.visual.currentAsset.text) || '';
+        if (cache.chatText !== displayText) {
+            dom.chatText.textContent = displayText;
+            cache.chatText = displayText;
+        }
+
+        // 名前表示
+        if (dom.nameTag && cache.nameTag !== this.name) {
+            dom.nameTag.textContent = this.name;
+            cache.nameTag = this.name;
+        }
+
+        // ステータスバーの更新 
         if (dom.statusBars) {
             const { hunger, friendship, mood } = this.status;
 
-            // 満腹度は 0-100 そのまま
-            dom.statusBars.hunger.style.width = `${Math.max(0, Math.min(100, hunger))}%`;
+            // 1%以上の変化、または未初期化の場合のみ更新
+            const shouldUpdateGauges = (
+                cache.lastHunger === undefined || Math.abs(cache.lastHunger - hunger) >= 1.0 ||
+                cache.lastFriendship === undefined || Math.abs(cache.lastFriendship - friendship) >= 1.0 ||
+                cache.lastMood === undefined || Math.abs(cache.lastMood - mood) >= 1.0
+            );
 
-            // 友好度は -50〜50 を 0-100% に変換
-            // (v - (-50)) / (50 - (-50)) * 100 = (v + 50) / 100 * 100 = v + 50
-            const fPercent = friendship + 50;
-            dom.statusBars.friendship.style.width = `${Math.max(0, Math.min(100, fPercent))}%`;
+            if (shouldUpdateGauges) {
+                dom.statusBars.hunger.style.width = `${Math.max(0, Math.min(100, hunger))}%`;
+                const fPercent = friendship + 50;
+                dom.statusBars.friendship.style.width = `${Math.max(0, Math.min(100, fPercent))}%`;
+                const mPercent = mood + 50;
+                dom.statusBars.mood.style.width = `${Math.max(0, Math.min(100, mPercent))}%`;
+                
+                cache.lastHunger = hunger;
+                cache.lastFriendship = friendship;
+                cache.lastMood = mood;
+            }
 
-            // 機嫌は -50〜50 を 0-100% に変換
-            // (v - (-50)) / (50 - (-50)) * 100 = (v + 50) / 100 * 100 = v + 50
-            const mPercent = mood + 50;
-            dom.statusBars.mood.style.width = `${Math.max(0, Math.min(100, mPercent))}%`;
-
-            // 死亡進行中またはNPCなら隠す
-            if (this.status.deathProgress > 0 || !this.canInteract) {
-                dom.statusBars.container.style.display = 'none';
-            } else {
-                dom.statusBars.container.style.display = 'flex';
+            const visible = (this.status.deathProgress <= 0 && this.canInteract);
+            if (cache.gaugesVisible !== visible) {
+                dom.statusBars.container.style.display = visible ? 'flex' : 'none';
+                cache.gaugesVisible = visible;
             }
         }
     }

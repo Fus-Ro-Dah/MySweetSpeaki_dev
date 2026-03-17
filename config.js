@@ -45,12 +45,12 @@ export const ASSETS = {
         mood: {
             normal: {
                 idle: [
-                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'dance' },
-                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'frozen' },
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'none' },
+                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'swing' },
                 ],
                 walking: [
-                    { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'none' },
-                    { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'none' },
+                    { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+                    { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
                 ]
             },
             happy: {
