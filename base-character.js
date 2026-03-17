@@ -53,8 +53,8 @@ export class BaseCharacter {
         // 3. 表示とアニメーション
         this.visual = {
             dom: {},
-            distortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0, hueRotate: 0 },
-            targetDistortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0, hueRotate: 0 },
+            distortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0, hueRotate: 0, opacity: 1.0 },
+            targetDistortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0, hueRotate: 0, opacity: 1.0 },
             motionType: 'none',
             motionTimer: 0,
             currentAssetKey: '',
@@ -722,6 +722,7 @@ export class BaseCharacter {
         // フィルター効果の適用 (frozen用や虹色効果用)
         let filter = distortion.filter || (distortion.hueRotate ? `hue-rotate(${distortion.hueRotate}deg)` : 'none');
         dom.sprite.style.filter = filter;
+        dom.sprite.style.opacity = distortion.opacity !== undefined ? distortion.opacity : 1.0;
 
         // セリフ表示
         let displayText = (this.visual.currentAsset && this.visual.currentAsset.text) || '';
@@ -1497,6 +1498,26 @@ export class BaseCharacter {
                     this.visual.distortion.translateY = 0;
                 }
                 break;
+            case 'ghost':
+                // ユーレイ (透明度変化とゆらゆら)
+                this.visual.distortion.opacity = 0.4 + Math.sin(this.visual.motionTimer * 0.003) * 0.2;
+                this.visual.distortion.translateX = Math.sin(this.visual.motionTimer * 0.002) * 20;
+                this.visual.distortion.translateY = Math.sin(this.visual.motionTimer * 0.001) * 10 - 20; // 少し浮く
+                this.visual.distortion.skewX = Math.sin(this.visual.motionTimer * 0.002) * 10;
+                break;
+            case 'glitch':
+                // グリッチ (瞬間移動とノイズ)
+                if (Math.random() < 0.15) {
+                    this.visual.distortion.translateX = (Math.random() - 0.5) * 50;
+                    this.visual.distortion.skewX = (Math.random() - 0.5) * 40;
+                    this.visual.distortion.scaleX = 0.8 + Math.random() * 0.4;
+                } else {
+                    this.visual.distortion.translateX *= 0.7;
+                    this.visual.distortion.skewX *= 0.7;
+                    this.visual.distortion.scaleX = 1.0;
+                }
+                this.visual.distortion.filter = Math.random() < 0.05 ? `hue-rotate(${Math.random() * 360}deg) brightness(2)` : '';
+                break;
             default:
                 this.visual.distortion.skewX *= 0.85;
                 this.visual.distortion.rotateX *= 0.85;
@@ -1505,6 +1526,7 @@ export class BaseCharacter {
                 this.visual.distortion.translateY *= 0.85;
                 this.visual.distortion.hueRotate = 0; // 虹色をリセット
                 this.visual.distortion.filter = ''; // フィルターをリセット
+                this.visual.distortion.opacity = 1.0; // 透明度をリセット
                 this.visual.distortion.scaleX += (1.0 - this.visual.distortion.scaleX) * 0.15;
                 this.visual.distortion.scaleY += (1.0 - this.visual.distortion.scaleY) * 0.15;
                 break;
