@@ -159,6 +159,13 @@ export class BaseCharacter {
         container.appendChild(barsContainer);
         this.parentElement.appendChild(container);
 
+        // CSSアニメーション(bob)の初期化: 各キャラクターで位相をずらす
+        // Math.random()でランダムな位相(-1.4s〜0s)を設定し、一斉に揺れるのを防ぐ
+        const bobPhase = -(Math.random() * 1.4);
+        const bobAmount = Math.round(this.status.size / 30);
+        container.style.setProperty('--bob-phase', `${bobPhase.toFixed(2)}s`);
+        container.style.setProperty('--bob-amount', `${bobAmount}px`);
+
         this.visual.dom.container = container;
         this.visual.dom.sprite = img;
         this.visual.dom.gift = gift;
@@ -246,14 +253,13 @@ export class BaseCharacter {
         // 表情の基本更新（オーバーライド可能）
         this._updateAppearanceByStatus();
 
-        // しあわせスピキ状態の視覚効果用フラグ更新
+        // しあわせスピキ状態の視覚効果用フラグ更新（差分があった時のみDOM操作）
         if (this.visual.dom.container) {
             const isRelaxed = this.game && this.game.gameMode === 'relaxed';
             const isHappySpeaki = !isRelaxed && this.canInteract && this.status.friendship >= 40 && this.status.hunger >= 80;
-            if (isHappySpeaki) {
-                this.visual.dom.container.classList.add('is-happy');
-            } else {
-                this.visual.dom.container.classList.remove('is-happy');
+            if (this._domCache.isHappy !== isHappySpeaki) {
+                this.visual.dom.container.classList.toggle('is-happy', isHappySpeaki);
+                this._domCache.isHappy = isHappySpeaki;
             }
         }
 
@@ -688,7 +694,7 @@ export class BaseCharacter {
         if (this.status.deathProgress > 0) {
             const p = this.status.deathProgress;
             if (cache.deathProgress !== p) {
-                const brightness = Math.max(0, 1.0 - p * 1.2); 
+                const brightness = Math.max(0, 1.0 - p * 1.2);
                 const grayscale = Math.min(1.0, p * 1.5);
                 dom.container.style.filter = `brightness(${brightness}) grayscale(${grayscale})`;
                 cache.deathProgress = p;
@@ -714,10 +720,18 @@ export class BaseCharacter {
 
         // 位置とサイズ
         const distortion = this.visual.distortion;
-        const bob = (this.visual.motionType === 'frozen') ? 0 : Math.sin(Date.now() / 200 + this.id * 100) * (this.status.size / 30);
         const flip = this.pos.facingLeft ? 1 : -1;
 
-        const containerTransform = `translate(${this.pos.x - this.status.size / 2 + distortion.translateX}px, ${this.pos.y - this.status.size / 2 + bob + distortion.translateY}px)`;
+        // bob(上下揺れ)はCSSアニメーション側で処理するため、JS計算を廃止
+        // frozen時はCSSクラスでアニメーションを停止
+        const isFrozen = (this.visual.motionType === 'frozen');
+        if (cache.isFrozen !== isFrozen) {
+            dom.container.classList.toggle('frozen-motion', isFrozen);
+            cache.isFrozen = isFrozen;
+        }
+
+        // translateはbob無しで設定（bobはCSSのmargin-topで処理）
+        const containerTransform = `translate(${this.pos.x - this.status.size / 2 + distortion.translateX}px, ${this.pos.y - this.status.size / 2 + distortion.translateY}px)`;
         if (cache.containerTransform !== containerTransform) {
             dom.container.style.transform = containerTransform;
             cache.containerTransform = containerTransform;
@@ -777,7 +791,7 @@ export class BaseCharacter {
                 dom.statusBars.friendship.style.width = `${Math.max(0, Math.min(100, fPercent))}%`;
                 const mPercent = mood + 50;
                 dom.statusBars.mood.style.width = `${Math.max(0, Math.min(100, mPercent))}%`;
-                
+
                 cache.lastHunger = hunger;
                 cache.lastFriendship = friendship;
                 cache.lastMood = mood;
@@ -955,6 +969,10 @@ export class BaseCharacter {
     }
 
     _onStateChanged(newState) {
+        // destroy()済みキャラクターは無視する
+        // (パートナー解放時など、外部から追いないで呼ばれるケースでも安全に抜ける)
+        if (!this.visual.dom) return;
+
         // _applySelectedAsset内で_stopCurrentVoiceが呼ばれるため、ここでは明示的に呼ばない
         this.timers.stateStart = Date.now();
         this.pos.destinationSet = false; // 状態が変わったら（または再設定されたら）必ずリセットして、次の実行フレームで目的地を再計算させる
@@ -1004,11 +1022,18 @@ export class BaseCharacter {
         }
     }
 
-    /** 音声の停止 */
+    /** 音声の停止とリソース解放 */
     _stopCurrentVoice() {
         if (this.visual.currentVoice) {
-            this.visual.currentVoice.loop = false;
-            this.visual.currentVoice.pause();
+            try {
+                this.visual.currentVoice.loop = false;
+                this.visual.currentVoice.pause();
+                // メモリリーク対策: srcを空にして強制的にリソースを解放させる
+                this.visual.currentVoice.src = "";
+                this.visual.currentVoice.load();
+            } catch (e) {
+                console.warn("[BaseCharacter] Error stopping voice:", e);
+            }
             this.visual.currentVoice = null;
         }
     }
@@ -1227,6 +1252,20 @@ export class BaseCharacter {
         this.visual.currentVoice = this.game.playSound(data.soundfile, (data.pitch || 1.0) * this.status.voicePitch);
         if (this.visual.currentVoice) {
             this.visual.currentVoice.loop = false;
+            
+            // 再生終了時に参照をクリアすることで isVoicePlaying() が正しい状態を返せるようにする
+            // (これをしないと、src="" にした際に ended がリセットされ、再生中と誤認される可能性がある)
+            const voice = this.visual.currentVoice;
+            voice.addEventListener('ended', () => {
+                if (this.visual.currentVoice === voice) {
+                    this.visual.currentVoice = null;
+                    // 自然終了時もリソース解放を試みる (Steady State 対策)
+                    try {
+                        voice.src = "";
+                        voice.load();
+                    } catch(e) {}
+                }
+            }, { once: true });
         }
 
         const voice = this.visual.currentVoice;
@@ -1574,7 +1613,8 @@ export class BaseCharacter {
 
     /** 絵文字（吹き出し）を表示 */
     showEmoji(text, duration = 3000) {
-        if (!this.visual.dom.emoji) return;
+        // destroy()済み（visual.domがnull）の場合は何もしない
+        if (!this.visual.dom || !this.visual.dom.emoji) return;
         this.visual.dom.emoji.textContent = text;
         this.visual.dom.emoji.classList.add('visible');
 
@@ -1589,7 +1629,8 @@ export class BaseCharacter {
 
     /** 絵文字を非表示にする */
     hideEmoji() {
-        if (!this.visual.dom.emoji) return;
+        // destroy()済み（visual.domがnull）の場合は何もしない
+        if (!this.visual.dom || !this.visual.dom.emoji) return;
         this.visual.dom.emoji.classList.remove('visible');
         if (this.timers.emojiTimer) {
             clearTimeout(this.timers.emojiTimer);
@@ -1623,6 +1664,42 @@ export class BaseCharacter {
     /** 能力の効果を実際に発生させる (サブクラスで要実装) */
     _onAbilityEffect(abilityId, options) {
         // デフォルトでは何もしない
+    }
+
+    /**
+     * キャラクターの破棄処理
+     * タイマー、音声、DOM、参照をすべて解放してメモリリークを防ぐ
+     */
+    destroy() {
+        console.log(`[BaseCharacter] Destroying character ${this.id} (${this.name})...`);
+        
+        // 1. タイマーのクリア
+        if (this.timers.emojiTimer) {
+            clearTimeout(this.timers.emojiTimer);
+            this.timers.emojiTimer = null;
+        }
+        if (this.timers.actionTimeout) {
+            clearTimeout(this.timers.actionTimeout);
+            this.timers.actionTimeout = null;
+        }
+
+        // 2. 音声の停止と解放
+        this._stopCurrentVoice();
+
+        // 3. DOM要素の削除と参照解除
+        if (this.visual.dom && this.visual.dom.container) {
+            this.visual.dom.container.remove();
+            // 循環参照を防ぐためDOMオブジェクト内の各参照をnullにする
+            Object.keys(this.visual.dom).forEach(key => {
+                this.visual.dom[key] = null;
+            });
+            this.visual.dom = null;
+        }
+
+        // 4. 外部参照の解除
+        this.game = null;
+        this.socialConfig = null;
+        this.interaction.targetItem = null;
     }
 
     /**

@@ -60,9 +60,10 @@ export class CharacterManager {
                 console.log(`[Game] Gift event aborted because Speaki ${id} was removed.`);
             }
 
-            if (s.visual.dom.container) s.visual.dom.container.remove();
-            
-            // 交流相手の解放
+            // 【再実装】キャラクターの破棄処理を呼び出す (タイマー、音声、DOMなどの解放)
+            s.destroy();
+
+            // 交流相手の解放 (s.destroyの前でも後でも良いが、参照が生きているうちに処理)
             if (s.socialConfig && s.socialConfig.partner) {
                 const partner = s.socialConfig.partner;
                 console.log(`[CharacterManager] Releasing partner ${partner.id} from social interaction due to removal of ${id}.`);
@@ -114,7 +115,8 @@ export class CharacterManager {
         if (!baby) return;
         console.log(`[Game] BabySpeaki ${baby.id} is evolving into Child!`);
 
-        if (baby.visual.dom.container) baby.visual.dom.container.remove();
+        // 【再実装】古いオブジェクトの破棄
+        baby.destroy();
 
         const index = game.speakis.indexOf(baby);
         if (index !== -1) {
@@ -165,7 +167,8 @@ export class CharacterManager {
         if (!child) return;
         console.log(`[Game] ChildSpeaki ${child.id} is evolving into Adult!`);
 
-        if (child.visual.dom.container) child.visual.dom.container.remove();
+        // 【再実装】古いオブジェクトの破棄
+        child.destroy();
 
         const index = game.speakis.indexOf(child);
         if (index !== -1) {
@@ -217,6 +220,22 @@ export class CharacterManager {
             const s = game.speakis[i];
             s.update(dt);
 
+            // 進化フラグのチェック: update完了後に安全に進化処理を行う
+            // (update()内から直接evolveBabyToChild()を呼ぶと、destroy()後もupdate()が続き
+            //  this.visual.domがnullになってクラッシュするため、フラグ経由で処理する)
+            if (s.isPendingEvolution) {
+                s.isPendingEvolution = false;
+                if (s.characterType === 'baby' && game.evolveBabyToChild) {
+                    console.log(`[CharacterManager] 赤ちゃん ${s.id} (${s.name}) を子供に進化させます。`);
+                    game.evolveBabyToChild(s);
+                } else if (s.characterType === 'child' && game.evolveChildToAdult) {
+                    console.log(`[CharacterManager] 子供 ${s.id} (${s.name}) を大人に進化させます。`);
+                    game.evolveChildToAdult(s);
+                }
+                // 進化後は配列が書き換わっているためcontinueでインデックスを保護
+                continue;
+            }
+
             if (s.isPendingDeletion) {
                 console.log(`[Game] Speaki ${s.id} died and returned to DeathWimple.`);
                 game.items.addItem('DeathWimple', 'item', s.pos.x, s.pos.y);
@@ -235,10 +254,9 @@ export class CharacterManager {
                     partner._onStateChanged(partner.status.state);
                 }
 
-                // DOM削除
-                if (s.visual.dom.container) {
-                    s.visual.dom.container.remove();
-                }
+                // 【再実装】キャラクターの破棄処理を呼び出す
+                s.destroy();
+
                 // リストから削除
                 game.speakis.splice(i, 1);
             }

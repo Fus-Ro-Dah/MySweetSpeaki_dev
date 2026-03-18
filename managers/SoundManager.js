@@ -123,8 +123,23 @@ export class SoundManager {
                 } else {
                     console.log("[Audio] Playback failed:", e);
                 }
+
+                // 再生失敗時も念のためリソース解放
+                try {
+                    playClone.src = "";
+                    playClone.load();
+                } catch(err) {}
             });
         }
+
+        // メモリリーク対策: 再生終了時にリソースを明示的に解放する
+        playClone.addEventListener('ended', () => {
+            try {
+                playClone.pause();
+                playClone.src = "";
+                playClone.load();
+            } catch (e) {}
+        }, { once: true });
 
         return playClone;
     }

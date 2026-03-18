@@ -844,6 +844,21 @@ button:hover {
     display: flex;
     justify-content: center;
     align-items: center;
+    /* bob（上下揺れ）はCSSアニメーションで処理（JS計算コスト削減） */
+    animation: speakiBob 1.4s ease-in-out infinite;
+    animation-delay: var(--bob-phase, 0s);
+}
+
+/* frozenモーション時はbobアニメーションを停止 */
+.char-sprite-container.frozen-motion {
+    animation: none;
+}
+
+/* bob（上下揺れ）keyframes */
+/* margin-topを使用: transformはJSが位置制御に使用しているため上書き不可 */
+@keyframes speakiBob {
+    0%, 100% { margin-top: 0; }
+    50%       { margin-top: calc(var(--bob-amount, 6px) * -1); }
 }
 
 .speaki-sprite,

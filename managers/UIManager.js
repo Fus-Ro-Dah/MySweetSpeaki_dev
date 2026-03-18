@@ -246,6 +246,11 @@ export class UIManager {
             </div>
         `;
         });
+        
+        // PERFORMANCE: 文字列が前回と完全に一致する場合は、DOM更新をスキップしてGC負荷を下げる
+        if (this._lastSpeakiListHTML === html) return;
+        this._lastSpeakiListHTML = html;
+        
         listContainer.innerHTML = html;
     }
 

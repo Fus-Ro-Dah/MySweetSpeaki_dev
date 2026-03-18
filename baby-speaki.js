@@ -51,12 +51,11 @@ export class BabySpeaki extends BaseCharacter {
     /** 状態遷移の制限と自動進化、喋りループ */
     _updateStateTransition() {
         // 1. 進化チェック (累積IDLE時間が60秒経過で子供へ)
-        // 進化は安全なステート（IDLE）の時のみ認める
+        // 直接evolveBabyToChildを呼ぶと、destroy()後もupdate()が続行してクラッシュする。
+        // isPendingEvolutionフラグを立て、CharacterManagerのループで安全に処理する。
         if (this.status.state === STATE.IDLE && this.idleGrowthTime > 60000) {
-            if (this.game && this.game.evolveBabyToChild) {
-                this.game.evolveBabyToChild(this);
-                return;
-            }
+            this.isPendingEvolution = true;
+            return;
         }
 
         // 2. 特殊状態（ユーザー交流、他スピキとの交流、死亡）の時は基底クラスに任せる

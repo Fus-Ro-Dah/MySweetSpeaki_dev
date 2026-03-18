@@ -30,13 +30,12 @@ export class ChildSpeaki extends BaseCharacter {
     _updateStateTransition() {
         if (this.status.state === STATE.DYING) return; // 死亡中は遷移しない
         // 0. 進化チェック (累積時間が60秒経過 && 満腹度75以上)
-        // 進化は安全なステート（IDLE or WALKING）の時のみ認める
+        // 直接evolveChildToAdult()を呼ぶと、destroy()後もupdate()が続行してクラッシュする。
+        // isPendingEvolutionフラグを立て、CharacterManagerのループで安全に処理する。
         const canEvolve = [STATE.IDLE, STATE.WALKING].includes(this.status.state);
         if (canEvolve && this.growthTime > 60000 && this.status.hunger >= 75) {
-            if (this.game && this.game.evolveChildToAdult) {
-                this.game.evolveChildToAdult(this);
-                return; // 進化したら以降の処理は不要
-            }
+            this.isPendingEvolution = true;
+            return; // 進化フラグを立てたら以降の処理は不要
         }
 
         super._updateStateTransition();
