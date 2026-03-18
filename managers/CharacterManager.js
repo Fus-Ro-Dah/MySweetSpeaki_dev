@@ -42,7 +42,7 @@ export class CharacterManager {
         }
         game.speakis.push(char);
         if (id === 0) {
-            console.log(char);
+            // console.log(char);
         }
         game.ui.updateSpeakiList();
     }
@@ -57,7 +57,7 @@ export class CharacterManager {
             // ギフト担当解除 (ゾンビ化防止)
             if (game.giftPartner === s) {
                 game.completeGiftEvent(null);
-                console.log(`[Game] Gift event aborted because Speaki ${id} was removed.`);
+                // console.log(`[Game] Gift event aborted because Speaki ${id} was removed.`);
             }
 
             // 【再実装】キャラクターの破棄処理を呼び出す (タイマー、音声、DOMなどの解放)
@@ -66,7 +66,7 @@ export class CharacterManager {
             // 交流相手の解放 (s.destroyの前でも後でも良いが、参照が生きているうちに処理)
             if (s.socialConfig && s.socialConfig.partner) {
                 const partner = s.socialConfig.partner;
-                console.log(`[CharacterManager] Releasing partner ${partner.id} from social interaction due to removal of ${id}.`);
+                // console.log(`[CharacterManager] Releasing partner ${partner.id} from social interaction due to removal of ${id}.`);
                 partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
                 partner.status.socialTurnCount = 0;
                 partner.status.isMySocialTurn = false;
@@ -96,7 +96,7 @@ export class CharacterManager {
         const game = this.game;
         const existingNPC = game.speakis.find(s => s.characterType === type);
         if (existingNPC) {
-            console.log(`[Game] NPC ${type} already exists. Removing (Leaving)...`);
+            // console.log(`[Game] NPC ${type} already exists. Removing (Leaving)...`);
             this.removeSpeaki(existingNPC.id);
             return;
         }
@@ -105,7 +105,7 @@ export class CharacterManager {
         const topY = 100;
 
         game.addSpeaki(centerX, topY, type);
-        console.log(`[Game] Called NPC: ${type}`);
+        // console.log(`[Game] Called NPC: ${type}`);
         game.ui.updateJobMenuUI();
     }
 
@@ -113,7 +113,7 @@ export class CharacterManager {
     evolveBabyToChild(baby) {
         const game = this.game;
         if (!baby) return;
-        console.log(`[Game] BabySpeaki ${baby.id} is evolving into Child!`);
+        // console.log(`[Game] BabySpeaki ${baby.id} is evolving into Child!`);
 
         // 【再実装】古いオブジェクトの破棄
         baby.destroy();
@@ -165,7 +165,7 @@ export class CharacterManager {
     evolveChildToAdult(child) {
         const game = this.game;
         if (!child) return;
-        console.log(`[Game] ChildSpeaki ${child.id} is evolving into Adult!`);
+        // console.log(`[Game] ChildSpeaki ${child.id} is evolving into Adult!`);
 
         // 【再実装】古いオブジェクトの破棄
         child.destroy();
@@ -226,10 +226,10 @@ export class CharacterManager {
             if (s.isPendingEvolution) {
                 s.isPendingEvolution = false;
                 if (s.characterType === 'baby' && game.evolveBabyToChild) {
-                    console.log(`[CharacterManager] 赤ちゃん ${s.id} (${s.name}) を子供に進化させます。`);
+                    // console.log(`[CharacterManager] 赤ちゃん ${s.id} (${s.name}) を子供に進化させます。`);
                     game.evolveBabyToChild(s);
                 } else if (s.characterType === 'child' && game.evolveChildToAdult) {
-                    console.log(`[CharacterManager] 子供 ${s.id} (${s.name}) を大人に進化させます。`);
+                    // console.log(`[CharacterManager] 子供 ${s.id} (${s.name}) を大人に進化させます。`);
                     game.evolveChildToAdult(s);
                 }
                 // 進化後は配列が書き換わっているためcontinueでインデックスを保護
@@ -237,7 +237,7 @@ export class CharacterManager {
             }
 
             if (s.isPendingDeletion) {
-                console.log(`[Game] Speaki ${s.id} died and returned to DeathWimple.`);
+                // console.log(`[Game] Speaki ${s.id} died and returned to DeathWimple.`);
                 game.items.addItem('DeathWimple', 'item', s.pos.x, s.pos.y);
 
                 // --- クリーンアップ ---
@@ -246,7 +246,7 @@ export class CharacterManager {
 
                 if (s.socialConfig && s.socialConfig.partner) {
                     const partner = s.socialConfig.partner;
-                    console.log(`[Game] Releasing partner ${partner.id} from social interaction.`);
+                    // console.log(`[Game] Releasing partner ${partner.id} from social interaction.`);
                     partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
                     partner.status.socialTurnCount = 0;
                     partner.status.isMySocialTurn = false;

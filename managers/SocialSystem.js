@@ -237,7 +237,7 @@ export class SocialSystem {
 
         // 実行：決定した配役をそのまま渡す
         if (bestMatch) {
-            console.log(`[Social] Action selected: ${bestMatch.template.id} (Priority: ${bestMatch.template.priority}) from Initiator:${bestMatch.initiator.id} to Target:${bestMatch.target.id}`);
+            // console.log(`[Social] Action selected: ${bestMatch.template.id} (Priority: ${bestMatch.template.priority}) from Initiator:${bestMatch.initiator.id} to Target:${bestMatch.target.id}`);
             bestMatch.template.execute(bestMatch.initiator, bestMatch.target);
             this.lastSocialTime = Date.now();
             return true;
@@ -367,7 +367,7 @@ export class SocialSystem {
 
         const success = this.requestSocialAction(childOrBaby, adult, 'CRYING');
         if (!success) console.warn("[Social] 開始できませんでした。既に交流中などの理由が考えられます。");
-        else console.log(`[Social] 強制的に ${childOrBaby.id} が泣き、大人が助けに行きます`);
+        // else console.log(`[Social] 強制的に ${childOrBaby.id} が泣き、大人が助けに行きます`);
     }
 
     /** デバッグ用: 強制的にお菓子を配らせる (GIVE_CANDY) */
@@ -383,7 +383,7 @@ export class SocialSystem {
 
         const success = this.requestSocialAction(adult, childOrBaby, 'GIVE_CANDY');
         if (!success) console.warn("[Social] 開始できませんでした。");
-        else console.log(`[Social] 強制的に ${adult.id} が ${childOrBaby.id} にお菓子を配りに行きます`);
+        // else console.log(`[Social] 強制的に ${adult.id} が ${childOrBaby.id} にお菓子を配りに行きます`);
     }
 
     /** デバッグ用: 強制的におしゃべりさせる (CHAT) */
@@ -402,7 +402,7 @@ export class SocialSystem {
 
         const success = this.requestSocialAction(initiator, target, 'CHAT');
         if (!success) console.warn("[Social] 開始できませんでした。");
-        else console.log(`[Social] 強制的に ${initiator.id} が ${target.id} とおしゃべりを開始します`);
+        // else console.log(`[Social] 強制的に ${initiator.id} が ${target.id} とおしゃべりを開始します`);
     }
 
     /** デバッグ用: ハッピーダンス (HAPPY_DANCE) */
@@ -414,7 +414,7 @@ export class SocialSystem {
         candidates[1].status.mood = 50;
 
         const success = this.requestSocialAction(candidates[0], candidates[1], 'HAPPY_DANCE');
-        if (success) console.log("[Social] HAPPY_DANCE 開始");
+        // if (success) console.log("[Social] HAPPY_DANCE 開始");
     }
 
     /** デバッグ用: なだめる (SOOTHE) */
@@ -427,7 +427,7 @@ export class SocialSystem {
         helper.status.mood = 50;
 
         const success = this.requestSocialAction(sadOne, helper, 'SOOTHE');
-        if (success) console.log("[Social] SOOTHE 開始");
+        // if (success) console.log("[Social] SOOTHE 開始");
     }
 
     /** デバッグ用: かぼちゃ遊び (PLAY_PUMPKIN) */
@@ -438,7 +438,7 @@ export class SocialSystem {
         // 近くに ToyPumpkin を置く（なければ作る）
         let pumpkin = (this.game.placedItems || []).find(it => it.id === 'ToyPumpkin');
         if (!pumpkin) {
-            console.log("[Social] ToyPumpkinがなかったので中央に配置します");
+            // console.log("[Social] ToyPumpkinがなかったので中央に配置します");
             this.game.items.addItem('ToyPumpkin', 'toy', 600, 400);
             pumpkin = this.game.placedItems.find(it => it.id === 'ToyPumpkin');
         }
@@ -451,7 +451,7 @@ export class SocialSystem {
         candidates[1].status.mood = 0;
 
         const success = this.requestSocialAction(candidates[0], candidates[1], 'PLAY_PUMPKIN');
-        if (success) console.log("[Social] PLAY_PUMPKIN 開始");
+        // if (success) console.log("[Social] PLAY_PUMPKIN 開始");
     }
 
     /** デバッグ用: 赤ちゃんのお世話 (BABY_CARE) */
@@ -462,6 +462,6 @@ export class SocialSystem {
 
         adult.status.hunger = 100;
         const success = this.requestSocialAction(baby, adult, 'BABY_CARE');
-        if (success) console.log("[Social] BABY_CARE 開始");
+        // if (success) console.log("[Social] BABY_CARE 開始");
     }
 }

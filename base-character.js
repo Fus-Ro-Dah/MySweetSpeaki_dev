@@ -227,7 +227,7 @@ export class BaseCharacter {
                     if (this.visual.currentVoice) {
                         this.visual.currentVoice.pause();
                     }
-                    console.log(`[BaseCharacter] ${this.name} is dying. (Starving: ${isStarving}, Despaired: ${isDespaired})`);
+                    // console.log(`[BaseCharacter] ${this.name} is dying. (Starving: ${isStarving}, Despaired: ${isDespaired})`);
                 }
             }
         }
@@ -322,12 +322,12 @@ export class BaseCharacter {
 
     /** 進行不能状態からの自動復旧 */
     _attemptAutoRecovery(reason) {
-        console.warn(`[AutoRecovery] ${this.name} (ID:${this.id}) を自動復旧します。理由: ${reason}`);
+        // console.warn(`[AutoRecovery] ${this.name} (ID:${this.id}) を自動復旧します。理由: ${reason}`);
 
         // 交流相手がいる場合は相手も解放する
         if (this.socialConfig && this.socialConfig.partner) {
             const partner = this.socialConfig.partner;
-            console.log(`[AutoRecovery] 相方 ${partner.name} (ID:${partner.id}) も解放します。`);
+            // console.log(`[AutoRecovery] 相方 ${partner.name} (ID:${partner.id}) も解放します。`);
             partner.status.state = (partner.status.stateStack.length > 0) ? partner.status.stateStack.pop() : STATE.IDLE;
             partner.status.socialTurnCount = 0;
             partner.status.isMySocialTurn = false;
@@ -441,15 +441,8 @@ export class BaseCharacter {
                     }
 
                     if (!isVoice && !isPreparing && elapsed > 2000) {
-                        const v = this.visual.currentVoice;
-                        console.log(`[Debug][${this.id}] Transitioning to IDLE. isVoice=${isVoice}, isPreparing=${isPreparing}, elapsed=${elapsed}`);
-                        if (v) console.log(`[Debug][${this.id}] Voice state at transition: ended=${v.ended}, paused=${v.paused}, ready=${v.readyState}, time=${v.currentTime}`);
-
                         this.status.state = (this.status.stateStack.length > 0) ? this.status.stateStack.pop() : STATE.IDLE;
                         this._onStateChanged(this.status.state);
-                    } else if (Math.random() < 0.01) {
-                        // Debug log occasionally to avoid spam
-                        console.log(`[Debug][${this.id}] Maintaining state. isVoice=${isVoice}, isPreparing=${isPreparing}, elapsed=${elapsed}`);
                     }
                 }
                 break;
@@ -514,7 +507,7 @@ export class BaseCharacter {
                     if (!this.pos.destinationSet && socialPartner) {
                         const d = Math.sqrt((this.pos.x - socialPartner.pos.x) ** 2 + (this.pos.y - socialPartner.pos.y) ** 2);
                         if (d < 200) {
-                            console.log(`[BaseCharacter] Recovering stuck for ${this.id}: partner nearby, forcing arrival.`);
+                            // console.log(`[BaseCharacter] Recovering stuck for ${this.id}: partner nearby, forcing arrival.`);
                             forceArrived = true;
                         }
                     }
@@ -1026,11 +1019,7 @@ export class BaseCharacter {
     _stopCurrentVoice() {
         if (this.visual.currentVoice) {
             try {
-                this.visual.currentVoice.loop = false;
                 this.visual.currentVoice.pause();
-                // メモリリーク対策: srcを空にして強制的にリソースを解放させる
-                this.visual.currentVoice.src = "";
-                this.visual.currentVoice.load();
             } catch (e) {
                 console.warn("[BaseCharacter] Error stopping voice:", e);
             }

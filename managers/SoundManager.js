@@ -67,7 +67,7 @@ export class SoundManager {
             if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
             const arrayBuffer = await response.arrayBuffer();
             this.bgmBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
-            console.log("[Audio] BGM loaded and decoded (Web Audio API).");
+            // console.log("[Audio] BGM loaded and decoded (Web Audio API).");
         } catch (e) {
             console.warn("[Audio] BGM loading failed:", e);
         }
@@ -91,7 +91,7 @@ export class SoundManager {
             this.bgmGain.connect(this.audioCtx.destination);
             
             this.bgmSource.start(0);
-            console.log("[Audio] Playing BGM.");
+            // console.log("[Audio] Playing BGM.");
         }
     }
 
@@ -146,9 +146,12 @@ export class SoundManager {
             duration: buffer ? buffer.duration : 0,
             pause: function() {
                 try { source.stop(); } catch(e) {}
-                source.disconnect();
-                gainNode.disconnect();
+                try { source.disconnect(); } catch(e) {}
+                try { gainNode.disconnect(); } catch(e) {}
                 this._ended = true;
+                // pause時にも参照を明示的に解放
+                source.onended = null;
+                source.buffer = null;
             },
             get ended() {
                 return this._ended;
@@ -163,12 +166,15 @@ export class SoundManager {
 
         // 再生が終了したらノードを切り離す（ガベージコレクションのため）
         source.onended = () => {
-            source.disconnect();
-            gainNode.disconnect();
+            try { source.disconnect(); } catch(e) {}
+            try { gainNode.disconnect(); } catch(e) {}
             resultNode._ended = true;
             if (typeof resultNode._onendedCallback === 'function') {
                 resultNode._onendedCallback();
             }
+            // 循環参照を強制的に断ち切る（Edge等でのメモリーリーク対策）
+            source.onended = null;
+            source.buffer = null;
         };
 
         return resultNode;
