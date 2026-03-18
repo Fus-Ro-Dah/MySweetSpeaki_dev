@@ -1251,34 +1251,22 @@ export class BaseCharacter {
         // 個体ごとの声の高さ (voicePitch) を反映
         this.visual.currentVoice = this.game.playSound(data.soundfile, (data.pitch || 1.0) * this.status.voicePitch);
         if (this.visual.currentVoice) {
-            this.visual.currentVoice.loop = false;
-            
-            // 再生終了時に参照をクリアすることで isVoicePlaying() が正しい状態を返せるようにする
-            // (これをしないと、src="" にした際に ended がリセットされ、再生中と誤認される可能性がある)
             const voice = this.visual.currentVoice;
-            voice.addEventListener('ended', () => {
+            // Web Audio APIの戻り値オブジェクトにonendedを設定する
+            voice.onended = () => {
                 if (this.visual.currentVoice === voice) {
                     this.visual.currentVoice = null;
-                    // 自然終了時もリソース解放を試みる (Steady State 対策)
-                    try {
-                        voice.src = "";
-                        voice.load();
-                    } catch(e) {}
                 }
-            }, { once: true });
+            };
         }
 
         const voice = this.visual.currentVoice;
         // アセットのタイプに関わらず、音声の長さを取得してアクションの長さに反映する
-        if (voice) {
-            const updateDur = () => {
-                if (isNaN(voice.duration) || voice.duration <= 0) return;
-                // 交流リアクション中も、ボイスの長さに合わせてカウントを進めるために時間を反映させる
-                // (少しだけ余韻を持たせるために 500ms 追加)
-                this.timers.actionDuration = (voice.duration / (data.pitch || 1.0)) * 1000 + 500;
-            };
-            if (voice.readyState >= 1) updateDur();
-            else voice.addEventListener('loadedmetadata', updateDur, { once: true });
+        // Web Audio APIのバッファからは即座にdurationが取得可能
+        if (voice && !isNaN(voice.duration) && voice.duration > 0) {
+            // 交流リアクション中も、ボイスの長さに合わせてカウントを進めるために時間を反映させる
+            // (少しだけ余韻を持たせるために 500ms 追加)
+            this.timers.actionDuration = (voice.duration / (data.pitch || 1.0)) * 1000 + 500;
         }
     }
 

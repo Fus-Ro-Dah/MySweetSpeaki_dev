@@ -6,21 +6,23 @@ import { ASSETS, ITEMS } from '../config.js';
  */
 export class SoundManager {
     constructor() {
-        this.images = {};       // 画像キャッシュ（パス/キー -> Image）
-        this.sounds = {};       // 音声キャッシュ（ファイル名 -> Audio）
+        this.images = {};        // 画像キャッシュ
+        this.soundBuffers = {};  // 音声キャッシュ（デコード済み AudioBuffer）
         this.audioEnabled = false;
-        this.audioCtx = null;   // AudioContext
-        this.bgmBuffer = null;  // Web Audio API用デコード済みデータ
-        this.bgmSource = null;  // 再生用ノード
-        this.bgmFallback = null; // CORSエラー時のフォールバック用
+        
+        // AudioContextはユーザー操作後に初期化できるようにあらかじめ作成しておく
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.audioCtx = new AudioContext();
+
+        this.bgmBuffer = null;  // BGM用バッファ
+        this.bgmSource = null;  // BGM再生用ノード
+        this.bgmGain = null;    // BGM音量制御ノード
     }
 
     /** アセット（画像・音声）の全読み込み */
     loadResources() {
-        // ネストされたアセットを再帰的に読み込む
         this._loadNestedAssets(ASSETS);
 
-        // ITEMSに定義された画像と音声をすべて読み込む
         Object.values(ITEMS).forEach(item => {
             if (item.imagefile) {
                 const path = `assets/images/${item.imagefile}`;
@@ -28,16 +30,34 @@ export class SoundManager {
                 img.src = path;
                 const key = item.imagefile.replace('.png', '');
                 this.images[key] = img;
-                this.images[path] = img; // パス指定でも引けるように
+                this.images[path] = img;
             }
-            if (item.soundfile && !this.sounds[item.soundfile]) {
-                const audio = new Audio(`assets/sounds/${item.soundfile}`);
-                this.sounds[item.soundfile] = audio;
+            if (item.soundfile) {
+                this._loadAudioBuffer(item.soundfile);
             }
         });
 
-        // BGMのロード (Web Audio API用)
+        // BGMのロード
         this._loadBGM('assets/music/he-jitsu-no-joh.mp3');
+    }
+
+    /** 音声ファイルをフェッチしてAudioBufferとしてキャッシュする */
+    async _loadAudioBuffer(fileName) {
+        if (this.soundBuffers[fileName]) return; // 既にロード中/済み
+        
+        this.soundBuffers[fileName] = "loading"; // 重複ロード防止フラグ
+        try {
+            const url = `assets/sounds/${fileName}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+            
+            const arrayBuffer = await response.arrayBuffer();
+            const audioBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
+            this.soundBuffers[fileName] = audioBuffer;
+        } catch (e) {
+            console.warn(`[Audio] Failed to load/decode ${fileName}:`, e);
+            delete this.soundBuffers[fileName]; // 失敗したら再試行できるように消す
+        }
     }
 
     /** BGMをフェッチしてデコードする */
@@ -46,128 +66,135 @@ export class SoundManager {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
             const arrayBuffer = await response.arrayBuffer();
-
-            if (!this.audioCtx) {
-                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-
             this.bgmBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
             console.log("[Audio] BGM loaded and decoded (Web Audio API).");
         } catch (e) {
-            console.warn("[Audio] Web Audio API failed (CORS?), falling back to standard Audio element:", e);
-            // フォールバック: 標準の Audio オブジェクトを作成（file:// プロトコル等での回避策）
-            this.bgmFallback = new Audio(url);
-            this.bgmFallback.loop = true;
-            this.bgmFallback.volume = 0.5;
+            console.warn("[Audio] BGM loading failed:", e);
         }
     }
 
     /** BGMの再生開始 */
     startBGM() {
-        if (this.audioCtx && this.audioCtx.state === 'suspended') {
+        if (this.audioCtx.state === 'suspended') {
             this.audioCtx.resume();
         }
 
-        if (this.bgmBuffer) {
-            if (!this.bgmSource) {
-                this.bgmSource = this.audioCtx.createBufferSource();
-                this.bgmSource.buffer = this.bgmBuffer;
-                this.bgmSource.loop = true;
-                const gainNode = this.audioCtx.createGain();
-                gainNode.gain.value = 0.5;
-                this.bgmSource.connect(gainNode);
-                gainNode.connect(this.audioCtx.destination);
-                this.bgmSource.start(0);
-                console.log("[Audio] Playing BGM via Web Audio API (Seamless).");
-            }
-        } else if (this.bgmFallback) {
-            this.bgmFallback.play().catch(e => console.log("[Audio] Fallback playback failed:", e));
-            console.log("[Audio] Playing BGM via Standard Audio (Fallback).");
+        if (this.bgmBuffer && !this.bgmSource) {
+            this.bgmSource = this.audioCtx.createBufferSource();
+            this.bgmSource.buffer = this.bgmBuffer;
+            this.bgmSource.loop = true;
+            
+            this.bgmGain = this.audioCtx.createGain();
+            this.bgmGain.gain.value = 0.5;
+            
+            this.bgmSource.connect(this.bgmGain);
+            this.bgmGain.connect(this.audioCtx.destination);
+            
+            this.bgmSource.start(0);
+            console.log("[Audio] Playing BGM.");
         }
     }
 
-    /** 音声の再生（インスタンスを返す） */
+    /** BGMの停止 */
+    stopBGM() {
+        if (this.bgmSource) {
+            try { this.bgmSource.stop(); } catch(e) {}
+            this.bgmSource.disconnect();
+            this.bgmSource = null;
+        }
+    }
+
+    /** 音声の再生（停止用の互換オブジェクトを返す） */
     playSound(fileName, pitch = 1.0) {
         if (!this.audioEnabled) return null;
 
-        let audio = this.sounds[fileName];
-        let src = audio ? audio.src : `assets/sounds/${fileName}`;
+        // Contextが停止していれば再開
+        if (this.audioCtx.state === 'suspended') {
+            this.audioCtx.resume().catch(() => {});
+        }
 
-        // 未ロードの音源の場合は、new Audio して再生を試みる
-        const playClone = new Audio(src);
-        playClone.volume = 0.5;
+        const buffer = this.soundBuffers[fileName];
+        
+        // 読み込み中または未ロードの場合は無視（new Audioによる強行はリークの元なのでやめる）
+        if (!buffer || buffer === "loading") {
+            if (!buffer) {
+                // 未ロードの場合は裏でロードを開始しておく
+                this._loadAudioBuffer(fileName);
+            }
+            return null;
+        }
 
+        const source = this.audioCtx.createBufferSource();
+        source.buffer = buffer;
+        
         // ピッチ（再生速度）の設定
         if (pitch !== 1.0) {
-            playClone.defaultPlaybackRate = pitch;
-            playClone.playbackRate = pitch;
-
-            if ('preservesPitch' in playClone) playClone.preservesPitch = false;
-            if ('webkitPreservesPitch' in playClone) playClone.webkitPreservesPitch = false;
-            if ('mozPreservesPitch' in playClone) playClone.mozPreservesPitch = false;
+            source.playbackRate.value = pitch;
         }
 
-        const promise = playClone.play();
-        if (promise !== undefined) {
-            promise.then(() => {
-                if (pitch !== 1.0) {
-                    playClone.playbackRate = pitch;
-                }
-            }).catch(e => {
-                // AbortError (playリクエストが中断された) は正常な動作範囲内なので無視する
-                if (e.name === 'AbortError') return;
+        const gainNode = this.audioCtx.createGain();
+        gainNode.gain.value = 0.5;
 
-                // ファイルが存在しないなどのエラー
-                if (!audio) {
-                    console.warn(`[Audio] Playback failed for unregistered sound: ${fileName}`, e);
-                } else {
-                    console.log("[Audio] Playback failed:", e);
-                }
+        source.connect(gainNode);
+        gainNode.connect(this.audioCtx.destination);
 
-                // 再生失敗時も念のためリソース解放
-                try {
-                    playClone.src = "";
-                    playClone.load();
-                } catch(err) {}
-            });
-        }
+        source.start(0);
 
-        // メモリリーク対策: 再生終了時にリソースを明示的に解放する
-        playClone.addEventListener('ended', () => {
-            try {
-                playClone.pause();
-                playClone.src = "";
-                playClone.load();
-            } catch (e) {}
-        }, { once: true });
+        const resultNode = {
+            _ended: false,
+            _onendedCallback: null,
+            duration: buffer ? buffer.duration : 0,
+            pause: function() {
+                try { source.stop(); } catch(e) {}
+                source.disconnect();
+                gainNode.disconnect();
+                this._ended = true;
+            },
+            get ended() {
+                return this._ended;
+            },
+            set onended(callback) {
+                this._onendedCallback = callback;
+            },
+            get onended() {
+                return this._onendedCallback;
+            }
+        };
 
-        return playClone;
+        // 再生が終了したらノードを切り離す（ガベージコレクションのため）
+        source.onended = () => {
+            source.disconnect();
+            gainNode.disconnect();
+            resultNode._ended = true;
+            if (typeof resultNode._onendedCallback === 'function') {
+                resultNode._onendedCallback();
+            }
+        };
+
+        return resultNode;
     }
 
     /** アセット定義を再帰的に探索して読み込む */
     _loadNestedAssets(node) {
         if (!node || typeof node !== 'object') return;
 
-        // 子要素が配列（バリエーションリスト）なら、それは末端のアセットデータ群
         if (Array.isArray(node)) {
             node.forEach(data => {
                 if (data.imagefile && !this.images[data.imagefile]) {
+                    const path = `assets/images/${data.imagefile}`;
                     const img = new Image();
-                    img.src = `assets/images/${data.imagefile}`;
+                    img.src = path;
                     this.images[data.imagefile] = img;
-                    // キーでも引けるように（マッピングの互換性維持のため）
                     const key = data.imagefile.replace('.png', '');
                     this.images[key] = img;
                 }
-                if (data.soundfile && !this.sounds[data.soundfile]) {
-                    const audio = new Audio(`assets/sounds/${data.soundfile}`);
-                    this.sounds[data.soundfile] = audio;
+                if (data.soundfile) {
+                    this._loadAudioBuffer(data.soundfile);
                 }
             });
             return;
         }
 
-        // それ以外はさらに深く探索
         Object.values(node).forEach(child => this._loadNestedAssets(child));
     }
 
