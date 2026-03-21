@@ -5,6 +5,7 @@ import { ItemManager } from './managers/ItemManager.js';
 import { CharacterManager } from './managers/CharacterManager.js';
 import { SocialSystem } from './managers/SocialSystem.js';
 import { UIManager } from './managers/UIManager.js';
+import { MessageManager } from './managers/MessageManager.js';
 
 /**
  * ゲームのメインクラス
@@ -53,6 +54,7 @@ export class Game {
 
         // --- マネージャの初期化 ---
         this.sound = new SoundManager();
+        this.messages = new MessageManager(this);
         this.input = new InputManager(this);
         this.items = new ItemManager(this);
         this.characters = new CharacterManager(this);

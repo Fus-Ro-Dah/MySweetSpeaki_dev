@@ -301,6 +301,11 @@ export class SocialSystem {
         origin._onStateChanged(origin.status.state);
         target._onStateChanged(target.status.state);
 
+        // メッセージログ (交流 - いずれかが選択されている場合のみ)
+        if (this.game.messages && (this.game.highlightedCharId === origin.id || this.game.highlightedCharId === target.id)) {
+            this.game.messages.logSocialInteraction(origin, target, options.id);
+        }
+
         // 状態変更後に目的地を確定させる
         if (movementType === 'TARGET_TO_ORIGIN') {
             target.pos.targetX = origin.pos.x + (target.pos.x < origin.pos.x ? -120 : 120);
@@ -350,6 +355,11 @@ export class SocialSystem {
 
         start(char1, target1, char2, true);
         start(char2, target2, char1, false);
+
+        // メッセージログ (交流 - いずれかが選択されている場合のみ)
+        if (this.game.messages && (this.game.highlightedCharId === char1.id || this.game.highlightedCharId === char2.id)) {
+            this.game.messages.logSocialInteraction(char1, char2, options.id);
+        }
     }
 
     /** デバッグ用: 強制的に赤ちゃん/子どもを泣かせる (CRYING) */

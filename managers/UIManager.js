@@ -60,9 +60,25 @@ export class UIManager {
         // 自動スクロール
         container.scrollTop = container.scrollHeight;
 
-        // メッセージ数制限（例：最大50件）
-        while (container.children.length > 50) {
+        // メッセージ数制限（最大30件）
+        while (container.children.length > 30) {
             container.removeChild(container.firstChild);
+        }
+    }
+
+    /** コンソールをクリアする */
+    clearConsole() {
+        const container = document.getElementById('message-section');
+        if (container) {
+            container.innerHTML = '<div class="message-placeholder">ｽﾋﾟｷたちを観察してみよう……（ｽﾋﾟｷ一覧で観察したいｽﾋﾟｷを選択してください）</div>';
+        }
+    }
+
+    /** コンソールのヘッダーを更新する */
+    updateConsoleHeader(name) {
+        const header = document.getElementById('selected-speaki-header');
+        if (header) {
+            header.textContent = name ? `観察中: ${name}` : '観察中: なし';
         }
     }
 
@@ -214,6 +230,14 @@ export class UIManager {
     setHighlight(id) {
         const game = this.game;
         game.highlightedCharId = (game.highlightedCharId === id) ? null : id;
+        
+        // コンソールのリフレッシュ
+        this.clearConsole();
+        
+        // ヘッダーの更新
+        const selectedSpeaki = game.speakis.find(s => s.id === game.highlightedCharId);
+        this.updateConsoleHeader(selectedSpeaki ? selectedSpeaki.name : null);
+
         this.updateSpeakiList(true);
     }
 

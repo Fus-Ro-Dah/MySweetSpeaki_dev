@@ -476,6 +476,17 @@ body.mode-relaxed #happiness-container {
     min-height: 0;
 }
 
+.selected-header {
+    background: rgba(255, 105, 180, 0.1);
+    color: var(--accent-color);
+    padding: 0.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255, 105, 180, 0.2);
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
 .tab-content.active {
     display: flex;
 }

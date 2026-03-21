@@ -310,6 +310,11 @@ export class InputManager {
             speaki.status.friendship = Math.min(50, speaki.status.friendship + 0.2);
             speaki.changeMood(0.1);
 
+            // メッセージログ (撫でる - 選択されている場合のみ)
+            if (this.game.messages && this.game.highlightedCharId === speaki.id) {
+                this.game.messages.logUserInteraction(speaki, 'isPetting');
+            }
+
             // ハート生成 (一定間隔)
             if (!speaki.timers.lastPettingHeart || Date.now() - speaki.timers.lastPettingHeart > 300) {
                 this._createPettingHeart(speaki);
@@ -365,6 +370,11 @@ export class InputManager {
         speaki.status.friendship = Math.max(-50, speaki.status.friendship - 5);
         speaki.changeMood(-10);
         this._createHitEffect(speaki.interaction.lastMouseX, speaki.interaction.lastMouseY);
+
+        // メッセージログ (叩く - 選択されている場合のみ)
+        if (game.messages && game.highlightedCharId === speaki.id) {
+            game.messages.logUserInteraction(speaki, 'isHit');
+        }
 
         if (speaki.status.friendship <= -31) {
             speaki.interaction.isInteracting = false;

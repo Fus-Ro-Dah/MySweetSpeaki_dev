@@ -23,7 +23,7 @@ export const STATE = {
     // ユーザーインタラクション
     USER_INTERACTING: 'user_interacting',
 
-    // スピキ同士のインタラクション(今後実装予定)
+    // スピキ同士のインタラクション
     GAME_APPROACHING: 'game_approaching',
     GAME_REACTION: 'game_reaction',
 

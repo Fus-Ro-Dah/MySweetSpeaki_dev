@@ -963,12 +963,15 @@ export class BaseCharacter {
 
     _onStateChanged(newState) {
         // destroy()済みキャラクターは無視する
-        // (パートナー解放時など、外部から追いないで呼ばれるケースでも安全に抜ける)
         if (!this.visual.dom) return;
 
-        // _applySelectedAsset内で_stopCurrentVoiceが呼ばれるため、ここでは明示的に呼ばない
+        // メッセージログの生成 (選択されている場合のみ)
+        if (this.game.messages && this.game.highlightedCharId === this.id) {
+            this.game.messages.logStateChange(this);
+        }
+
         this.timers.stateStart = Date.now();
-        this.pos.destinationSet = false; // 状態が変わったら（または再設定されたら）必ずリセットして、次の実行フレームで目的地を再計算させる
+        this.pos.destinationSet = false;
 
         this._applyStateAppearance(newState);
         this.visual.motionTimer = 0;
@@ -1293,6 +1296,11 @@ export class BaseCharacter {
         if (!item) return;
         this.status.state = STATE.ITEM_APPROACHING;
         this.interaction.targetItem = item;
+
+        // アイテム反応ログ (選択されている場合のみ)
+        if (this.game.messages && this.game.highlightedCharId === this.id) {
+            this.game.messages.logItemReaction(this, item);
+        }
 
         const dx = this.pos.x - item.x;
         const dy = this.pos.y - item.y;
@@ -1649,7 +1657,7 @@ export class BaseCharacter {
      */
     destroy() {
         console.log(`[BaseCharacter] Destroying character ${this.id} (${this.name})...`);
-        
+
         // 1. タイマーのクリア
         if (this.timers.emojiTimer) {
             clearTimeout(this.timers.emojiTimer);
