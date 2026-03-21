@@ -45,27 +45,47 @@ export const ASSETS = {
         mood: {
             normal: {
                 idle: [
-                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'none' },
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'pulse' },
+                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'swing' },
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'stretch' },
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'pulse' },
                     { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'swing' },
                 ],
                 walking: [
                     { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
                     { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+                    { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'pulse' },
+                    { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'pulse' },
+                    { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'none' },
+                    { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'stretch' },
                 ]
             },
             happy: {
                 idle: [
-                    { imagefile: 'speaki_happy_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'swing' },
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'swing' },
+                    { imagefile: 'speaki_happy_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'fast_swing' },
                     { imagefile: 'speaki_happy_idle_3.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'swing' },
-                    { imagefile: 'speaki_happy_idle_4.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+                    { imagefile: 'speaki_happy_idle_4.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'pulse' },
                     { imagefile: 'speaki_happy_idle_5.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'fast_swing' },
                     { imagefile: 'speaki_happy_idle_6.png', soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3', text: 'ｽﾝﾊﾞｺｯﾁﾁｮﾜﾖｰ', movePattern: 'swing' },
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'swing' },
+                    { imagefile: 'speaki_happy_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'fast_swing' },
+                    { imagefile: 'speaki_happy_idle_3.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'swing' },
+                    { imagefile: 'speaki_happy_idle_4.png', soundfile: 'チョワヨ2.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'pulse' },
+                    { imagefile: 'speaki_happy_idle_5.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'pulse' },
+                    { imagefile: 'speaki_happy_idle_6.png', soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3', text: 'ｽﾝﾊﾞｺｯﾁﾁｮﾜﾖｰ', movePattern: 'stretch' },
                 ],
                 walking: [
                     { imagefile: 'speaki_happy_walking_1.png', soundfile: 'チョワヨチョワヨウェガレジチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'swing' },
                     { imagefile: 'speaki_happy_walking_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'swing' },
                     { imagefile: 'speaki_happy_walking_3.png', soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'swing' },
-                    { imagefile: 'speaki_happy_walking_4.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'none' },
+                    { imagefile: 'speaki_happy_walking_4.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+                    { imagefile: 'speaki_happy_walking_5.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'pulse' },
+                    { imagefile: 'speaki_happy_walking_1.png', soundfile: 'チョワヨチョワヨウェガレジチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'pulse' },
+                    { imagefile: 'speaki_happy_walking_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'pulse' },
+                    { imagefile: 'speaki_happy_walking_3.png', soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'bounce' },
+                    { imagefile: 'speaki_happy_walking_4.png', soundfile: 'チョワヨ2.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'fast_swing' },
                     { imagefile: 'speaki_happy_walking_5.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'swing' }
                 ],
                 giftwait: [
@@ -78,28 +98,76 @@ export const ASSETS = {
                     { imagefile: 'speaki_sad_idle_2.png', soundfile: 'デルジバゼヨ.mp3', text: 'ﾃﾞﾙｼﾞﾊﾞｾﾞﾖ!', movePattern: 'shake' },
                     { imagefile: 'speaki_sad_idle_3.png', soundfile: 'ウアアスピキデルジバゼヨ.mp3', text: 'ｳｱｱ!ｽﾋﾟｷﾃﾞﾙｼﾞﾊﾞｾﾞﾖ!', movePattern: 'shake' },
                     { imagefile: 'speaki_sad_idle_4.png', soundfile: 'スピキヲイジメヌンデ.mp3', text: 'ｽﾋﾟｷｦｲｼﾞﾒﾇﾝﾃﾞ...', movePattern: 'shake' },
-                    { imagefile: 'speaki_sad_idle_5.png', soundfile: 'ひきつけ.mp3', text: 'ﾋｯｸ…ﾋｯｸ…', movePattern: 'shake' }
+                    { imagefile: 'speaki_sad_idle_5.png', soundfile: 'ひきつけ.mp3', text: 'ﾋｯｸ…ﾋｯｸ…', movePattern: 'twitch' },
+                    { imagefile: 'speaki_sad_idle_1.png', soundfile: '完全詠唱.mp3', text: '完全詠唱', movePattern: 'twitch' },
+                    { imagefile: 'speaki_sad_idle_2.png', soundfile: 'デルジバゼヨ.mp3', text: 'ﾃﾞﾙｼﾞﾊﾞｾﾞﾖ!', movePattern: 'vibrate' },
+                    { imagefile: 'speaki_sad_idle_3.png', soundfile: 'ウアアスピキデルジバゼヨ.mp3', text: 'ｳｱｱ!ｽﾋﾟｷﾃﾞﾙｼﾞﾊﾞｾﾞﾖ!', movePattern: 'vibrate' },
+                    { imagefile: 'speaki_sad_idle_4.png', soundfile: '本場スピキ叩きpp.mp3', text: 'ｽﾋﾟｷｦｲｼﾞﾒﾇﾝﾃﾞ...', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_5.png', soundfile: 'ひきつけ.mp3', text: 'ﾋｯｸ…ﾋｯｸ…', movePattern: 'twitch' }
                 ],
                 walking: [
                     { imagefile: 'speaki_sad_walking_1.png', soundfile: 'スピキヲイジメヌンデ.mp3', text: 'ｽﾋﾟｷｦｲｼﾞﾒﾇﾝﾃﾞ...', movePattern: 'shake' },
                     { imagefile: 'speaki_sad_walking_2.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ', movePattern: 'shake' },
-                    { imagefile: 'speaki_sad_walking_3.png', soundfile: '本場スピキ叩き.mp3', text: 'ﾃﾞﾙｼﾞﾊﾞｾﾞﾖ!', movePattern: 'shake' }
+                    { imagefile: 'speaki_sad_walking_3.png', soundfile: '本場スピキ叩き.mp3', text: 'ﾃﾞﾙｼﾞﾊﾞｾﾞﾖ!', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_walking_1.png', soundfile: 'スピキヲイジメヌンデ.mp3', text: 'ｽﾋﾟｷｦｲｼﾞﾒﾇﾝﾃﾞ...', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_walking_2.png', soundfile: 'ネルニドチャガヌ.mp3', text: 'ｱｰｳ', movePattern: 'vibrate' },
+                    { imagefile: 'speaki_sad_walking_3.png', soundfile: 'スピキヲトンゴエヨ.mp3', text: 'ｱｰｳ', movePattern: 'vibrate' },
+                    { imagefile: 'speaki_sad_walking_1.png', soundfile: 'スピキヲイジメヌンデ.mp3', text: 'ｽﾋﾟｷｦｲｼﾞﾒﾇﾝﾃﾞ...', movePattern: 'vibrate' },
+                    { imagefile: 'speaki_sad_walking_2.png', soundfile: 'ネルリタタセヨ.mp3', text: 'ｱｰｳ', movePattern: 'twitch' },
+                    { imagefile: 'speaki_sad_walking_3.png', soundfile: 'ひきつけ.mp3', text: 'ﾋｯｸ…ﾋｯ……', movePattern: 'twitch' },
                 ]
             }
         },
         performance: {
             ITEM: {
-                ToyPumpkin: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'bounce' }],
+                ToyPumpkin: [
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'bounce' },
+                    { imagefile: 'speaki_happy_idle_2.png', soundfile: 'ホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'fast_swing' },
+                    { imagefile: 'speaki_happy_idle_3.png', soundfile: '本場スピキくすぐり.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'fast_swing' },
+                    { imagefile: 'speaki_happy_idle_4.png', soundfile: 'チョンチュドーン.mp3', text: 'ﾁｮﾝﾁｭﾄﾞｰﾝ!', movePattern: 'dance' },
+                ],
                 Wimple: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖｰﾁｮﾜﾖｰ', movePattern: 'bounce' }],
                 DeathWimple: [{ imagefile: 'speaki_sad_idle_5.png', soundfile: 'ひきつけ.mp3', text: 'ﾋｯｸ…ﾋｯｸ…', movePattern: 'shake' }],
-                Candy: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' }],
-                Mocaron: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
+                Candy: [
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ2.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'pulse' },
+                    { imagefile: 'speaki_happy_idle_2.png', soundfile: 'もぐもぐ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+
+                ],
+                Mocaron: [
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ2.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'pulse' },
+                    { imagefile: 'speaki_happy_idle_2.png', soundfile: 'ドクンジマッチャブセーヤ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+
+                ],
                 AnimalCan: [{ imagefile: 'コミー.png', soundfile: 'これを食べて眠気を覚ますにゃん.mp3', text: 'これを食べて眠気を覚ますにゃん', movePattern: 'swing' }],
-                Shionmelone: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'bounce' }],
-                LeviDriver: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'bounce' }],
-                BrokenHobagi: [{ imagefile: 'speaki_sad_idle_3.png', soundfile: '慟哭.mp3', text: '慟哭', movePattern: 'shake' }],
-                Poteto: [{ imagefile: 'speaki_item_poteto.png', soundfile: '本場スピキ撫で.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
-                generic: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }]
+                Shionmelone: [
+                    { imagefile: 'speaki_sad_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_2.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_3.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'lean' },
+                    { imagefile: 'speaki_sad_idle_4.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'lean' },
+                    { imagefile: 'speaki_sad_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'vibrate' },
+                ],
+                LeviDriver: [
+                    { imagefile: 'speaki_sad_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_2.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱ!', movePattern: 'lean' },
+                    { imagefile: 'speaki_sad_idle_3.png', soundfile: 'スピキチャリゼヨ.mp3', text: 'ｳｱｱ!', movePattern: 'lean' },
+                    { imagefile: 'speaki_sad_idle_1.png', soundfile: 'スピキチャリゼヨ.mp3', text: 'ｳｱｱ!', movePattern: 'vibrate' },
+                ],
+                BrokenHobagi: [
+                    { imagefile: 'speaki_sad_idle_1.png', soundfile: '慟哭.mp3', text: '慟哭', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_3.png', soundfile: '慟哭.mp3', text: '慟哭', movePattern: 'vibrate' },
+                ],
+                Poteto: [
+                    { imagefile: 'speaki_item_poteto.png', soundfile: '本場スピキ撫で.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                    { imagefile: 'speaki_item_poteto.png', soundfile: 'もぐもぐ2.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'fast_swing' },
+
+                ],
+                generic: [
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                    { imagefile: 'speaki_happy_idle_2.png', soundfile: 'チョワヨ2.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                    { imagefile: 'speaki_happy_idle_3.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                ]
             },
             action: {
                 dance: [
@@ -113,6 +181,21 @@ export const ASSETS = {
                 jump: [
                     { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'jump' },
                     { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3', text: 'ｽﾝﾊﾞｺｯﾁﾁｮﾜﾖｰ!', movePattern: 'jump' },
+                ],
+                feed: [
+                    { imagefile: 'speaki_performance_feed.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+                ],
+                givecandy1: [
+                    { imagefile: 'speaki_performance_givecandy1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                ],
+                givecandy1_2: [
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'スピキ!', movePattern: 'bounce' },
+                ],
+                givecandy2: [
+                    { imagefile: 'speaki_performance_givecandy2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                ],
+                givecandy3: [
+                    { imagefile: 'speaki_performance_givecandy3.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
                 ]
             },
             happy: {
@@ -137,17 +220,36 @@ export const ASSETS = {
                 idle: [
                     { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
                     { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'fast_swing' },
+                    { imagefile: 'speaki_normal_idle_1.png', soundfile: 'チョワヨチョワヨウェガレジチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
+                    { imagefile: 'speaki_normal_idle_2.png', soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'swing' },
                 ],
                 walking: [
                     { imagefile: 'speaki_normal_walking_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                    { imagefile: 'speaki_normal_walking_1.png', soundfile: 'スピキ.mp3', text: 'ｽﾋﾟｷ!', movePattern: 'bounce' },
                 ]
             },
             happy: {
-                idle: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' }],
+                idle: [
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨチョワヨホバギチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨチョワヨウェガレジチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                    { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨチョワヨスンバコッチチョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                ],
                 giftreaction: [{ imagefile: 'speaki_happy_idle_1.png', soundfile: '本場スピキくすぐり.mp3', text: '(ｽﾋﾟｷはとっても満足げだ)', movePattern: 'swing' }]
             },
             sad: {
-                idle: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｰｳ...', movePattern: 'bounce' }],
+                idle: [
+                    { imagefile: 'speaki_sad_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｰｳ...', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_2.png', soundfile: 'アーウ.mp3', text: 'ｳｱｱ!', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_3.png', soundfile: '赤ちゃん泣き.mp3', text: 'ｱｰｰｳ...', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_4.png', soundfile: 'ヌンデ.mp3', text: 'ﾇﾝﾃﾞ...', movePattern: 'shake' },
+                ],
+                walking: [
+                    { imagefile: 'speaki_sad_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｰｳ...', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_2.png', soundfile: 'アーウ.mp3', text: 'ｳｱｱ!', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_3.png', soundfile: '赤ちゃん泣き.mp3', text: 'ｱｰｰｳ...', movePattern: 'shake' },
+                    { imagefile: 'speaki_sad_idle_4.png', soundfile: 'ヌンデ.mp3', text: 'ﾇﾝﾃﾞ...', movePattern: 'shake' },
+                ],
                 surprised: [{ imagefile: 'speaki_sad_surprised_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱｯ!', movePattern: 'shake' }],
                 gifttimeout: [{ imagefile: 'speaki_sad_idle_1.png', soundfile: 'スピキヲイジメヌンデ.mp3', text: 'ｽﾋﾟｷｦｲｼﾞﾒﾇﾝﾃﾞ……', movePattern: 'shake' }]
             }
@@ -208,24 +310,31 @@ export const ASSETS = {
                     { imagefile: 'baby_happy_idle_1.png', soundfile: '無音08.mp3', text: '……', movePattern: 'none' },
                     { imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'shake' },
                 ],
-                walking: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶぅ!', movePattern: 'bounce' }]
+                walking: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: '…ﾜﾖ!', movePattern: 'bounce' }]
             },
             sad: {
-                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ふええ...', movePattern: 'shake' }],
-                walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }]
+                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }],
+                walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }],
+                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }],
+                walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }],
+                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: '赤ちゃん泣き.mp3', text: 'ﾌｪｪﾝ...', movePattern: 'shake' }],
+                walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: '赤ちゃん泣き.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }]
             }
         },
         performance: {
             ITEM: {
-                generic: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶぅ', movePattern: 'bounce' }]
+                generic: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: '…ﾜﾖ!', movePattern: 'bounce' }]
+            },
+            action: {
+                eat: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'もぐもぐ.mp3', text: 'もぐもぐ', movePattern: 'bounce' }]
             },
             happy: {
-                eat: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'ピキ.mp3', text: 'もぐもぐ!', movePattern: 'bounce' }],
-                dance: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶぅ!', movePattern: 'dance' }],
-                jump: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ばぶぅ!', movePattern: 'jump' }]
+                eat: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'もぐもぐ.mp3', text: 'もぐもぐ', movePattern: 'bounce' }],
+                dance: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: '…ﾜﾖ!', movePattern: 'dance' }],
+                jump: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: '…ﾜﾖ!', movePattern: 'jump' }]
             },
             normal: {
-                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'スピキ.mp3', text: 'ばぶぅ', movePattern: 'bounce' }],
+                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'スピキ.mp3', text: '…', movePattern: 'bounce' }],
                 surprised: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｱｰｳ!!', movePattern: 'shake' }]
             },
             sad: {
@@ -377,7 +486,7 @@ export const ITEMS = {
         forcedEmotion: 'happy',
         showInMenu: false,
         reloadTime: 0,
-        unlockDesc: 'ダークベーカリーからの刺客\n <a href="https://youtu.be/Py06vYKp4EY?si=V2BOhdAMiVH_Rvh1" target="_blank">【GB素材】シオン・ザ・ダークブレッド(使用例付き) by 私はエビィ様</a>',
+        unlockDesc: 'ダークベーカリーからの刺客<br><a href="https://youtu.be/Py06vYKp4EY?si=V2BOhdAMiVH_Rvh1" target="_blank">【GB素材】シオン・ザ・ダークブレッド(使用例付き) by 私はエビィ様</a>',
         unlockPrice: 1
     },
     LeviDriver: {
@@ -390,7 +499,7 @@ export const ITEMS = {
         isFood: false,
         showInMenu: false,
         reloadTime: 0,
-        unlockDesc: 'たぶんマ○タ製\n<a href="https://youtu.be/WsQKUin6sb0?si=lltZElvtIdY4qbA6" target="_blank">電動レヴィドライバーの音声 by 私はエビィ様</a>',
+        unlockDesc: 'たぶんマ○タ製<br><a href="https://youtu.be/WsQKUin6sb0?si=lltZElvtIdY4qbA6" target="_blank">電動レヴィドライバーの音声 by 私はエビィ様</a>',
         unlockPrice: 1
     },
     MasterStatue: {
@@ -404,7 +513,7 @@ export const ITEMS = {
         friendshipChange: 0,
         moodGain: 0,
         forcedEmotion: 'happy',
-        unlockDesc: 'ｽﾋﾟｷにとってのあなたの象徴\nあなたのことが好きなｽﾋﾟｷは 自然とこれに触れたがる\n配置されていると ｽﾋﾟｷたちの好感度が減らなくなる',
+        unlockDesc: 'ｽﾋﾟｷにとってのあなたの象徴<br>あなたのことが好きなｽﾋﾟｷは 自然とこれに触れたがる<br>配置されていると ｽﾋﾟｷたちの好感度が減らなくなる',
         unlockPrice: 5
     },
     //ランダムアイテム
@@ -422,48 +531,54 @@ export const ITEMS = {
         unlockPrice: 1
     },
     Uninse1: {
-        name: 'Uninse1',
+        name: 'とげとげしたおともだち',
         imagefile: 'item_uninse1.png',
-        size: 100,
+        soundfile: '私の名前はウニンセです.mp3',
+        size: 200,
         isLockedItem: true,
         isFood: false,
         moodGain: 5,
         forcedEmotion: 'happy',
         showInMenu: false,
         reloadTime: 0,
-        unlockDesc: 'Uninse1',
-        unlockPrice: 1
+        unlockDesc: 'ﾄﾘｯｶﾙが流行りますよ（予言）<br> うに（海産物）<br> <a href="https://www.youtube.com/watch?v=eUHXqrROU18" target="_blank">ｽﾋﾟｷとウニンセ by minmi様</a>',
+        unlockPrice: 1,
+        transform: { nextId: 'Uninse2', duration: 60000 }
     },
     Uninse2: {
         name: 'Uninse2',
         imagefile: 'item_uninse2.png',
+        soundfile: '私の名前はウニンセです.mp3',
         size: 100,
         isLockedItem: false,
         isFood: false,
         moodGain: 5,
         forcedEmotion: 'happy',
         showInMenu: false,
+        transform: { nextId: 'Uninse3', duration: 60000 }
     },
     Uninse3: {
         name: 'Uninse3',
         imagefile: 'item_uninse3.png',
+        soundfile: 'ウニンセです.mp3',
         size: 100,
         isLockedItem: false,
         isFood: false,
         moodGain: 5,
         forcedEmotion: 'happy',
         showInMenu: false,
+        transform: { nextId: 'Uninse1', duration: 60000 }
     },
     LeetsHead: {
         name: 'ゆっくりリッツ',
         imagefile: 'item_leetshead.png',
-        size: 100,
+        size: 300,
         isLockedItem: true,
         isFood: false,
         moodGain: 5,
         forcedEmotion: 'happy',
         showInMenu: false,
-        unlockDesc: 'ゆっくりしていってね！',
+        unlockDesc: '某サイトの不具合により誕生した奇妙なリッツ。',
         unlockPrice: 1
     },
 };

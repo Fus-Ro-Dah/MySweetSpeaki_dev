@@ -53,8 +53,8 @@ export class BaseCharacter {
         // 3. 表示とアニメーション
         this.visual = {
             dom: {},
-            distortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0, hueRotate: 0, opacity: 1.0 },
-            targetDistortion: { skewX: 0, rotateX: 0, rotateY: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0, hueRotate: 0, opacity: 1.0 },
+            distortion: { skewX: 0, rotateX: 0, rotateY: 0, rotateZ: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0, hueRotate: 0, opacity: 1.0 },
+            targetDistortion: { skewX: 0, rotateX: 0, rotateY: 0, rotateZ: 0, scaleX: 1.0, scaleY: 1.0, translateX: 0, translateY: 0, hueRotate: 0, opacity: 1.0 },
             motionType: 'none',
             motionTimer: 0,
             currentAssetKey: '',
@@ -748,7 +748,7 @@ export class BaseCharacter {
             cache.containerSize = this.status.size;
         }
 
-        const spriteTransform = `perspective(800px) rotateX(${distortion.rotateX}deg) rotateY(${distortion.rotateY}deg) skewX(${distortion.skewX}deg) scale(${distortion.scaleX * flip}, ${distortion.scaleY})`;
+        const spriteTransform = `perspective(800px) rotateX(${distortion.rotateX}deg) rotateY(${distortion.rotateY}deg) rotateZ(${distortion.rotateZ || 0}deg) skewX(${distortion.skewX}deg) scale(${distortion.scaleX * flip}, ${distortion.scaleY})`;
         if (cache.spriteTransform !== spriteTransform) {
             dom.sprite.style.transform = spriteTransform;
             cache.spriteTransform = spriteTransform;
@@ -1436,6 +1436,15 @@ export class BaseCharacter {
                 this.visual.distortion.rotateZ = (Math.random() - 0.5) * 30;
                 this.visual.distortion.scaleX = 0.5 + Math.random() * 1.0;
                 this.visual.distortion.scaleY = 0.5 + Math.random() * 1.0;
+                break;
+            case 'violent':
+                // さらに激しい錯乱 (極端な伸縮と大きな回転、色の変化)
+                this.visual.distortion.translateX = (Math.random() - 0.5) * 80;
+                this.visual.distortion.translateY = (Math.random() - 0.5) * 80;
+                this.visual.distortion.rotateZ = (Math.random() - 0.5) * 120;
+                this.visual.distortion.scaleX = 0.2 + Math.random() * 2.0;
+                this.visual.distortion.scaleY = 0.2 + Math.random() * 2.0;
+                this.visual.distortion.filter = `hue-rotate(${Math.random() * 360}deg) contrast(2)`;
                 break;
             case 'frozen':
                 // 凍ったモーション (動かず、水色になる)

@@ -26,11 +26,13 @@ export class SocialSystem {
                     initiatorAction: 'idle',
                     receiverAction: 'happy',
                     sequence: [
-                        { origin: 'happy', target: 'normal' },
+                        { origin: 'performance.action.givecandy1', target: 'sad' },
+                        { origin: 'performance.action.givecandy1_2', target: 'performance.action.givecandy2' },
+                        { origin: 'happy', target: 'performance.action.givecandy3' },
                         { origin: 'happy', target: 'happy' }
                     ],
                     onComplete: (r) => {
-                        r.status.hunger = Math.min(100, r.status.hunger + 30);
+                        r.status.hunger = Math.min(100, r.status.hunger + 15);
                         r.changeMood(10); // お菓子をもらって上機嫌
                     }
                 })

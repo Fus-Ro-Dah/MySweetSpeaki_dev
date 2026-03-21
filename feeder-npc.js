@@ -117,7 +117,8 @@ export class FeederNPC extends NPCCharacter {
         return game.speakis.find(s =>
             s !== this &&
             s.hasHunger &&
-            s.status.hunger <= 30
+            s.status.hunger <= 30 &&
+            (s.status.state === STATE.IDLE || s.status.state === STATE.WALKING)
         );
     }
 }

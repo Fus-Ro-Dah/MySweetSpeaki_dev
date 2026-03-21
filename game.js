@@ -518,7 +518,11 @@ export class Game {
         if (this.unlocks.feeder && this.settings.feederEnabled) {
             const posher = this.speakis.find(s => s.characterType === 'posher');
             if (!posher) {
-                const hungryOne = this.speakis.find(s => s.canInteract && s.status.hunger <= 30);
+                const hungryOne = this.speakis.find(s => 
+                    s.canInteract && 
+                    s.status.hunger <= 30 &&
+                    (s.status.state === STATE.IDLE || s.status.state === STATE.WALKING)
+                );
                 if (hungryOne) {
                     this.characters.callNPC('posher');
                 }
