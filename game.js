@@ -397,10 +397,6 @@ export class Game {
         this.sound.playSound('チョワヨ.mp3');
     }
 
-    receiveGift() {
-        if (this.giftTimeout) clearTimeout(this.giftTimeout);
-        this.ui.updateGiftUI('receiving');
-    }
 
     handleReaction(type) {
         this.ui.updateGiftUI('hide');

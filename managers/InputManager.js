@@ -31,7 +31,6 @@ export class InputManager {
         // タッチイベント・紛失対応
         canvas.addEventListener('pointercancel', (e) => this.handleMouseUp(e));
 
-        game._bindButton('gift-btn-receive', () => game.receiveGift());
         game._bindButton('reaction-btn-1', () => game.handleReaction(1));
         game._bindButton('reaction-btn-2', () => game.handleReaction(2));
 

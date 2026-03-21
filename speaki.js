@@ -46,11 +46,9 @@ export class Speaki extends BaseCharacter {
 
             case STATE.GIFT_RETURNING:
                 if (arrived) {
-                    this.status.state = STATE.GIFT_WAIT_FOR_USER_REACTION;
                     if (this.game) {
                         this.game.startGiftReceiveEvent(this);
                     }
-                    this._onStateChanged(this.status.state);
                 }
                 break;
 

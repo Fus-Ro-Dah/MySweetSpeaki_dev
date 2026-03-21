@@ -199,21 +199,14 @@ export class UIManager {
     /** ギフトUIの表示制御 */
     updateGiftUI(mode) {
         const ui = document.getElementById('gift-event-ui');
-        const receiveBtn = document.getElementById('gift-btn-receive');
         const reactionGroup = document.getElementById('reaction-group');
         const message = document.getElementById('gift-message');
 
         switch (mode) {
             case 'start':
-                message.textContent = 'プレゼントを持ってきてくれた！';
+                message.textContent = 'プレゼントを持ってきてくれた！ お礼を言おう';
                 ui.classList.remove('hidden');
-                receiveBtn.classList.remove('hidden');
-                reactionGroup.classList.add('hidden');
-                break;
-            case 'receiving':
-                message.textContent = 'お礼を言おう';
-                receiveBtn.classList.add('hidden');
-                reactionGroup.classList.remove('hidden');
+                reactionGroup.classList.remove('hidden'); // 最初からお礼ボタンを表示
                 break;
             case 'hide':
                 ui.classList.add('hidden');
