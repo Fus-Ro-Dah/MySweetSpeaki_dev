@@ -270,6 +270,18 @@ export class UIManager {
         if (modalCount) modalCount.textContent = Math.floor(game.plastics);
     }
 
+    /** スピキの名前を更新する */
+    updateSpeakiName(id, newName) {
+        const speaki = this.game.speakis.find(s => s.id === id);
+        if (speaki) {
+            speaki.name = newName;
+            // 観察ウィンドウのヘッダーも更新
+            if (this.game.highlightedCharId === id) {
+                this.updateConsoleHeader(speaki.name);
+            }
+        }
+    }
+
     /** ハイライト設定 */
     setHighlight(id) {
         const game = this.game;
@@ -360,6 +372,12 @@ export class UIManager {
                         onclick="event.stopPropagation(); window.game.ui.setHighlight(${s.id})">
                         ${isHighlighted ? '★' : '☆'}
                     </button>
+                    <input type="text" class="speaki-name-input" 
+                        id="speaki-name-input-${s.id}" name="speaki-name-input-${s.id}" 
+                        value="${s.name}" 
+                        onclick="event.stopPropagation()" 
+                        oninput="window.game.ui.updateSpeakiName(${s.id}, this.value)"
+                        onfocus="this.select()">
                     <span class="speaki-state-tag">${emotionLabel || ''}</span>
                 </div>
                 
@@ -413,6 +431,12 @@ export class UIManager {
             if (starBtn) {
                 starBtn.classList.toggle('active', isHighlighted);
                 starBtn.textContent = isHighlighted ? '★' : '☆';
+            }
+
+            // 名前の更新 (フォーカスがなければ)
+            const nameInput = entry.querySelector('.speaki-name-input');
+            if (nameInput && document.activeElement !== nameInput) {
+                nameInput.value = s.name;
             }
 
             // 状態タグの更新
