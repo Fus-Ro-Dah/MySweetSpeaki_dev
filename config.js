@@ -137,7 +137,7 @@ export const ASSETS = {
                 Mocaron: [
                     { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
                     { imagefile: 'speaki_happy_idle_1.png', soundfile: 'チョワヨ2.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'pulse' },
-                    { imagefile: 'speaki_happy_idle_2.png', soundfile: 'ドクンジマッチャブセーヤ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
+                    { imagefile: 'speaki_happy_idle_2.png', soundfile: 'ドグンジマッチャブセーヤ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
 
                 ],
                 AnimalCan: [{ imagefile: 'コミー.png', soundfile: 'これを食べて眠気を覚ますにゃん.mp3', text: 'これを食べて眠気を覚ますにゃん', movePattern: 'swing' }],
@@ -363,7 +363,7 @@ export const ASSETS = {
             normal: {
                 idle: [{ imagefile: 'posher_idle_1.png', soundfile: '無音08.mp3', text: '・・・', movePattern: 'bounce' }],
                 walking: [{ imagefile: 'posher_idle_2.png', soundfile: 'いももかぼちゃのなかまでしょ.mp3', text: 'いももかぼちゃのなかまでしょ？', movePattern: 'bounce' }],
-                place_item: [{ imagefile: 'posher_idle_1.png', soundfile: '給餌8秒.mp3', text: 'どーぞ！', movePattern: 'jump' }]
+                place_item: [{ imagefile: 'posher_idle_1.png', soundfile: '給餌8秒.mp3', text: 'どーぞ！', movePattern: 'bounce' }]
             }
         }
     }
@@ -373,9 +373,9 @@ export const ASSETS = {
  * アイテム定義 (ITEMS)
  * 
  * [特殊な設定項目]
- * - isLockedItem: true にすると機能解放メニューの対象になります。
- * - unlockDesc: 解放メニューに表示する説明文。 \n で改行、HTMLタグ(<a>等)も使用可能です。
- * - unlockPrice: 解放に必要なプラスチック数。
+ * - isLockedItem: true にすると機能解放メニューの対象になります
+ * - unlockDesc: 解放メニューに表示する説明文 \n で改行、HTMLタグ(<a>等)も使用可能です
+ * - unlockPrice: 解放に必要なプラスチック数
  * 
  * 例:
  * unlockDesc: `1行目の説明\n2行目の説明\n<a href="..." target="_blank">リンク</a>`
@@ -448,7 +448,7 @@ export const ITEMS = {
         moodGain: 5,
         forcedEmotion: 'happy',
         reloadTime: 20000,
-        unlockDesc: 'キャンディより栄養価が高い\nｽﾋﾟｷたちも喜ぶ\nでもレベルは上がらない',
+        unlockDesc: 'キャンディより栄養価が高い<br>ｽﾋﾟｷたちも喜ぶ<br>でもレベルは上がらない',
         unlockPrice: 1
     },
     Poteto: {
@@ -472,7 +472,7 @@ export const ITEMS = {
         isLockedItem: true,  //ランダムアイテムであることを示すもの
         showInMenu: false,
         reloadTime: 0,
-        unlockDesc: 'コミーがすきなやつ\nでもｽﾋﾟｷは食べない',
+        unlockDesc: 'コミーがすきなやつ<br>でもｽﾋﾟｷは食べない<br>不思議な形の石だと思っているようだ',
         unlockPrice: 1
     },
     Shionmelone: {
@@ -514,7 +514,7 @@ export const ITEMS = {
         moodGain: 0,
         forcedEmotion: 'happy',
         unlockDesc: 'ｽﾋﾟｷにとってのあなたの象徴<br>あなたのことが好きなｽﾋﾟｷは 自然とこれに触れたがる<br>配置されていると ｽﾋﾟｷたちの好感度が減らなくなる',
-        unlockPrice: 5
+        unlockPrice: 20
     },
     //ランダムアイテム
     BrokenHobagi: {
@@ -523,7 +523,7 @@ export const ITEMS = {
         size: 100,
         isLockedItem: true,
         isFood: false,
-        moodGain: -30,
+        moodGain: -35,
         forcedEmotion: 'sad',
         showInMenu: false,
         reloadTime: 0,
@@ -534,7 +534,7 @@ export const ITEMS = {
         name: 'とげとげしたおともだち',
         imagefile: 'item_uninse1.png',
         soundfile: '私の名前はウニンセです.mp3',
-        size: 200,
+        size: 100,
         isLockedItem: true,
         isFood: false,
         moodGain: 5,
@@ -578,7 +578,7 @@ export const ITEMS = {
         moodGain: 5,
         forcedEmotion: 'happy',
         showInMenu: false,
-        unlockDesc: '某サイトの不具合により誕生した奇妙なリッツ。',
+        unlockDesc: '某サイトの不具合により誕生した奇妙なリッツ',
         unlockPrice: 1
     },
 };
@@ -600,23 +600,23 @@ export const UNLOCK_DATA = {
     growthStop: {
         name: 'ｽﾋﾟｷの成長停止',
         price: 1,
-        desc: 'スピキが成長しなくなります。赤ちゃんは赤ちゃんのまま、子供は子供のままの姿を維持します'
+        desc: 'スピキが成長しなくなります赤ちゃんは赤ちゃんのまま、子供は子供のままの姿を維持します'
     },
     // チャレンジモード用強化項目
     hungerDecay: {
         name: '空腹度減少の緩和',
         price: 1,
-        desc: '減少速度を遅くします。'
+        desc: '減少速度を遅くします'
     },
     affectionDecay: {
         name: '好感度減少の緩和',
         price: 1,
-        desc: '減少速度を遅くします。'
+        desc: '減少速度を遅くします'
     },
     cooldownReduction: {
         name: 'リロード時間短縮',
         price: 1,
-        desc: 'ごはん系アイテム配置のリロード時間が短縮されます。'
+        desc: 'ごはん系アイテム配置のリロード時間が短縮されます'
     }
 };
 

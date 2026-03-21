@@ -21,7 +21,7 @@ export class UIManager {
             btn.addEventListener('click', () => {
                 const tabId = btn.dataset.tab;
                 this.switchTab(tabId);
-                
+
                 // サウンド再生は必要に応じてここに追加
             });
         });
@@ -53,24 +53,38 @@ export class UIManager {
 
         if (!windowEl || !headerEl) return;
 
-        // ドラッグ機能
+        // ドラッグ機能 (PointerEventsへの移行によりタッチ対応)
         let isDragging = false;
         let startX, startY;
+        let pointerId = null;
 
-        headerEl.addEventListener('mousedown', (e) => {
+        headerEl.addEventListener('pointerdown', (e) => {
             isDragging = true;
             startX = e.clientX - windowEl.offsetLeft;
             startY = e.clientY - windowEl.offsetTop;
+            pointerId = e.pointerId;
+            headerEl.setPointerCapture(pointerId);
         });
 
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
+        headerEl.addEventListener('pointermove', (e) => {
+            if (!isDragging || e.pointerId !== pointerId) return;
             windowEl.style.left = (e.clientX - startX) + 'px';
             windowEl.style.top = (e.clientY - startY) + 'px';
         });
 
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
+        headerEl.addEventListener('pointerup', (e) => {
+            if (e.pointerId === pointerId) {
+                isDragging = false;
+                headerEl.releasePointerCapture(pointerId);
+                pointerId = null;
+            }
+        });
+
+        headerEl.addEventListener('pointercancel', (e) => {
+            if (e.pointerId === pointerId) {
+                isDragging = false;
+                pointerId = null;
+            }
         });
 
         // 閉じるボタン
@@ -148,13 +162,13 @@ export class UIManager {
         if (itemList) {
             Object.keys(ITEMS).forEach(id => {
                 const def = ITEMS[id];
-                
+
                 // 'never' の場合は絶対に表示しない
                 if (def.showInMenu === 'never') return;
 
                 // 特殊アイテムの場合は解放済みかどうかもチェックする
                 const isUnlocked = def.isLockedItem ? (game.unlocks.itemUnlocks[id] === true) : true;
-                
+
                 // 解放が必要なアイテムで未解放なら表示しない
                 if (def.showInMenu === false && !isUnlocked) return;
 
@@ -295,7 +309,7 @@ export class UIManager {
         const game = this.game;
         const prevId = game.highlightedCharId;
         game.highlightedCharId = (game.highlightedCharId === id) ? null : id;
-        
+
         // ウィンドウの表示切り替え
         const windowEl = document.getElementById('message-window');
         if (windowEl) {
@@ -308,7 +322,7 @@ export class UIManager {
         if (game.highlightedCharId !== prevId) {
             this.clearConsole(game.highlightedCharId !== null);
         }
-        
+
         // ヘッダーの更新
         const selectedSpeaki = game.speakis.find(s => s.id === game.highlightedCharId);
         this.updateConsoleHeader(selectedSpeaki ? selectedSpeaki.name : null);
@@ -404,13 +418,6 @@ export class UIManager {
                         </div>
                         <div class="gauge-bar"><div class="gauge-fill hunger" style="width: ${hungerPct}%"></div></div>
                     </div>
-                    <div class="gauge-item mini-row">
-                        <div class="icon-wrapper">
-                            <img src="assets/images/icon_mood.png" class="gauge-icon" alt="mood">
-                            <span class="gauge-value">${(s.status.mood || 0).toFixed(0)}</span>
-                        </div>
-                        <div class="gauge-bar"><div class="gauge-fill mood" style="width: ${moodPct}%"></div></div>
-                    </div>
                 </div>
             </div>
         `;
@@ -430,7 +437,7 @@ export class UIManager {
             if (!entry || parseInt(entry.dataset.id) !== s.id) return;
 
             const isHighlighted = (s.id === this.game.highlightedCharId);
-            
+
             // クラスの更新
             entry.classList.toggle('active', isHighlighted);
 
@@ -467,9 +474,6 @@ export class UIManager {
 
             if (gaugeFills[1]) gaugeFills[1].style.width = `${hungerPct}%`;
             if (gaugeValues[1]) gaugeValues[1].textContent = s.status.hunger.toFixed(0);
-
-            if (gaugeFills[2]) gaugeFills[2].style.width = `${moodPct}%`;
-            if (gaugeValues[2]) gaugeValues[2].textContent = (s.status.mood || 0).toFixed(0);
         });
     }
 
@@ -559,22 +563,7 @@ export class UIManager {
             }
         });
 
-        // 2. 特殊アイテムの個別解放
-        Object.keys(ITEMS).forEach(itemId => {
-            const def = ITEMS[itemId];
-            if (def.isLockedItem) {
-                const isUnlocked = game.unlocks.itemUnlocks[itemId] === true;
-                unlockDefs.push({
-                    id: `item_${itemId}`,
-                    name: `${def.name}の解放`,
-                    price: def.unlockPrice || 3,
-                    desc: def.unlockDesc || `「${def.name}」をメニューからいつでも配置できるようになります。プラスチックを消費しません。`,
-                    current: isUnlocked
-                });
-            }
-        });
-
-        // 3. アップグレード項目（チャレンジモードのみ表示する項目など）
+        // 2. アップグレード項目（チャレンジモードのみ表示する項目など）
         if (game.gameMode !== 'relaxed') {
             unlockDefs.push(
                 {
@@ -604,6 +593,21 @@ export class UIManager {
             );
         }
 
+        // 3. 特殊アイテムの個別解放
+        Object.keys(ITEMS).forEach(itemId => {
+            const def = ITEMS[itemId];
+            if (def.isLockedItem) {
+                const isUnlocked = game.unlocks.itemUnlocks[itemId] === true;
+                unlockDefs.push({
+                    id: `item_${itemId}`,
+                    name: `${def.name}の解放`,
+                    price: def.unlockPrice || 3,
+                    desc: def.unlockDesc || `「${def.name}」をメニューからいつでも配置できるようになります。`,
+                    current: isUnlocked
+                });
+            }
+        });
+
         list.innerHTML = '';
         unlockDefs.forEach(def => {
             const div = document.createElement('div');
@@ -611,7 +615,7 @@ export class UIManager {
 
             let buttonHTML = '';
             const settingKey = `${def.id}Enabled`;
-            
+
             if (def.current) {
                 // 解放済みの場合
                 if (game.settings[settingKey] !== undefined) {
@@ -650,7 +654,7 @@ export class UIManager {
             div.innerHTML = `
                 <h4>${def.name}</h4>
                 <p>${(def.desc || '').replace(/\\n/g, '<br>')}</p>
-                <div class="price">${def.current ? '解放済み' : `消費: ${def.price} 個`}</div>
+                <div class="price">${def.current ? '解放済み' : `消費<img src="assets/images/icon_prastic.png" class="mini-icon" alt="plastic icon">: ${def.price} 個 `}</div>
                 ${buttonHTML}
             `;
             list.appendChild(div);

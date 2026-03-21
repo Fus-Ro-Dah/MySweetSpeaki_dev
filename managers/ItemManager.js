@@ -144,9 +144,10 @@ export class ItemManager {
             if (result.action === 'delete') {
                 return false; // フィルターで削除
             } else if (result.action === 'transform') {
-                // 変換処理 (もう splice は使わない)
+                // 変換処理
                 this._processItemTransform(item, result.transform);
-                return false; // 変換元のアイテムはリストから消す
+                // ｽﾋﾟｷ化(isAdult)した場合はアイテムリストから消すが、ID変化のみ(nextId)の場合は残す
+                return result.transform.isAdult ? false : true;
             }
 
             // キャラクターに運ばれているアイテムはキャラクターの位置に同期 (タイマー更新の後に行う)

@@ -27,7 +27,7 @@ export class Game {
         this.interactTarget = null;
         this.lastGiftTime = Date.now() - 20000;
         this.giftPartner = null;
-        this.plastics = 100;
+        this.plastics = 0;
         this.happiness = 0;
         this.maxHappiness = 5000;
         this.isGameCleared = false;
@@ -303,29 +303,10 @@ export class Game {
                 this.unlocks.reloadReductionLv = 20;
             }
 
-            // 最初のスピキを2匹生成 + 赤ちゃん1匹
+            // 最初のスピキを1匹生成
             const centerX = this.canvas.width / 2;
             const centerY = this.canvas.height / 2;
             this.characters.addSpeaki(centerX - 100, centerY, 'speaki');
-            this.characters.addSpeaki(centerX + 100, centerY, 'speaki');
-            this.characters.addSpeaki(centerX - 100, centerY, 'speaki');
-            this.characters.addSpeaki(centerX + 100, centerY, 'speaki');
-            this.characters.addSpeaki(centerX - 100, centerY, 'speaki');
-            this.characters.addSpeaki(centerX + 100, centerY, 'speaki');
-            this.characters.addSpeaki(centerX + 100, centerY, 'child');
-            this.characters.addSpeaki(centerX + 100, centerY, 'child');
-            this.characters.addSpeaki(centerX + 100, centerY, 'child');
-            this.characters.addSpeaki(centerX + 100, centerY, 'child');
-            this.characters.addSpeaki(centerX + 100, centerY, 'child');
-            this.characters.addSpeaki(centerX + 100, centerY, 'child');
-            this.characters.addSpeaki(centerX + 100, centerY, 'child');
-            this.characters.addSpeaki(centerX, centerY + 100, 'baby');
-            this.characters.addSpeaki(centerX, centerY + 110, 'baby');
-            this.characters.addSpeaki(centerX, centerY + 120, 'baby');
-            this.characters.addSpeaki(centerX, centerY + 130, 'baby');
-            this.characters.addSpeaki(centerX, centerY + 140, 'baby');
-            this.characters.addSpeaki(centerX, centerY + 150, 'baby');
-            this.characters.addSpeaki(centerX, centerY + 160, 'baby');
 
         } catch (e) {
             alert("Error starting game: " + e.message + "\n" + e.stack);
@@ -508,7 +489,7 @@ export class Game {
             ).length;
 
             if (happySpeakCount > 0) {
-                const gain = (dt / 1000) * happySpeakCount * 1.5;
+                const gain = (dt / 1000) * happySpeakCount * 2;
                 this.happiness = Math.min(this.maxHappiness, this.happiness + gain);
                 this.ui.updateHappinessUI();
             }
@@ -518,8 +499,8 @@ export class Game {
         if (this.unlocks.feeder && this.settings.feederEnabled) {
             const posher = this.speakis.find(s => s.characterType === 'posher');
             if (!posher) {
-                const hungryOne = this.speakis.find(s => 
-                    s.canInteract && 
+                const hungryOne = this.speakis.find(s =>
+                    s.canInteract &&
                     s.status.hunger <= 30 &&
                     (s.status.state === STATE.IDLE || s.status.state === STATE.WALKING)
                 );

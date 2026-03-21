@@ -56,7 +56,6 @@ export class SocialSystem {
                         receiverAction: 'idle',
                         sequence: [
                             { origin: 'sad', target: 'happy' },
-                            { origin: 'sad', target: 'happy' },
                             { origin: 'happy', target: 'happy' }
                         ],
                         onComplete: () => {
@@ -71,7 +70,7 @@ export class SocialSystem {
                 priority: 1,
                 canTrigger: (a, b) => {
                     const dist = Math.sqrt((a.pos.x - b.pos.x) ** 2 + (a.pos.y - b.pos.y) ** 2);
-                    return dist < 400 && !(a.characterType === 'baby' && b.characterType === 'baby');
+                    return dist < 400 && !(a.characterType === 'baby' && b.characterType === 'baby') && a.status.hunger > 30 && b.status.hunger > 30;
                 },
                 execute: (a, b) => this.startInteraction(a, b, {
                     id: 'CHAT',
@@ -162,7 +161,7 @@ export class SocialSystem {
                 movementType: 'TARGET_TO_ORIGIN',
                 canTrigger: (a, b) => {
                     // a: 赤ちゃん, b: 大人スピキ
-                    return a.characterType === 'baby' && b.characterType === 'speaki' && b.status.hunger > 20;
+                    return a.characterType === 'baby' && b.characterType === 'speaki' && b.status.hunger > 30;
                 },
                 execute: (baby, adult) => this.triggerDirectedSocialAction(baby, adult, {
                     id: 'BABY_CARE',
@@ -296,8 +295,8 @@ export class SocialSystem {
         target.status.socialTurnCount = 0;
 
         // 演出開始
-        origin.showEmoji(movementType === 'TARGET_TO_ORIGIN' ? '!' : '💬', null);
-        target.showEmoji(movementType === 'TARGET_TO_ORIGIN' ? '💬' : '!', null);
+        origin.showEmoji(movementType === 'TARGET_TO_ORIGIN' ? '💬' : '!', null);
+        target.showEmoji(movementType === 'TARGET_TO_ORIGIN' ? '!' : '💬', null);
 
         origin._onStateChanged(origin.status.state);
         target._onStateChanged(target.status.state);

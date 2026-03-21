@@ -9,7 +9,10 @@ export class MessageManager {
         this.game = game;
         this.lastLogTimes = new Map(); // キャラクターごとの最終ログ時刻
         this.throttleInterval = 10000;  // 同一キャラクターの連投制限（ミリ秒）
-        this.lastThrottledLogTime = 0; // 制限付きログの最終時刻
+        this.throttles = {
+            state: 0,       // 状態変化による自動ログ用
+            interaction: 0  // ユーザー操作（撫でる・叩く）用
+        };
     }
 
     /**
@@ -17,8 +20,8 @@ export class MessageManager {
      * @param {BaseCharacter} char 対象のキャラクター
      */
     logStateChange(char) {
-        // ハイライトチェックと5秒制限の確認
-        if (!this._isHighlighted(char) || !this._checkThrottle()) return;
+        // ハイライトチェックと5秒制限（stateカテゴリ）の確認
+        if (!this._isHighlighted(char) || !this._checkThrottle('state')) return;
 
         const isBaby = char.characterType === 'baby';
         const typeKey = isBaby ? 'baby' : 'speaki';
@@ -69,7 +72,7 @@ export class MessageManager {
         }
 
         if (templates && templates.length > 0) {
-            this._send(char, this._getRandom(templates));
+            this._send(char, this._getRandom(templates), null, 'state');
         }
     }
 
@@ -77,15 +80,15 @@ export class MessageManager {
      * ユーザーとのインタラクションログ（撫でる・叩く）
      */
     logUserInteraction(char, type) {
-        // ハイライトチェックと5秒制限の確認
-        if (!this._isHighlighted(char) || !this._checkThrottle()) return;
+        // ハイライトチェックと5秒制限（interactionカテゴリ）の確認
+        if (!this._isHighlighted(char) || !this._checkThrottle('interaction')) return;
 
         const isBaby = char.characterType === 'baby';
         const typeKey = isBaby ? 'baby' : 'speaki';
         const templates = MESSAGES[typeKey].USER_INTERACTING?.[type];
 
         if (templates && templates.length > 0) {
-            this._send(char, this._getRandom(templates), null, true); // タイマー更新あり
+            this._send(char, this._getRandom(templates), null, 'interaction');
         }
     }
 
@@ -103,7 +106,7 @@ export class MessageManager {
         const templates = MESSAGES[typeKey].ITEM_ACTION?.[itemType];
 
         if (templates && templates.length > 0) {
-            this._send(char, this._getRandom(templates), null, false); // タイマー更新なし
+            this._send(char, this._getRandom(templates), null, null); // 制限なし
         }
     }
 
@@ -131,7 +134,7 @@ export class MessageManager {
             }
 
             if (templates && templates.length > 0) {
-                this._send(initiator, this._getRandom(templates), target, false); // タイマー更新なし
+                this._send(initiator, this._getRandom(templates), target, null); // 制限なし
             }
         }
 
@@ -141,7 +144,7 @@ export class MessageManager {
 
         if (isTargetHighlighted && targetSocialData && targetSocialData.target) {
             setTimeout(() => {
-                this._send(target, this._getRandom(targetSocialData.target), initiator, false); // タイマー更新なし
+                this._send(target, this._getRandom(targetSocialData.target), initiator, null); // 制限なし
             }, 1000);
         }
     }
@@ -153,9 +156,7 @@ export class MessageManager {
     logDeath(char) {
         // 観察対象のみ（制限なし）
         if (!this._isHighlighted(char)) return;
-
-        // 特別なメッセージを送信（スロットル更新なし）
-        this._send(char, "その子はいなくなってしまった", null, false);
+        this._send(char, "その子はいなくなってしまった", null, null);
     }
 
     /**
@@ -167,16 +168,20 @@ export class MessageManager {
 
     /**
      * 5秒間の制限チェック
+     * @param {string} type 制限カテゴリ ('state'|'interaction')
      */
-    _checkThrottle() {
-        return Date.now() - this.lastThrottledLogTime >= 5000;
+    _checkThrottle(type) {
+        if (!type || !this.throttles[type]) return true;
+        return Date.now() - this.throttles[type] >= 5000;
     }
 
     /**
      * 制限時刻を更新
+     * @param {string} type 制限カテゴリ ('state'|'interaction')
      */
-    _updateThrottle() {
-        this.lastThrottledLogTime = Date.now();
+    _updateThrottle(type) {
+        if (!type || !this.throttles.hasOwnProperty(type)) return;
+        this.throttles[type] = Date.now();
     }
 
     /**
@@ -184,9 +189,9 @@ export class MessageManager {
      * @param {BaseCharacter} char 対象のキャラクター
      * @param {string} template メッセージテンプレート
      * @param {BaseCharacter} target ターゲットキャラクター (オプション)
-     * @param {boolean} updateGlobalTimer 全体ログ時刻を更新するかどうか (デフォルト: true)
+     * @param {string|null} throttleType 更新する制限カテゴリ (nullなら更新しない)
      */
-    _send(char, template, target = null, updateThrottle = true) {
+    _send(char, template, target = null, throttleType = 'state') {
         if (!this.game.ui) return;
 
         let text = template.replace(/{name}/g, char.name);
@@ -198,8 +203,8 @@ export class MessageManager {
         this.game.ui.addConsoleMessage(text);
 
         // スロットル更新
-        if (updateThrottle) {
-            this._updateThrottle();
+        if (throttleType) {
+            this._updateThrottle(throttleType);
         }
     }
 

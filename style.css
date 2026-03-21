@@ -1922,6 +1922,7 @@ button:hover {
     z-index: 2000;
     overflow: hidden;
     user-select: none;
+    touch-action: none; /* タッチ操作でのスクロール等を防ぐ */
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -1934,6 +1935,7 @@ button:hover {
     color: white;
     padding: 8px 12px;
     cursor: move;
+    touch-action: none; /* タッチ操作でのスクロール等を防ぐ */
     display: flex;
     justify-content: space-between;
     align-items: center;

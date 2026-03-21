@@ -144,11 +144,9 @@ export class BaseCharacter {
 
         const hungerBar = createBar('hunger');
         const friendshipBar = createBar('friendship');
-        const moodBar = createBar('mood');
 
         barsContainer.appendChild(friendshipBar.bar);
         barsContainer.appendChild(hungerBar.bar);
-        barsContainer.appendChild(moodBar.bar);
 
         container.appendChild(footEffect); // 背面側に配置するため先に追加
         container.appendChild(img);
@@ -176,8 +174,7 @@ export class BaseCharacter {
         this.visual.dom.statusBars = {
             container: barsContainer,
             hunger: hungerBar.fill,
-            friendship: friendshipBar.fill,
-            mood: moodBar.fill
+            friendship: friendshipBar.fill
         };
     }
 
@@ -224,7 +221,7 @@ export class BaseCharacter {
 
                         // 3秒後にハイライトを解除（観察ウィンドウのクリア）
                         setTimeout(() => {
-                            if (this.game.highlightedCharId === this.id) {
+                            if (this.game && this.game.highlightedCharId === this.id) {
                                 this.game.ui.setHighlight(this.id); // トグルなので、同じIDを渡すと解除される
                             }
                         }, 3000);
@@ -376,8 +373,8 @@ export class BaseCharacter {
         this.timers.lastSocialRequestAttempt = now;
 
         // 交流リクエストの検討
-        // 場の人数に応じて確率を動的に計算 (基本 10% + 1匹につき 1%)
-        const chance = this._getSocialProbability(0.1);
+        // 場の人数に応じて確率を動的に計算 (基本 10% + 1匹につき 1%) ひとまず２０%で固定
+        const chance = this._getSocialProbability(0.2);
 
         if (Math.random() < chance) {
             if (this.game && this.game.social) {
@@ -391,9 +388,10 @@ export class BaseCharacter {
     _getSocialProbability(baseChance) {
         if (!this.game || !this.game.speakis) return baseChance;
         const count = this.game.speakis.length;
-        // 人数によるボーナス (1匹ごとに 1%)
-        const bonus = count * 0.01;
-        return baseChance + bonus;
+        // 人数による調整 (1匹ごとに -1%)
+        //const adjustment = count * -0.01;
+        const adjustment = 0;
+        return Math.max(0, baseChance + adjustment);
     }
 
     /** 状態遷移の判定 (サブクラスで拡張可能) */
@@ -786,20 +784,16 @@ export class BaseCharacter {
             // 1%以上の変化、または未初期化の場合のみ更新
             const shouldUpdateGauges = (
                 cache.lastHunger === undefined || Math.abs(cache.lastHunger - hunger) >= 1.0 ||
-                cache.lastFriendship === undefined || Math.abs(cache.lastFriendship - friendship) >= 1.0 ||
-                cache.lastMood === undefined || Math.abs(cache.lastMood - mood) >= 1.0
+                cache.lastFriendship === undefined || Math.abs(cache.lastFriendship - friendship) >= 1.0
             );
 
             if (shouldUpdateGauges) {
                 dom.statusBars.hunger.style.width = `${Math.max(0, Math.min(100, hunger))}%`;
                 const fPercent = friendship + 50;
                 dom.statusBars.friendship.style.width = `${Math.max(0, Math.min(100, fPercent))}%`;
-                const mPercent = mood + 50;
-                dom.statusBars.mood.style.width = `${Math.max(0, Math.min(100, mPercent))}%`;
 
                 cache.lastHunger = hunger;
                 cache.lastFriendship = friendship;
-                cache.lastMood = mood;
             }
 
             const visible = (this.status.deathProgress <= 0 && this.canInteract);

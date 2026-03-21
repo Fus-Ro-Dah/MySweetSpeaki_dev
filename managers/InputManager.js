@@ -89,7 +89,8 @@ export class InputManager {
             game.ui.updateSpeakiList(true); // UIを即座に更新
         };
 
-        // キーボードショートカット '2'
+        // テスト用餓死ショートカット　不要のためコメントアウト
+        /*
         window.addEventListener('keydown', (e) => {
             if (e.key === '2') {
                 // 入力フォーム等にフォーカスがある場合は無視
@@ -97,6 +98,7 @@ export class InputManager {
                 window.setAllHungerTo2();
             }
         });
+        */
     }
 
     /** ドラッグ＆ドロップの設定 */
