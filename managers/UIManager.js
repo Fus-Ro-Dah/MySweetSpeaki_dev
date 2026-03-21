@@ -117,10 +117,11 @@ export class UIManager {
     }
 
     /** コンソールをクリアする */
-    clearConsole() {
+    clearConsole(isObserving = false) {
         const container = document.getElementById('message-window-content');
         if (container) {
-            container.innerHTML = '<div class="window-placeholder">ｽﾋﾟｷを選択して観察を開始</div>';
+            const message = isObserving ? '観察中…' : 'ｽﾋﾟｷを選択して観察を開始';
+            container.innerHTML = `<div class="window-placeholder">${message}</div>`;
         }
     }
 
@@ -292,7 +293,7 @@ export class UIManager {
 
         // コンソールのリフレッシュ (対象が変わった時だけ)
         if (game.highlightedCharId !== prevId) {
-            this.clearConsole();
+            this.clearConsole(game.highlightedCharId !== null);
         }
         
         // ヘッダーの更新

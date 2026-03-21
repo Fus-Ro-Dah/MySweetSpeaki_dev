@@ -218,6 +218,18 @@ export class BaseCharacter {
                     this.status.deathProgress = 0;
                     this.timers.stateStart = Date.now();
 
+                    // 死亡ログの出力 (MessageManager経由)
+                    if (this.game && this.game.messages) {
+                        this.game.messages.logDeath(this);
+                        
+                        // 3秒後にハイライトを解除（観察ウィンドウのクリア）
+                        setTimeout(() => {
+                            if (this.game.highlightedCharId === this.id) {
+                                this.game.ui.setHighlight(this.id); // トグルなので、同じIDを渡すと解除される
+                            }
+                        }, 3000);
+                    }
+
                     // 死に際のサウンド再生 (プラン1: ピッチを個体設定に合わせる)
                     if (this.game) {
                         this.game.playSound('ヌンデ.mp3', this.status.voicePitch);

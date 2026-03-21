@@ -9,8 +9,7 @@ export class MessageManager {
         this.game = game;
         this.lastLogTimes = new Map(); // キャラクターごとの最終ログ時刻
         this.throttleInterval = 10000;  // 同一キャラクターの連投制限（ミリ秒）
-        this.globalLastLogTime = 0;    // 全体での最終ログ時刻
-        this.globalMinInterval = 1500; // 全体での最低間隔（ミリ秒）
+        this.lastThrottledLogTime = 0; // 制限付きログの最終時刻
     }
 
     /**
@@ -18,8 +17,8 @@ export class MessageManager {
      * @param {BaseCharacter} char 対象のキャラクター
      */
     logStateChange(char) {
-        // 全体のログ頻度を制限（5秒間隔に固定）
-        if (!this._canLog(char)) return;
+        // ハイライトチェックと5秒制限の確認
+        if (!this._isHighlighted(char) || !this._checkThrottle()) return;
 
         const isBaby = char.characterType === 'baby';
         const typeKey = isBaby ? 'baby' : 'speaki';
@@ -78,8 +77,8 @@ export class MessageManager {
      * ユーザーとのインタラクションログ（撫でる・叩く）
      */
     logUserInteraction(char, type) {
-        // インタラクションはハイライトチェックのみ行う（5秒制限はバイパス）
-        if (this.game.highlightedCharId !== char.id) return;
+        // ハイライトチェックと5秒制限の確認
+        if (!this._isHighlighted(char) || !this._checkThrottle()) return;
 
         const isBaby = char.characterType === 'baby';
         const typeKey = isBaby ? 'baby' : 'speaki';
@@ -94,8 +93,8 @@ export class MessageManager {
      * アイテムへの反応ログ
      */
     logItemReaction(char, item) {
-        // アイテム反応はハイライトチェックのみ（5秒制限はバイパス）
-        if (this.game.highlightedCharId !== char.id) return;
+        // ハイライトチェックのみ（制限なし）
+        if (!this._isHighlighted(char)) return;
 
         const typeKey = char.characterType === 'baby' ? 'baby' : 'speaki';
         const itemType = item.id || item.type;
@@ -104,7 +103,7 @@ export class MessageManager {
         const templates = MESSAGES[typeKey].ITEM_ACTION?.[itemType];
 
         if (templates && templates.length > 0) {
-            this._send(char, this._getRandom(templates), null, true); // タイマー更新あり
+            this._send(char, this._getRandom(templates), null, false); // タイマー更新なし
         }
     }
 
@@ -112,9 +111,9 @@ export class MessageManager {
      * キャラクター同士の交流ログ
      */
     logSocialInteraction(initiator, target, actionId) {
-        // 交流はハイライトされているスピキがいれば表示（5秒制限はバイパス）
-        const isInitiatorHighlighted = this.game.highlightedCharId === initiator.id;
-        const isTargetHighlighted = this.game.highlightedCharId === target.id;
+        // ハイライトされているスピキがいれば表示（制限なし）
+        const isInitiatorHighlighted = this._isHighlighted(initiator);
+        const isTargetHighlighted = this._isHighlighted(target);
         if (!isInitiatorHighlighted && !isTargetHighlighted) return;
 
         const typeKey = initiator.characterType === 'baby' ? 'baby' : 'speaki';
@@ -132,7 +131,7 @@ export class MessageManager {
             }
 
             if (templates && templates.length > 0) {
-                this._send(initiator, this._getRandom(templates), target, true); // タイマー更新あり
+                this._send(initiator, this._getRandom(templates), target, false); // タイマー更新なし
             }
         }
 
@@ -142,27 +141,42 @@ export class MessageManager {
 
         if (isTargetHighlighted && targetSocialData && targetSocialData.target) {
             setTimeout(() => {
-                this._send(target, this._getRandom(targetSocialData.target), initiator, true); // タイマー更新あり
+                this._send(target, this._getRandom(targetSocialData.target), initiator, false); // タイマー更新なし
             }, 1000);
         }
     }
 
     /**
-     * ログ出力が可能かチェック (5秒制限用)
-     * @param {BaseCharacter} char 対象のキャラクター
-     * @returns {boolean} ログ出力が可能であればtrue
+     * キャラクターの死亡ログ
+     * @param {BaseCharacter} char 死亡したキャラクター
      */
-    _canLog(char) {
-        const now = Date.now();
-        // 全体での5秒制限
-        if (now - this.globalLastLogTime < 5000) return false;
+    logDeath(char) {
+        // 観察対象のみ（制限なし）
+        if (!this._isHighlighted(char)) return;
 
-        // ハイライトされているスピキのみ対象
-        if (this.game.highlightedCharId === null || char.id !== this.game.highlightedCharId) {
-            return false;
-        }
+        // 特別なメッセージを送信（スロットル更新なし）
+        this._send(char, "その子はいなくなってしまった", null, false);
+    }
 
-        return true;
+    /**
+     * ハイライトされているかチェック
+     */
+    _isHighlighted(char) {
+        return char && this.game.highlightedCharId === char.id;
+    }
+
+    /**
+     * 5秒間の制限チェック
+     */
+    _checkThrottle() {
+        return Date.now() - this.lastThrottledLogTime >= 5000;
+    }
+
+    /**
+     * 制限時刻を更新
+     */
+    _updateThrottle() {
+        this.lastThrottledLogTime = Date.now();
     }
 
     /**
@@ -172,7 +186,7 @@ export class MessageManager {
      * @param {BaseCharacter} target ターゲットキャラクター (オプション)
      * @param {boolean} updateGlobalTimer 全体ログ時刻を更新するかどうか (デフォルト: true)
      */
-    _send(char, template, target = null, updateGlobalTimer = true) {
+    _send(char, template, target = null, updateThrottle = true) {
         if (!this.game.ui) return;
 
         let text = template.replace(/{name}/g, char.name);
@@ -183,9 +197,9 @@ export class MessageManager {
         // メッセージを表示
         this.game.ui.addConsoleMessage(text);
 
-        // タイムスタンプ更新
-        if (updateGlobalTimer) {
-            this.globalLastLogTime = Date.now();
+        // スロットル更新
+        if (updateThrottle) {
+            this._updateThrottle();
         }
     }
 
