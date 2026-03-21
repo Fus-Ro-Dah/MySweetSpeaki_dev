@@ -221,7 +221,7 @@ export class BaseCharacter {
                     // 死亡ログの出力 (MessageManager経由)
                     if (this.game && this.game.messages) {
                         this.game.messages.logDeath(this);
-                        
+
                         // 3秒後にハイライトを解除（観察ウィンドウのクリア）
                         setTimeout(() => {
                             if (this.game.highlightedCharId === this.id) {
@@ -1086,10 +1086,11 @@ export class BaseCharacter {
         const oldEmotion = this.status.emotion;
         const now = Date.now();
 
-        // 優先度 1: 空腹 (最優先)
-        if (this.status.hunger <= 0) {
+        // 優先度 1: 深刻な不調 (最優先で sad)
+        // 好感度 -20以下、空腹度 30以下、機嫌 -20以下のいずれか
+        if (this.status.hunger <= 30 || this.status.friendship <= -20 || this.status.mood <= -20) {
             this.status.emotion = 'sad';
-            // 空腹時は強制感情タイマーを無効化する
+            // 強制感情タイマーを無効化（不調を優先）
             this.timers.forcedEmotionUntil = 0;
             this.status.forcedEmotion = null;
         }
@@ -1097,14 +1098,13 @@ export class BaseCharacter {
         else if (this.status.forcedEmotion && now < this.timers.forcedEmotionUntil) {
             this.status.emotion = this.status.forcedEmotion;
         }
-        // 優先度 3: 通常の好感度ロジック
+        // 優先度 3: 通常の好調/普通判定
         else {
-            if (this.status.friendship <= -11) {
-                this.status.emotion = 'sad';
-            } else if (this.status.friendship <= 10) {
-                this.status.emotion = 'normal';
-            } else {
+            // 好感度 20以上、空腹度 70以上、機嫌 20以上のいずれか
+            if (this.status.hunger >= 70 || this.status.friendship >= 20 || this.status.mood >= 20) {
                 this.status.emotion = 'happy';
+            } else {
+                this.status.emotion = 'normal';
             }
             // 強制感情が終了した場合はクリア
             if (this.status.forcedEmotion) {
