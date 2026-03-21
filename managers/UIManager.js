@@ -59,6 +59,9 @@ export class UIManager {
         let pointerId = null;
 
         headerEl.addEventListener('pointerdown', (e) => {
+            // ボタン自体をクリックした時はドラッグを開始しない（閉じれなくなるため）
+            if (e.target.closest('button')) return;
+
             isDragging = true;
             startX = e.clientX - windowEl.offsetLeft;
             startY = e.clientY - windowEl.offsetTop;
@@ -134,7 +137,7 @@ export class UIManager {
     clearConsole(isObserving = false) {
         const container = document.getElementById('message-window-content');
         if (container) {
-            const message = isObserving ? '観察中…' : 'ｽﾋﾟｷを選択して観察を開始';
+            const message = isObserving ? '観察中…' : 'ｽﾋﾟｷ一覧タブからｽﾋﾟｷを選択（★マークをクリック）して観察を開始';
             container.innerHTML = `<div class="window-placeholder">${message}</div>`;
         }
     }
