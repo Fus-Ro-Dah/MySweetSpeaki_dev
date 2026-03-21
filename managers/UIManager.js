@@ -8,6 +8,62 @@ export class UIManager {
     constructor(game) {
         this.game = game;
         this.lastUIUpdate = 0;
+        this.initTabs(); // コンストラクタでタブを初期化
+    }
+
+    /** タブ機能の初期化 */
+    initTabs() {
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        if (tabButtons.length === 0) return;
+
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                this.switchTab(tabId);
+                
+                // サウンド再生は必要に応じてここに追加
+            });
+        });
+    }
+
+    /** タブの切り替え */
+    switchTab(tabId) {
+        const buttons = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.tab-content');
+
+        buttons.forEach(b => b.classList.remove('active'));
+        contents.forEach(c => c.classList.remove('active'));
+
+        const targetBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        const targetContent = document.getElementById(tabId);
+
+        if (targetBtn && targetContent) {
+            targetBtn.classList.add('active');
+            targetContent.classList.add('active');
+        }
+    }
+
+    /** メッセージセクションにメッセージを追加 (将来用) */
+    addConsoleMessage(text) {
+        const container = document.getElementById('message-section');
+        if (!container) return;
+
+        // プレースホルダーがあれば削除
+        const placeholder = container.querySelector('.message-placeholder');
+        if (placeholder) placeholder.remove();
+
+        const item = document.createElement('div');
+        item.className = 'message-item';
+        item.textContent = text;
+        container.appendChild(item);
+
+        // 自動スクロール
+        container.scrollTop = container.scrollHeight;
+
+        // メッセージ数制限（例：最大50件）
+        while (container.children.length > 50) {
+            container.removeChild(container.firstChild);
+        }
     }
 
     /** アイテムメニューを動的に生成 */

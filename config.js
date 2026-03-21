@@ -428,7 +428,7 @@ export const ITEMS = {
         forcedEmotion: 'sad',
         showInMenu: false,
         reloadTime: 0,
-        unlockDesc: 'かつて友達だったもの',
+        unlockDesc: '友達だったもの',
         unlockPrice: 1
     },
 };

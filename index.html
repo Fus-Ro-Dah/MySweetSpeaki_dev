@@ -99,28 +99,53 @@
                     <button id="open-tutorial-btn" class="header-square-btn">?</button>
                 </div>
 
-                <section id="item-section" class="menu-block">
-                    <h2>アイテム</h2>
-                    <p class="menu-description">ドラッグでアイテムを配置できるよ</p>
-                    <div id="item-list" class="draggable-container">
-                        <!-- Dynamic Items -->
-                    </div>
-                    <div class="resource-displays">
-                        <div id="gift-stock-display">
-                            <img src="assets/images/gift.png" alt="gift" class="stock-icon" title="プラスチック">
-                            <span>x <span id="gift-stock-count">0</span></span>
-                        </div>
-                    </div>
-                </section>
+                <!-- タブ切り替えボタン -->
+                <div class="menu-tabs">
+                    <button class="tab-btn active" data-tab="item-tab">アイテム</button>
+                    <button class="tab-btn" data-tab="list-tab">ｽﾋﾟｷ一覧</button>
+                    <button class="tab-btn" data-tab="message-tab">ｽﾋﾟｷのようす</button>
+                </div>
 
-
-                <section id="speaki-status" class="menu-block">
-                    <h2>ｽﾋﾟｷたち</h2>
-                    <div id="speaki-list">
-                        <!-- Dynamic Speaki List -->
-                        <p class="empty-list">ｽﾋﾟｷはいません...</p>
+                <div class="tab-content-container">
+                    <!-- アイテムタブ -->
+                    <div id="item-tab" class="tab-content active">
+                        <section id="item-section" class="menu-block">
+                            <h2>アイテム</h2>
+                            <p class="menu-description">ドラッグでアイテムを配置できるよ</p>
+                            <div id="item-list" class="draggable-container">
+                                <!-- Dynamic Items -->
+                            </div>
+                            <div class="resource-displays">
+                                <div id="gift-stock-display">
+                                    <img src="assets/images/gift.png" alt="gift" class="stock-icon" title="プラスチック">
+                                    <span>x <span id="gift-stock-count">0</span></span>
+                                </div>
+                            </div>
+                        </section>
                     </div>
-                </section>
+
+                    <!-- ｽﾋﾟｷ一覧タブ -->
+                    <div id="list-tab" class="tab-content">
+                        <section id="speaki-status" class="menu-block">
+                            <h2>ｽﾋﾟｷたち</h2>
+                            <div id="speaki-list">
+                                <!-- Dynamic Speaki List -->
+                                <p class="empty-list">ｽﾋﾟｷはいません...</p>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- ｽﾋﾟｷのようすタブ -->
+                    <div id="message-tab" class="tab-content">
+                        <section id="message-section-wrapper" class="menu-block">
+                            <h2>ｽﾋﾟｷのようす</h2>
+                            <div id="message-section">
+                                <!-- 観察メッセージがここに動的に追加される -->
+                                <div class="message-placeholder">ｽﾋﾟｷたちを観察してみよう……（ｽﾋﾟｷ一覧で観察したいｽﾋﾟｷを選択してください）</div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
 
                 <div id="footer-section">
                     <button id="open-memo-btn" class="secondary-mini-btn">開発メモ・引用</button>
