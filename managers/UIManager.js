@@ -9,6 +9,7 @@ export class UIManager {
         this.game = game;
         this.lastUIUpdate = 0;
         this.initTabs(); // コンストラクタでタブを初期化
+        this.initMessageWindow(); // メッセージウィンドウの初期化
     }
 
     /** タブ機能の初期化 */
@@ -43,13 +44,62 @@ export class UIManager {
         }
     }
 
-    /** メッセージセクションにメッセージを追加 (将来用) */
+    /** メッセージウィンドウの初期化（ドラッグ・閉じる） */
+    initMessageWindow() {
+        const windowEl = document.getElementById('message-window');
+        const headerEl = document.getElementById('message-window-header');
+        const closeBtn = document.getElementById('close-window-btn');
+        const observeBtn = document.getElementById('observe-speaki-btn');
+
+        if (!windowEl || !headerEl) return;
+
+        // ドラッグ機能
+        let isDragging = false;
+        let startX, startY;
+
+        headerEl.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - windowEl.offsetLeft;
+            startY = e.clientY - windowEl.offsetTop;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            windowEl.style.left = (e.clientX - startX) + 'px';
+            windowEl.style.top = (e.clientY - startY) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // 閉じるボタン
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                windowEl.classList.add('hidden');
+                // 閉じる時はハイライトも外すか検討したが、一旦ウィンドウだけ消す
+            });
+        }
+
+        // 「観察する」ボタン
+        if (observeBtn) {
+            observeBtn.addEventListener('click', () => {
+                if (windowEl.classList.contains('hidden')) {
+                    windowEl.classList.remove('hidden');
+                } else {
+                    windowEl.classList.add('hidden');
+                }
+            });
+        }
+    }
+
+    /** メッセージウィンドウにメッセージを追加 */
     addConsoleMessage(text) {
-        const container = document.getElementById('message-section');
+        const container = document.getElementById('message-window-content');
         if (!container) return;
 
         // プレースホルダーがあれば削除
-        const placeholder = container.querySelector('.message-placeholder');
+        const placeholder = container.querySelector('.window-placeholder');
         if (placeholder) placeholder.remove();
 
         const item = document.createElement('div');
@@ -60,25 +110,25 @@ export class UIManager {
         // 自動スクロール
         container.scrollTop = container.scrollHeight;
 
-        // メッセージ数制限（最大30件）
-        while (container.children.length > 30) {
+        // メッセージ数制限（直近3件のみに制限）
+        while (container.children.length > 3) {
             container.removeChild(container.firstChild);
         }
     }
 
     /** コンソールをクリアする */
     clearConsole() {
-        const container = document.getElementById('message-section');
+        const container = document.getElementById('message-window-content');
         if (container) {
-            container.innerHTML = '<div class="message-placeholder">ｽﾋﾟｷたちを観察してみよう……（ｽﾋﾟｷ一覧で観察したいｽﾋﾟｷを選択してください）</div>';
+            container.innerHTML = '<div class="window-placeholder">ｽﾋﾟｷを選択して観察を開始</div>';
         }
     }
 
     /** コンソールのヘッダーを更新する */
     updateConsoleHeader(name) {
-        const header = document.getElementById('selected-speaki-header');
-        if (header) {
-            header.textContent = name ? `観察中: ${name}` : '観察中: なし';
+        const headerTitle = document.getElementById('window-speaki-name');
+        if (headerTitle) {
+            headerTitle.textContent = name ? `観察中: ${name}` : '観察中: なし';
         }
     }
 
@@ -229,10 +279,21 @@ export class UIManager {
     /** ハイライト設定 */
     setHighlight(id) {
         const game = this.game;
+        const prevId = game.highlightedCharId;
         game.highlightedCharId = (game.highlightedCharId === id) ? null : id;
         
-        // コンソールのリフレッシュ
-        this.clearConsole();
+        // ウィンドウの表示切り替え
+        const windowEl = document.getElementById('message-window');
+        if (windowEl) {
+            if (game.highlightedCharId !== null) {
+                windowEl.classList.remove('hidden');
+            }
+        }
+
+        // コンソールのリフレッシュ (対象が変わった時だけ)
+        if (game.highlightedCharId !== prevId) {
+            this.clearConsole();
+        }
         
         // ヘッダーの更新
         const selectedSpeaki = game.speakis.find(s => s.id === game.highlightedCharId);
@@ -289,7 +350,7 @@ export class UIManager {
             const moodPct = Math.min(100, Math.max(0, s.status.mood + 50));
 
             html += `
-            <div class="speaki-entry ${isHighlighted ? 'active' : ''}">
+            <div class="speaki-entry ${isHighlighted ? 'active' : ''}" onclick="window.game.ui.setHighlight(${s.id})">
                 <div class="speaki-entry-header">
                     <button class="highlight-toggle ${isHighlighted ? 'active' : ''}" 
                         onclick="event.stopPropagation(); window.game.ui.setHighlight(${s.id})">

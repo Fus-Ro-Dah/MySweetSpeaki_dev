@@ -19,7 +19,6 @@ export class MessageManager {
      */
     logStateChange(char) {
         // 全体のログ頻度を制限（5秒間隔に固定）
-        if (Date.now() - this.globalLastLogTime < 5000) return;
         if (!this._canLog(char)) return;
 
         const isBaby = char.characterType === 'baby';
@@ -79,16 +78,15 @@ export class MessageManager {
      * ユーザーとのインタラクションログ（撫でる・叩く）
      */
     logUserInteraction(char, type) {
-        // 全体のログ頻度を制限
-        if (Date.now() - this.globalLastLogTime < 5000) return;
+        // インタラクションはハイライトチェックのみ行う（5秒制限はバイパス）
+        if (this.game.highlightedCharId !== char.id) return;
 
-        // type: 'isPetting' or 'isHit'
         const isBaby = char.characterType === 'baby';
         const typeKey = isBaby ? 'baby' : 'speaki';
         const templates = MESSAGES[typeKey].USER_INTERACTING?.[type];
 
         if (templates && templates.length > 0) {
-            this._send(char, this._getRandom(templates));
+            this._send(char, this._getRandom(templates), null, true); // タイマー更新あり
         }
     }
 
@@ -96,16 +94,17 @@ export class MessageManager {
      * アイテムへの反応ログ
      */
     logItemReaction(char, item) {
-        if (!this._canLog(char)) return;
+        // アイテム反応はハイライトチェックのみ（5秒制限はバイパス）
+        if (this.game.highlightedCharId !== char.id) return;
 
         const typeKey = char.characterType === 'baby' ? 'baby' : 'speaki';
-        const itemType = item.type || item.id;
+        const itemType = item.id || item.type;
 
         // ユーザー指定のキー名に合わせる
         const templates = MESSAGES[typeKey].ITEM_ACTION?.[itemType];
 
         if (templates && templates.length > 0) {
-            this._send(char, this._getRandom(templates));
+            this._send(char, this._getRandom(templates), null, true); // タイマー更新あり
         }
     }
 
@@ -113,72 +112,81 @@ export class MessageManager {
      * キャラクター同士の交流ログ
      */
     logSocialInteraction(initiator, target, actionId) {
+        // 交流はハイライトされているスピキがいれば表示（5秒制限はバイパス）
+        const isInitiatorHighlighted = this.game.highlightedCharId === initiator.id;
+        const isTargetHighlighted = this.game.highlightedCharId === target.id;
+        if (!isInitiatorHighlighted && !isTargetHighlighted) return;
 
         const typeKey = initiator.characterType === 'baby' ? 'baby' : 'speaki';
         const socialData = MESSAGES[typeKey].GAME_REACTION?.[actionId];
 
         if (!socialData) return;
 
-        let templates;
-        if (Array.isArray(socialData)) {
-            templates = socialData;
-        } else {
-            // initiator/target別
-            // プログラムの実態に合わせる（始めた方がinitiator）
-            templates = socialData.initiator;
+        // 1. initiator(誘った側)のメッセージ
+        if (isInitiatorHighlighted) {
+            let templates;
+            if (Array.isArray(socialData)) {
+                templates = socialData;
+            } else {
+                templates = socialData.initiator;
+            }
+
+            if (templates && templates.length > 0) {
+                this._send(initiator, this._getRandom(templates), target, true); // タイマー更新あり
+            }
         }
 
-        if (templates && templates.length > 0) {
-            // targetの名前も使えるようにする
-            this._send(initiator, this._getRandom(templates), target);
-        }
-
-        // target側の反応も出す場合（必要に応じて）
+        // 2. target(誘われた側)の反応
         const targetTypeKey = target.characterType === 'baby' ? 'baby' : 'speaki';
         const targetSocialData = MESSAGES[targetTypeKey].GAME_REACTION?.[actionId];
-        if (targetSocialData && targetSocialData.target) {
-            // 社会的交流の連鎖は5秒制限に含めない（セットで表示するため、_sendはガードを通るはず）
-            // ただし、_send側にガードがあるとここも止まるので注意。
-            // ユーザーは「新規の出力」を5秒制限したいはず。
+        
+        if (isTargetHighlighted && targetSocialData && targetSocialData.target) {
             setTimeout(() => {
-                // target側の返答には連鎖フラグを立てず、通常の _send (5秒制限) を通す
-                this._send(target, this._getRandom(targetSocialData.target), initiator);
+                this._send(target, this._getRandom(targetSocialData.target), initiator, true); // タイマー更新あり
             }, 1000);
         }
     }
 
     /**
-     * メッセージ送信の実体
-     * @param {BaseCharacter} char 
-     * @param {string} template 
-     * @param {BaseCharacter} target 
+     * ログ出力が可能かチェック (5秒制限用)
+     * @param {BaseCharacter} char 対象のキャラクター
+     * @returns {boolean} ログ出力が可能であればtrue
      */
-    _send(char, template, target = null) {
-        // 選択されているスピキのみメッセージを表示する (id=0を考慮)
+    _canLog(char) {
+        const now = Date.now();
+        // 全体での5秒制限
+        if (now - this.globalLastLogTime < 5000) return false;
+
+        // ハイライトされているスピキのみ対象
         if (this.game.highlightedCharId === null || char.id !== this.game.highlightedCharId) {
-            return;
+            return false;
         }
 
-        // グローバル制限の最終チェック (5秒間隔)
-        if (Date.now() - this.globalLastLogTime < 5000) {
-            return;
-        }
+        return true;
+    }
+
+    /**
+     * メッセージ送信の実体
+     * @param {BaseCharacter} char 対象のキャラクター
+     * @param {string} template メッセージテンプレート
+     * @param {BaseCharacter} target ターゲットキャラクター (オプション)
+     * @param {boolean} updateGlobalTimer 全体ログ時刻を更新するかどうか (デフォルト: true)
+     */
+    _send(char, template, target = null, updateGlobalTimer = true) {
+        if (!this.game.ui) return;
 
         let text = template.replace(/{name}/g, char.name);
         if (target) {
             text = text.replace(/{targetName}/g, target.name);
         }
 
+        // メッセージを表示
         this.game.ui.addConsoleMessage(text);
 
-        const now = Date.now();
-        this.lastLogTimes.set(char.id, now);
-        this.globalLastLogTime = now;
-    }
-
-    _canLog(char) {
-        const lastTime = this.lastLogTimes.get(char.id) || 0;
-        return (Date.now() - lastTime > this.throttleInterval);
+        // タイムスタンプ更新
+        if (updateGlobalTimer) {
+            this.globalLastLogTime = Date.now();
+        }
     }
 
     _getRandom(array) {

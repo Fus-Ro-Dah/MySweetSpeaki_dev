@@ -103,7 +103,6 @@
                 <div class="menu-tabs">
                     <button class="tab-btn active" data-tab="item-tab">アイテム</button>
                     <button class="tab-btn" data-tab="list-tab">ｽﾋﾟｷ一覧</button>
-                    <button class="tab-btn" data-tab="message-tab">ｽﾋﾟｷのようす</button>
                 </div>
 
                 <div class="tab-content-container">
@@ -128,6 +127,9 @@
                     <div id="list-tab" class="tab-content">
                         <section id="speaki-status" class="menu-block">
                             <h2>ｽﾋﾟｷたち</h2>
+                            <div class="observe-btn-container">
+                                <button id="observe-speaki-btn" class="observe-btn primary-btn">観察する</button>
+                            </div>
                             <div id="speaki-list">
                                 <!-- Dynamic Speaki List -->
                                 <p class="empty-list">ｽﾋﾟｷはいません...</p>
@@ -135,17 +137,6 @@
                         </section>
                     </div>
 
-                    <!-- ｽﾋﾟｷのようすタブ -->
-                    <div id="message-tab" class="tab-content">
-                        <section id="message-section-wrapper" class="menu-block">
-                            <h2>ｽﾋﾟｷのようす</h2>
-                            <div id="selected-speaki-header" class="selected-header">観察中: なし</div>
-                            <div id="message-section">
-                                <!-- 観察メッセージがここに動的に追加される -->
-                                <div class="message-placeholder">ｽﾋﾟｷたちを観察してみよう……（ｽﾋﾟｷ一覧で観察したいｽﾋﾟｷを選択してください）</div>
-                            </div>
-                        </section>
-                    </div>
                 </div>
 
                 <div id="footer-section">
@@ -342,6 +333,18 @@
             <div class="modal-body" id="unlock-list">
                 <!-- Dynamic unlock items -->
             </div>
+        </div>
+    </div>
+
+    <!-- 観察メッセージウィンドウ (ドラッグ可能) -->
+    <div id="message-window" class="draggable-window hidden">
+        <div id="message-window-header" class="window-header">
+            <span id="window-speaki-name">観察中: なし</span>
+            <button id="close-window-btn" class="close-btn">&times;</button>
+        </div>
+        <div id="message-window-content" class="window-content">
+            <!-- 直近3件のメッセージ -->
+            <div class="window-placeholder">ｽﾋﾟｷを選択して観察を開始</div>
         </div>
     </div>
 

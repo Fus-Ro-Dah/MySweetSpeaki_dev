@@ -1885,3 +1885,132 @@ button:hover {
 .resume-btn:active {
     transform: scale(0.95);
 }
+
+/* ================================================================
+   観察メッセージウィンドウ (ドラッグ可能)
+   ================================================================ */
+.draggable-window {
+    position: absolute;
+    top: 100px;
+    left: 20px;
+    width: 280px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 105, 180, 0.3);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 2000;
+    overflow: hidden;
+    user-select: none;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.draggable-window.hidden {
+    display: none;
+}
+
+.window-header {
+    background: linear-gradient(90deg, var(--accent-color), #ff69b4);
+    color: white;
+    padding: 8px 12px;
+    cursor: move;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.window-content {
+    padding: 10px;
+    max-height: 250px;
+    overflow-y: auto;
+    font-size: 0.85rem;
+    color: #444;
+}
+
+.window-content .message-item {
+    background: white;
+    padding: 8px 10px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    border-left: 3px solid var(--accent-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    animation: slideInLow 0.3s ease-out;
+}
+
+@keyframes slideInLow {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.window-placeholder {
+    color: #888;
+    text-align: center;
+    padding: 20px 10px;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* スピキ一覧タブ内の「観察する」ボタン */
+.observe-btn {
+    padding: 4px 10px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(255, 20, 147, 0.2);
+}
+
+.observe-btn:hover {
+    background: #ff1493;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(255, 20, 147, 0.3);
+}
+
+.observe-btn.active {
+    background: #ff69b4;
+    font-weight: 700;
+}
+
+/* スピキリストの星マークボタン */
+.highlight-toggle {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    color: #bdc3c7; /* 未選択時はグレー */
+    transition: transform 0.23s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s;
+}
+
+.highlight-toggle:hover {
+    transform: scale(1.2);
+}
+
+.highlight-toggle.active {
+    color: #ffd700; /* 選択時はゴールド */
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
