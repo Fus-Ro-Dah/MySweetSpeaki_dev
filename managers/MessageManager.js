@@ -78,15 +78,15 @@ export class MessageManager {
      * ユーザーとのインタラクションログ（撫でる・叩く）
      */
     logUserInteraction(char, type) {
-        // インタラクションはハイライトチェックのみ行う（5秒制限はバイパス）
-        if (this.game.highlightedCharId !== char.id) return;
+        // インタラクションは5秒制限を設ける（連打防止）
+        if (!this._canLog(char)) return;
 
         const isBaby = char.characterType === 'baby';
         const typeKey = isBaby ? 'baby' : 'speaki';
         const templates = MESSAGES[typeKey].USER_INTERACTING?.[type];
 
         if (templates && templates.length > 0) {
-            this._send(char, this._getRandom(templates), null, true); // タイマー更新あり
+            this._send(char, this._getRandom(templates));
         }
     }
 
