@@ -494,7 +494,8 @@ body.mode-relaxed #happiness-container {
 /* メッセージセクション */
 #message-section {
     flex: 1;
-    background: rgba(255, 240, 245, 0.3); /* 薄いピンク背景 */
+    background: rgba(255, 240, 245, 0.3);
+    /* 薄いピンク背景 */
     border-radius: 15px;
     padding: 0.8rem;
     overflow-y: auto;
@@ -527,8 +528,15 @@ body.mode-relaxed #happiness-container {
 }
 
 @keyframes messageEntry {
-    from { opacity: 0; transform: translateX(10px) scale(0.95); }
-    to { opacity: 1; transform: translateX(0) scale(1.0); }
+    from {
+        opacity: 0;
+        transform: translateX(10px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1.0);
+    }
 }
 
 /* サイドメニュー上部のリソース表示エリア */
@@ -965,8 +973,15 @@ button:hover {
 /* bob（上下揺れ）keyframes */
 /* margin-topを使用: transformはJSが位置制御に使用しているため上書き不可 */
 @keyframes speakiBob {
-    0%, 100% { margin-top: 0; }
-    50%       { margin-top: calc(var(--bob-amount, 6px) * -1); }
+
+    0%,
+    100% {
+        margin-top: 0;
+    }
+
+    50% {
+        margin-top: calc(var(--bob-amount, 6px) * -1);
+    }
 }
 
 .speaki-sprite,
@@ -1033,8 +1048,9 @@ button:hover {
     width: 80px;
     height: auto;
     pointer-events: none;
-    z-index: 5; /* スピキ本体orギフト(10, 50)より後ろ */
-    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2));
+    z-index: 5;
+    /* スピキ本体orギフト(10, 50)より後ろ */
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
     transition: opacity 0.3s ease;
 }
 
@@ -1180,7 +1196,8 @@ button:hover {
 /* フィールド上のステータスバー表示 */
 .char-status-bars {
     position: absolute;
-    bottom: -15px; /* 足元より少し下 */
+    bottom: -15px;
+    /* 足元より少し下 */
     left: 50%;
     transform: translateX(-50%);
     width: 60px;
@@ -1189,7 +1206,8 @@ button:hover {
     gap: 2px;
     pointer-events: none;
     z-index: 70;
-    opacity: 0.7; /* 邪魔にならないよう少し透けさせる */
+    opacity: 0.7;
+    /* 邪魔にならないよう少し透けさせる */
     transition: opacity 0.3s;
 }
 
@@ -1828,7 +1846,8 @@ button:hover {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(139, 0, 0, 0.85); /* Dark Red */
+    background: rgba(139, 0, 0, 0.85);
+    /* Dark Red */
     backdrop-filter: blur(15px);
     z-index: 9999;
     display: flex;
@@ -1941,8 +1960,15 @@ button:hover {
 }
 
 @keyframes slideInLow {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .window-placeholder {
@@ -2001,16 +2027,18 @@ button:hover {
     cursor: pointer;
     padding: 0;
     line-height: 1;
-    color: #bdc3c7; /* 未選択時はグレー */
-    transition: transform 0.23s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s;
+    color: #bdc3c7;
+    /* 未選択時はグレー */
+    transition: transform 0.2s, color 0.2s;
 }
 
 .highlight-toggle:hover {
     transform: scale(1.2);
+    color: var(--accent-color);
 }
 
 .highlight-toggle.active {
-    color: #ffd700; /* 選択時はゴールド */
+    color: #ffd700;
+    /* 選択時はゴールド */
     text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
 }
-

@@ -78,15 +78,15 @@ export class MessageManager {
      * ユーザーとのインタラクションログ（撫でる・叩く）
      */
     logUserInteraction(char, type) {
-        // インタラクションは5秒制限を設ける（連打防止）
-        if (!this._canLog(char)) return;
+        // インタラクションはハイライトチェックのみ行う（5秒制限はバイパス）
+        if (this.game.highlightedCharId !== char.id) return;
 
         const isBaby = char.characterType === 'baby';
         const typeKey = isBaby ? 'baby' : 'speaki';
         const templates = MESSAGES[typeKey].USER_INTERACTING?.[type];
 
         if (templates && templates.length > 0) {
-            this._send(char, this._getRandom(templates));
+            this._send(char, this._getRandom(templates), null, true); // タイマー更新あり
         }
     }
 
@@ -139,7 +139,7 @@ export class MessageManager {
         // 2. target(誘われた側)の反応
         const targetTypeKey = target.characterType === 'baby' ? 'baby' : 'speaki';
         const targetSocialData = MESSAGES[targetTypeKey].GAME_REACTION?.[actionId];
-        
+
         if (isTargetHighlighted && targetSocialData && targetSocialData.target) {
             setTimeout(() => {
                 this._send(target, this._getRandom(targetSocialData.target), initiator, true); // タイマー更新あり

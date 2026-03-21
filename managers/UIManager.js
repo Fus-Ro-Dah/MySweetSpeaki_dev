@@ -336,13 +336,23 @@ export class UIManager {
 
         if (displaySpeakis.length === 0) {
             listContainer.innerHTML = '<p class="empty-list">スピキはいません...</p>';
+            this._lastSpeakiIds = "";
             return;
         }
 
+        // リストの構造（スピキの数やID）が変わっていないか確認
+        const currentIds = displaySpeakis.map(s => s.id).join(',');
+        if (!force && this._lastSpeakiIds === currentIds) {
+            // 構造が同じなら、中身（ゲージ等）だけ更新してホバーを維持する
+            this._updateSpeakiEntries(displaySpeakis);
+            return;
+        }
+        this._lastSpeakiIds = currentIds;
+
+        // 構造が変わった場合のみ full rebuild
         let html = '';
         displaySpeakis.forEach(s => {
             const isHighlighted = (s.id === game.highlightedCharId);
-            const state = s.getStateLabel();
             const emotionLabel = this._getEmotionLabel(s);
 
             const friendshipPct = Math.min(100, Math.max(0, s.status.friendship + 50));
@@ -350,13 +360,13 @@ export class UIManager {
             const moodPct = Math.min(100, Math.max(0, s.status.mood + 50));
 
             html += `
-            <div class="speaki-entry ${isHighlighted ? 'active' : ''}" onclick="window.game.ui.setHighlight(${s.id})">
+            <div class="speaki-entry ${isHighlighted ? 'active' : ''}" data-id="${s.id}" onclick="window.game.ui.setHighlight(${s.id})">
                 <div class="speaki-entry-header">
                     <button class="highlight-toggle ${isHighlighted ? 'active' : ''}" 
                         onclick="event.stopPropagation(); window.game.ui.setHighlight(${s.id})">
                         ${isHighlighted ? '★' : '☆'}
                     </button>
-                    ${emotionLabel ? '<span class="speaki-state-tag">' + emotionLabel + '</span>' : ''}
+                    <span class="speaki-state-tag">${emotionLabel || ''}</span>
                 </div>
                 
                 <div class="speaki-gauges">
@@ -386,11 +396,55 @@ export class UIManager {
         `;
         });
 
-        // PERFORMANCE: 文字列が前回と完全に一致する場合は、DOM更新をスキップしてGC負荷を下げる
-        if (this._lastSpeakiListHTML === html) return;
-        this._lastSpeakiListHTML = html;
-
         listContainer.innerHTML = html;
+    }
+
+    /** 既存語のリスト要素を効率的に更新（ホバー維持のため） */
+    _updateSpeakiEntries(displaySpeakis) {
+        const listContainer = document.getElementById('speaki-list');
+        if (!listContainer) return;
+
+        const entries = listContainer.querySelectorAll('.speaki-entry');
+        displaySpeakis.forEach((s, index) => {
+            const entry = entries[index];
+            if (!entry || parseInt(entry.dataset.id) !== s.id) return;
+
+            const isHighlighted = (s.id === this.game.highlightedCharId);
+            
+            // クラスの更新
+            entry.classList.toggle('active', isHighlighted);
+
+            // 星ボタンの更新
+            const starBtn = entry.querySelector('.highlight-toggle');
+            if (starBtn) {
+                starBtn.classList.toggle('active', isHighlighted);
+                starBtn.textContent = isHighlighted ? '★' : '☆';
+            }
+
+            // 状態タグの更新
+            const tag = entry.querySelector('.speaki-state-tag');
+            if (tag) {
+                tag.textContent = this._getEmotionLabel(s);
+            }
+
+            // ゲージの更新
+            const friendshipPct = Math.min(100, Math.max(0, s.status.friendship + 50));
+            const hungerPct = Math.min(100, Math.max(0, s.status.hunger));
+            const moodPct = Math.min(100, Math.max(0, s.status.mood + 50));
+
+            const gaugeFills = entry.querySelectorAll('.gauge-fill');
+            const gaugeValues = entry.querySelectorAll('.gauge-value');
+
+            // 0: friendship, 1: hunger, 2: mood
+            if (gaugeFills[0]) gaugeFills[0].style.width = `${friendshipPct}%`;
+            if (gaugeValues[0]) gaugeValues[0].textContent = s.status.friendship.toFixed(0);
+
+            if (gaugeFills[1]) gaugeFills[1].style.width = `${hungerPct}%`;
+            if (gaugeValues[1]) gaugeValues[1].textContent = s.status.hunger.toFixed(0);
+
+            if (gaugeFills[2]) gaugeFills[2].style.width = `${moodPct}%`;
+            if (gaugeValues[2]) gaugeValues[2].textContent = (s.status.mood || 0).toFixed(0);
+        });
     }
 
     /** バイトメニューのUI状態を更新 */
