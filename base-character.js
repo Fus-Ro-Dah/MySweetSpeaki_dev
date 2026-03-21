@@ -914,6 +914,11 @@ export class BaseCharacter {
                     const def = ITEMS[it.id];
                     if (def && def.isFood) return false;
                 }
+
+                // 好感度が低い時は教主像を除外
+                if (this.status.friendship < 20 && it.id === 'MasterStatue') {
+                    return false;
+                }
                 return true;
             });
             if (itemsInRange.length > 0) {

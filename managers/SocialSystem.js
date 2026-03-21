@@ -140,7 +140,7 @@ export class SocialSystem {
                     // 近くに ToyPumpkin または MasterStatue があるか
                     const items = this.game.placedItems || [];
                     const item = items.find(it => (it.id === 'ToyPumpkin' || it.id === 'MasterStatue') &&
-                        Math.hypot(a.pos.x - it.x, a.pos.y - it.y) < 500);
+                        Math.hypot(a.pos.x - it.x, a.pos.y - it.y) < 200);
                     return !!item;
                 },
                 execute: (a, b) => this.startInteraction(a, b, {
