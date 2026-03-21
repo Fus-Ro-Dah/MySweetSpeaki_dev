@@ -60,7 +60,6 @@ export class SocialSystem {
                             { origin: 'happy', target: 'happy' }
                         ],
                         onComplete: () => {
-                            baby.status.hunger = Math.min(100, baby.status.hunger + 20);
                             baby.status.emotion = 'happy';
                             baby.changeFriendship(10); // なだめてもらって安心
                         }
