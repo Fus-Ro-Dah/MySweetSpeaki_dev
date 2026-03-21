@@ -829,7 +829,23 @@ export class BaseCharacter {
     dropItem() {
         if (!this.interaction.carryingItem) return;
         const item = this.interaction.carryingItem;
-        item.carriedBy = null;
+        const def = ITEMS[item.id];
+
+        // 設置時に別のアイテムに変化させるかチェック (AAAA -> BBBB の機能)
+        if (def && def.transformOnDrop) {
+            const nextId = def.transformOnDrop;
+            const game = this.game;
+            if (game && game.items) {
+                console.log(`[BaseCharacter] Item transform on drop: ${item.id} -> ${nextId}`);
+                const x = this.pos.x;
+                const y = this.pos.y;
+                game.items.removeItem(item);
+                game.items.addItem(nextId, 'item', x, y);
+            }
+        } else {
+            item.carriedBy = null;
+        }
+
         this.interaction.carryingItem = null;
 
         // 設置時のアクション

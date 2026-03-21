@@ -279,6 +279,7 @@ export const ITEMS = {
         text: '',                       //配置時に表示するテキスト
         size: 180,                      //サイズ
         showInMenu: true,               //メニューに表示するか
+        isLockedItem: false,            //機能解放には載せない
         isFood: false,                  //食べ物かどうか
         friendshipChange: 10,           //友好度の変化量
         moodGain: 10,                   //機嫌の変化量
@@ -292,6 +293,7 @@ export const ITEMS = {
         text: '',
         size: 80,
         showInMenu: true,
+        isLockedItem: false,
         isFood: false,
         moodGain: 5,
         forcedEmotion: 'happy',
@@ -316,6 +318,7 @@ export const ITEMS = {
         size: 100,
         text: '',
         showInMenu: true,
+        isLockedItem: false,
         nutrition: 15,
         isFood: true,
         friendshipChange: 2,
@@ -351,16 +354,6 @@ export const ITEMS = {
         moodGain: 5,
         forcedEmotion: 'happy'
     },
-    //----ランダムアイテム(プラスチックの数だけおけるやつ)----//
-    //メニュー表示用のやつ
-    RandomGift: {
-        name: 'ランダムアイテム',
-        imagefile: 'gift.png', // ギフト画像を使用
-        size: 50,
-        showInMenu: true,
-        isRandomTool: true, // 内部的な識別用(これにしか使わない)
-    },
-    //ランダムアイテム
     AnimalCan: {
         name: 'アニマル缶',
         imagefile: 'item_アニマル缶.png',
@@ -373,7 +366,6 @@ export const ITEMS = {
         unlockDesc: 'コミーがすきなやつ\nでもｽﾋﾟｷは食べない',
         unlockPrice: 1
     },
-    //ランダムアイテム
     Shionmelone: {
         name: 'シオン・ザ・DB',
         imagefile: 'item_シオン・ザ・メロンブレッド.png',
@@ -388,7 +380,6 @@ export const ITEMS = {
         unlockDesc: 'ダークベーカリーからの刺客\n <a href="https://youtu.be/Py06vYKp4EY?si=V2BOhdAMiVH_Rvh1" target="_blank">【GB素材】シオン・ザ・ダークブレッド(使用例付き) by 私はエビィ様</a>',
         unlockPrice: 1
     },
-    //ランダムアイテム
     LeviDriver: {
         name: '工具',
         imagefile: 'item_レヴィドライバー.png',
@@ -402,7 +393,6 @@ export const ITEMS = {
         unlockDesc: 'たぶんマ○タ製\n<a href="https://youtu.be/WsQKUin6sb0?si=lltZElvtIdY4qbA6" target="_blank">電動レヴィドライバーの音声 by 私はエビィ様</a>',
         unlockPrice: 1
     },
-    //教主像
     MasterStatue: {
         name: '教主像',
         imagefile: 'item_master.png',
@@ -429,6 +419,51 @@ export const ITEMS = {
         showInMenu: false,
         reloadTime: 0,
         unlockDesc: '友達だったもの',
+        unlockPrice: 1
+    },
+    Uninse1: {
+        name: 'Uninse1',
+        imagefile: 'item_uninse1.png',
+        size: 100,
+        isLockedItem: true,
+        isFood: false,
+        moodGain: 5,
+        forcedEmotion: 'happy',
+        showInMenu: false,
+        reloadTime: 0,
+        unlockDesc: 'Uninse1',
+        unlockPrice: 1
+    },
+    Uninse2: {
+        name: 'Uninse2',
+        imagefile: 'item_uninse2.png',
+        size: 100,
+        isLockedItem: false,
+        isFood: false,
+        moodGain: 5,
+        forcedEmotion: 'happy',
+        showInMenu: false,
+    },
+    Uninse3: {
+        name: 'Uninse3',
+        imagefile: 'item_uninse3.png',
+        size: 100,
+        isLockedItem: false,
+        isFood: false,
+        moodGain: 5,
+        forcedEmotion: 'happy',
+        showInMenu: false,
+    },
+    LeetsHead: {
+        name: 'ゆっくりリッツ',
+        imagefile: 'item_leetshead.png',
+        size: 100,
+        isLockedItem: true,
+        isFood: false,
+        moodGain: 5,
+        forcedEmotion: 'happy',
+        showInMenu: false,
+        unlockDesc: 'ゆっくりしていってね！',
         unlockPrice: 1
     },
 };

@@ -148,10 +148,18 @@ export class UIManager {
         if (itemList) {
             Object.keys(ITEMS).forEach(id => {
                 const def = ITEMS[id];
-                // メニュー表示フラグのチェック
+                
+                // 'never' の場合は絶対に表示しない
+                if (def.showInMenu === 'never') return;
+
                 // 特殊アイテムの場合は解放済みかどうかもチェックする
                 const isUnlocked = def.isLockedItem ? (game.unlocks.itemUnlocks[id] === true) : true;
+                
+                // 解放が必要なアイテムで未解放なら表示しない
                 if (def.showInMenu === false && !isUnlocked) return;
+
+                // 解放アイテムでないのに showInMenu: false なら表示しない
+                if (!def.isLockedItem && def.showInMenu === false) return;
 
                 const div = this._createDraggableMenuItem(id, def, 'item');
                 itemList.appendChild(div);
@@ -536,13 +544,22 @@ export class UIManager {
         const currentHungerSec = 2 + game.unlocks.hungerDecayLv;
         const nextHungerSec = currentHungerSec + 1;
 
-        const unlockDefs = [
-            { id: 'feeder', ...UNLOCK_DATA.feeder, current: game.unlocks.feeder },
-            { id: 'autoReceive', ...UNLOCK_DATA.autoReceive, current: game.unlocks.autoReceive },
-            { id: 'growthStop', ...UNLOCK_DATA.growthStop, current: game.unlocks.growthStop }
-        ];
+        const unlockDefs = [];
 
-        // 特殊アイテムの個別解放
+        // 1. 基本機能（UNLOCK_DATA から動的に取得）
+        Object.keys(UNLOCK_DATA).forEach(key => {
+            const data = UNLOCK_DATA[key];
+            // アップグレード系（Lvがあるもの）以外をここに追加
+            if (key !== 'hungerDecay' && key !== 'affectionDecay' && key !== 'cooldownReduction') {
+                unlockDefs.push({
+                    id: key,
+                    ...data,
+                    current: game.unlocks[key]
+                });
+            }
+        });
+
+        // 2. 特殊アイテムの個別解放
         Object.keys(ITEMS).forEach(itemId => {
             const def = ITEMS[itemId];
             if (def.isLockedItem) {
@@ -557,9 +574,9 @@ export class UIManager {
             }
         });
 
-        // チャレンジモードのみ表示する項目
+        // 3. アップグレード項目（チャレンジモードのみ表示する項目など）
         if (game.gameMode !== 'relaxed') {
-            unlockDefs.splice(1, 0,
+            unlockDefs.push(
                 {
                     id: 'hungerDecay',
                     name: `${UNLOCK_DATA.hungerDecay.name} (Lv.${game.unlocks.hungerDecayLv})`,
@@ -575,16 +592,16 @@ export class UIManager {
                     desc: `${UNLOCK_DATA.affectionDecay.desc}現在: ${2 + game.unlocks.affectionDecayLv}秒に1 → 次: ${3 + game.unlocks.affectionDecayLv}秒に1`,
                     current: false,
                     isUpgrade: true
+                },
+                {
+                    id: 'cooldownReduction',
+                    name: `${UNLOCK_DATA.cooldownReduction.name} (Lv.${game.unlocks.reloadReductionLv})`,
+                    price: UNLOCK_DATA.cooldownReduction.price,
+                    desc: `${UNLOCK_DATA.cooldownReduction.desc}現在: -${game.unlocks.reloadReductionLv}秒 → 次: -${game.unlocks.reloadReductionLv + 1}秒`,
+                    current: false,
+                    isUpgrade: true
                 }
             );
-            unlockDefs.push({
-                id: 'cooldownReduction',
-                name: `${UNLOCK_DATA.cooldownReduction.name} (Lv.${game.unlocks.reloadReductionLv})`,
-                price: UNLOCK_DATA.cooldownReduction.price,
-                desc: `${UNLOCK_DATA.cooldownReduction.desc}現在: -${game.unlocks.reloadReductionLv}秒 → 次: -${game.unlocks.reloadReductionLv + 1}秒`,
-                current: false,
-                isUpgrade: true
-            });
         }
 
         list.innerHTML = '';
@@ -593,13 +610,13 @@ export class UIManager {
             div.className = `unlock-item ${def.current ? 'unlocked' : 'locked'}`;
 
             let buttonHTML = '';
-            if (def.id === 'feeder' || def.id === 'autoReceive' || def.id === 'growthStop') {
-                if (def.current) {
-                    let isEnabled = false;
-                    if (def.id === 'feeder') isEnabled = game.settings.feederEnabled;
-                    else if (def.id === 'autoReceive') isEnabled = game.settings.autoReceiveEnabled;
-                    else if (def.id === 'growthStop') isEnabled = game.settings.growthStopEnabled;
-
+            const settingKey = `${def.id}Enabled`;
+            
+            if (def.current) {
+                // 解放済みの場合
+                if (game.settings[settingKey] !== undefined) {
+                    // ON/OFF切り替えがある機能
+                    const isEnabled = game.settings[settingKey];
                     let toggleText = isEnabled ? 'ON' : 'OFF';
                     if (def.id === 'feeder') toggleText = isEnabled ? '手伝い中' : '今はいない';
                     else if (def.id === 'growthStop') toggleText = isEnabled ? '成長停止中' : '今は自然に成長する';
@@ -612,25 +629,27 @@ export class UIManager {
                         </button>
                     `;
                 } else {
+                    // 切り替えがない機能（アイテム解放など）
                     buttonHTML = `
-                        <button class="primary-btn unlock-btn" ${game.plastics < def.price ? 'disabled' : ''} 
-                            onclick="window.game.unlockFeature('${def.id}', ${def.price})">
-                            解放する
+                        <button class="primary-btn unlock-btn" disabled>
+                            解放済み
                         </button>
                     `;
                 }
             } else {
+                // 未解放の場合
+                const canAfford = game.plastics >= def.price;
                 buttonHTML = `
-                    <button class="primary-btn unlock-btn" ${(def.current || game.plastics < def.price) ? 'disabled' : ''} 
+                    <button class="primary-btn unlock-btn" ${!canAfford ? 'disabled' : ''} 
                         onclick="window.game.unlockFeature('${def.id}', ${def.price})">
-                        ${def.current ? '解放済み' : (def.isUpgrade ? '強化する' : '解放する')}
+                        ${def.isUpgrade ? '強化する' : '解放する'}
                     </button>
                 `;
             }
 
             div.innerHTML = `
                 <h4>${def.name}</h4>
-                <p>${(def.desc || '').replace(/\n/g, '<br>')}</p>
+                <p>${(def.desc || '').replace(/\\n/g, '<br>')}</p>
                 <div class="price">${def.current ? '解放済み' : `消費: ${def.price} 個`}</div>
                 ${buttonHTML}
             `;
