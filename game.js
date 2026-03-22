@@ -21,6 +21,7 @@ export class Game {
         // --- ゲーム状態 ---
         this.speakis = [];
         this.nextCharId = 0;
+        this.speakiCount = 0;
         this.highlightedCharId = null;
         this.furniture = [];
         this.placedItems = [];
@@ -489,7 +490,7 @@ export class Game {
             ).length;
 
             if (happySpeakCount > 0) {
-                const gain = (dt / 1000) * happySpeakCount * 2;
+                const gain = (dt / 1000) * happySpeakCount * 3;
                 this.happiness = Math.min(this.maxHappiness, this.happiness + gain);
                 this.ui.updateHappinessUI();
             }

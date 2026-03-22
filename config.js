@@ -308,17 +308,17 @@ export const ASSETS = {
                     { imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'none' },
                     { imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'bounce' },
                     { imagefile: 'baby_happy_idle_1.png', soundfile: '無音08.mp3', text: '……', movePattern: 'none' },
-                    { imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: 'ﾁｮﾜﾖ!', movePattern: 'shake' },
+                    { imagefile: 'baby_happy_idle_1.png', soundfile: '無音08.mp3', text: '……', movePattern: 'shake' },
                 ],
                 walking: [{ imagefile: 'baby_happy_idle_1.png', soundfile: 'チョワヨ.mp3', text: '…ﾜﾖ!', movePattern: 'bounce' }]
             },
             sad: {
                 idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }],
                 walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }],
-                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'アーウ.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }],
-                walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: 'ウアア.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }],
-                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: '赤ちゃん泣き.mp3', text: 'ﾌｪｪﾝ...', movePattern: 'shake' }],
-                walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: '赤ちゃん泣き.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }]
+                walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: '赤ちゃん泣き.mp3', text: 'ｳｱｱｱｱﾝ!!', movePattern: 'shake' }],
+                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: '無音08.mp3', text: '……', movePattern: 'shake' }],
+                walking: [{ imagefile: 'baby_normal_idle_1.png', soundfile: '無音08.mp3', text: '……', movePattern: 'shake' }],
+                idle: [{ imagefile: 'baby_normal_idle_1.png', soundfile: '無音08.mp3', text: '……', movePattern: 'shake' }],
             }
         },
         performance: {
@@ -500,7 +500,8 @@ export const ITEMS = {
         showInMenu: false,
         reloadTime: 0,
         unlockDesc: 'たぶんマ○タ製<br><a href="https://youtu.be/WsQKUin6sb0?si=lltZElvtIdY4qbA6" target="_blank">電動レヴィドライバーの音声 by 私はエビィ様</a>',
-        unlockPrice: 1
+        unlockPrice: 1,
+        transform: { nextId: 'LeviDriver', duration: 60000 }
     },
     MasterStatue: {
         name: '教主像',
@@ -514,7 +515,7 @@ export const ITEMS = {
         moodGain: 0,
         forcedEmotion: 'happy',
         unlockDesc: 'ｽﾋﾟｷにとってのあなたの象徴<br>あなたのことが好きなｽﾋﾟｷは 自然とこれに触れたがる<br>配置されていると ｽﾋﾟｷたちの好感度が減らなくなる',
-        unlockPrice: 20
+        unlockPrice: 8
     },
     //ランダムアイテム
     BrokenHobagi: {

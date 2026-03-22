@@ -27,23 +27,28 @@ export class CharacterManager {
         const finalY = (y !== undefined && y !== 0) ? y : defY + (Math.random() * 100 - 50);
 
         let char;
+        const isSpeakiType = (type === 'speaki' || type === 'baby' || type === 'child');
+        
+        let options = { characterType: type };
+        if (isSpeakiType) {
+            game.speakiCount++;
+            options.speakiNumber = game.speakiCount;
+        }
+
         if (type === 'baby') {
-            char = new BabySpeaki(game, id, game.speakiRoom, finalX, finalY);
+            char = new BabySpeaki(game, id, game.speakiRoom, finalX, finalY, options);
         } else if (type === 'child') {
-            char = new ChildSpeaki(game, id, game.speakiRoom, finalX, finalY);
+            char = new ChildSpeaki(game, id, game.speakiRoom, finalX, finalY, options);
         } else if (type === 'ashur') {
-            char = new Ashur(game, id, game.speakiRoom, finalX, finalY);
+            char = new Ashur(game, id, game.speakiRoom, finalX, finalY, options);
         } else if (type === 'posher') {
-            char = new Posher(game, id, game.speakiRoom, finalX, finalY);
+            char = new Posher(game, id, game.speakiRoom, finalX, finalY, options);
         } else if (type === 'npc' || type.startsWith('npc_')) {
-            char = new NPCCharacter(game, id, game.speakiRoom, finalX, finalY, { characterType: type });
+            char = new NPCCharacter(game, id, game.speakiRoom, finalX, finalY, options);
         } else {
-            char = new Speaki(game, id, game.speakiRoom, finalX, finalY, { characterType: type });
+            char = new Speaki(game, id, game.speakiRoom, finalX, finalY, options);
         }
         game.speakis.push(char);
-        if (id === 0) {
-            // console.log(char);
-        }
         game.ui.updateSpeakiList();
     }
 

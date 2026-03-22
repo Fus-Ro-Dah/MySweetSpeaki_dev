@@ -1996,15 +1996,16 @@ button:hover {
 
 /* スピキ一覧タブ内の「観察する」ボタン */
 .observe-btn {
-    padding: 4px 10px;
+    padding: 8px 16px;
     background: var(--accent-color);
     color: white;
     border: none;
     border-radius: 15px;
-    font-size: 0.75rem;
+    font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.2s;
     box-shadow: 0 2px 6px rgba(255, 20, 147, 0.2);
+    margin-bottom: 8px;
 }
 
 .observe-btn:hover {

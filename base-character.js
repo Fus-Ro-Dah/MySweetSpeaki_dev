@@ -13,7 +13,8 @@ export class BaseCharacter {
         // const defaultNamePrefix = (this.characterType === 'baby') ? '赤ちゃんスピキ' : 'ｽﾋﾟｷ';
         // こどもでも大人でも「ｽﾋﾟｷ_番号」で統一
         const defaultNamePrefix = 'ｽﾋﾟｷ';
-        this.name = options.name || `${id + 1}ﾋﾟｷめの${defaultNamePrefix}`;
+        const num = options.speakiNumber !== undefined ? options.speakiNumber : id + 1;
+        this.name = options.name || `${num}ﾋﾟｷめの${defaultNamePrefix}`;
 
         // 0. 機能フラグ
         this.canInteract = options.canInteract !== undefined ? options.canInteract : true;
@@ -1291,8 +1292,8 @@ export class BaseCharacter {
 
     /** アイテムアクション実行 */
     _performItemAction(item) {
-        // 特定のアイテム（アニマル缶）は「運搬」する
-        if (item.id === 'AnimalCan') {
+        // 特定のアイテムは運搬する （今後使用）
+        if (item.id === 'XXXXX') {
             this.interaction.carryingItem = item;
             item.carriedBy = this;
 
